@@ -29,17 +29,20 @@ The current configuration targets a macOS `.app` with an ad hoc signature for lo
 
 - Create models on the canvas or open one of the bundled examples through **Open / import**.
 - Open `.py` or graph `.json` files through the native file picker. Open a project folder to browse its PyTorch models.
+- Reopening the same native file selects its existing tab and preserves unsaved edits. File identity is retained across restarts; files with the same name in different folders remain separate.
 - Press **Command+S** to save. Existing Python files retain code outside the imported model classes through the original source-merging logic.
 - Use **Export SVG** for a diagram. Use **Export…** for model code, a training script, or a ZIP. Training export requires a connected loss and target; a model without a loss can still be saved with Command+S.
 - The editor autosaves graph tabs and library edits in local WebView storage. Save important models to disk for a portable copy.
 
-File access is granted by native file/folder selection and lasts for the current app process. Reopen files or folders after restarting. The adapter supports the File System Access API operations used by Torch Canvas; it is not a general implementation of that browser API. Python is exported as text; the desktop app does not execute models or install PyTorch.
+File access is granted by native file/folder selection and lasts for the current app process. Reopen files or folders after restarting. Saved tabs retain canonical file identity and the previous source baseline, but never filesystem permission. Reopening a file restores access to its existing tab. The adapter supports the File System Access API operations used by Torch Canvas; it is not a general implementation of that browser API. Python is exported as text; the desktop app does not execute models or install PyTorch.
 
 ## Source and attribution
 
 `upstream/torch-canvas.html` is the unmodified page fetched on October 22, 2026. `upstream/source.json` records its URL, author, retrieval time, and SHA-256 digest. `scripts/prepare-web.py` derives `web/index.html` and applies desktop compatibility patches. The dimension evaluator uses an arithmetic parser instead of dynamic JavaScript compilation, so symbolic sizes and variance plots work under the desktop Content Security Policy. Unresolved or nonpositive prediction sizes produce a descriptive error. `web/desktop.js` adapts file operations to scoped Rust commands in `src-tauri/src/main.rs`.
 
 The offline page uses system fonts instead of fetching Google Fonts. The author's original icon is preserved, and Jesse Roberts is credited in the window title and editor header.
+
+The Content Security Policy explicitly permits style attributes used by the SVG plots and arrowheads. Script and style elements retain Tauri's nonce/hash protection. UI tests reproduce Tauri's generated nonce policy and check plot strokes, point colors, legends, and arrowheads in both light and dark mode.
 
 No upstream license was identified in the retrieved page. This private port does not assert permission to relicense or redistribute Jesse Roberts's work. See [NOTICE](NOTICE).
 

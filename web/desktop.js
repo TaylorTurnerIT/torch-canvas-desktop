@@ -10,8 +10,9 @@
       kind: info.kind,
       async queryPermission() { return 'granted'; },
       async requestPermission() { return 'granted'; },
-      async isSameEntry(other) { return other?._nativeId === info.id; },
+      async isSameEntry(other) { return !!info.identity && other?._nativeIdentity === info.identity; },
       _nativeId: info.id,
+      _nativeIdentity: info.identity,
     };
     if (info.kind === 'file') {
       result.getFile = async () => {

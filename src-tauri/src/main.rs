@@ -23,6 +23,7 @@ struct Files(Mutex<HashMap<String, Grant>>);
 #[serde(rename_all = "camelCase")]
 struct Handle {
     id: String,
+    identity: String,
     name: String,
     kind: &'static str,
 }
@@ -59,7 +60,10 @@ fn child_path(parent: &Path, name: &str) -> Result<PathBuf, String> {
 
 impl Files {
     fn grant(&self, grant: Grant) -> Result<Handle, String> {
-        checked_path(&grant)?;
+        let identity = checked_path(&grant)?
+            .to_str()
+            .ok_or("File path is not valid UTF-8")?
+            .to_owned();
         let mut map = self.0.lock().map_err(error)?;
         let id = map
             .iter()
@@ -68,6 +72,7 @@ impl Files {
             .unwrap_or_else(|| (map.len() + 1).to_string());
         let handle = Handle {
             id: id.clone(),
+            identity,
             name: grant
                 .path
                 .file_name()
@@ -263,6 +268,47 @@ mod tests {
     #[test]
     fn rejects_ungranted_handle() {
         assert!(Files::default().get("1").is_err());
+    }
+
+    #[test]
+    fn file_identity_matches_across_grants_but_distinguishes_same_basename() {
+        let root =
+            std::env::temp_dir().join(format!("torch-canvas-identity-{}", std::process::id()));
+        fs::create_dir(&root).unwrap();
+        fs::create_dir(root.join("other")).unwrap();
+        fs::write(root.join("model.py"), b"first").unwrap();
+        fs::write(root.join("other/model.py"), b"second").unwrap();
+        let root = root.canonicalize().unwrap();
+        let files = Files::default();
+        let from_folder = files
+            .grant(Grant {
+                path: root.join("model.py"),
+                root: root.clone(),
+                directory: false,
+            })
+            .unwrap();
+        let direct = files
+            .grant(Grant {
+                path: root.join("model.py"),
+                root: root.join("model.py"),
+                directory: false,
+            })
+            .unwrap();
+        let other = files
+            .grant(Grant {
+                path: root.join("other/model.py"),
+                root: root.clone(),
+                directory: false,
+            })
+            .unwrap();
+        assert_ne!(from_folder.id, direct.id);
+        assert_eq!(from_folder.identity, direct.identity);
+        assert_eq!(from_folder.name, other.name);
+        assert_ne!(from_folder.identity, other.identity);
+        fs::remove_file(root.join("model.py")).unwrap();
+        fs::remove_file(root.join("other/model.py")).unwrap();
+        fs::remove_dir(root.join("other")).unwrap();
+        fs::remove_dir(root).unwrap();
     }
 
     #[cfg(unix)]

@@ -2,10 +2,18 @@ const { test, expect } = require('@playwright/test');
 const fs = require('node:fs');
 
 test.beforeEach(async ({ page }) => {
-  const csp = require('../../src-tauri/tauri.conf.json').app.security.csp;
+  // Tauri adds nonces to script-src and style-src at runtime. These override
+  // unsafe-inline, so testing the unmodified config misses blocked style attrs.
+  const nonce = 'dG9yY2gtY2FudmFzLXRlc3Q=';
+  const csp = require('../../src-tauri/tauri.conf.json').app.security.csp
+    .replace(/(script-src|style-src) ([^;]+)/g, `$1 $2 'nonce-${nonce}'`);
   await page.route('http://127.0.0.1:4173/**', async route => {
     const response = await route.fetch();
-    await route.fulfill({ response, headers: { ...response.headers(), 'content-security-policy': csp } });
+    const headers = { ...response.headers(), 'content-security-policy': csp };
+    if (headers['content-type']?.includes('text/html')) {
+      const body = (await response.text()).replace(/<(script|style)(?=[\s>])/g, `<$1 nonce="${nonce}"`);
+      await route.fulfill({ response, headers, body });
+    } else await route.fulfill({ response, headers });
   });
   await page.addInitScript(() => {
     window.nativeCalls = [];
@@ -15,11 +23,12 @@ test.beforeEach(async ({ page }) => {
       window.nativeCalls.push({ command, args });
       if (command === 'native_pick') {
         if (window.cancelNextPick) { window.cancelNextPick = false; return null; }
-        return { id: args.name || 'model.py', name: args.name || 'model.py', kind: args.mode === 'directory' ? 'directory' : 'file' };
+        if (window.nextPickedFile) { const file = window.nextPickedFile; window.nextPickedFile = null; return file; }
+        return { id: args.name || 'model.py', identity: '/test/' + (args.name || 'model.py'), name: args.name || 'model.py', kind: args.mode === 'directory' ? 'directory' : 'file' };
       }
       if (command === 'native_write') { window.savedFiles[args.id] = args.bytes; return; }
       if (command === 'native_read') return { bytes: window.savedFiles[args.id] || [], lastModified: 123 };
-      if (command === 'native_child') return { id: args.name, name: args.name, kind: 'file' };
+      if (command === 'native_child') return { id: args.name, identity: '/test/' + args.name, name: args.name, kind: 'file' };
       throw new Error('Unexpected native command: ' + command);
     } } };
   });
@@ -101,4 +110,76 @@ test('variance also works when workers are unavailable', async ({ page }) => {
   await page.locator('#zVar').click();
   await expect(page.locator('#varPane .var-plot')).toBeVisible();
   await expect(page.locator('#varPane')).not.toContainText("Couldn't compute");
+});
+
+for (const theme of ['light', 'dark']) {
+  test(`plot lines, legend, and arrowheads retain theme colors in ${theme} mode`, async ({ page }) => {
+    await page.emulateMedia({ colorScheme: theme });
+    await page.goto('http://127.0.0.1:4173');
+    await page.locator('#zVar').click();
+    await expect(page.locator('#varPane .var-plot')).toBeVisible();
+    const colors = await page.evaluate(() => {
+      const root = getComputedStyle(document.documentElement);
+      const resolve = name => {
+        const probe = document.createElement('span');
+        probe.style.color = root.getPropertyValue(name).trim();
+        document.body.appendChild(probe);
+        const color = getComputedStyle(probe).color;
+        probe.remove();
+        return color;
+      };
+      return {
+        expected: ['--stream', '--bwd'].map(resolve),
+        strokes: [...document.querySelectorAll('.var-plot .ln')].map(p => getComputedStyle(p).stroke),
+        lengths: [...document.querySelectorAll('.var-plot .ln')].map(p => p.getTotalLength()),
+        pointColors: [...document.querySelectorAll('.var-plot .pt')].map(p => getComputedStyle(p).fill),
+        legend: [...document.querySelectorAll('.var-legend i:not(.dash)')].map(p => getComputedStyle(p).borderTopColor),
+        arrow: getComputedStyle(document.querySelector('#ar path')).fill,
+        expectedArrow: resolve('--edge'),
+      };
+    });
+    expect(colors.strokes).toEqual(colors.expected);
+    expect(colors.lengths.every(length => length > 0)).toBe(true);
+    expect(colors.pointColors.every(color => colors.expected.includes(color))).toBe(true);
+    expect(colors.legend).toEqual(colors.expected);
+    expect(colors.arrow).toBe(colors.expectedArrow);
+    await page.screenshot({ path: `test-results/rendering-${theme}.png` });
+  });
+}
+
+test('reopening the same file reuses its edited tab, including after reload', async ({ page }) => {
+  const source = 'import torch.nn as nn\n\nclass DiskModel(nn.Module):\n    def __init__(self):\n        super().__init__()\n        self.fc = nn.Linear(4, 2)\n\n    def forward(self, x):\n        return self.fc(x)\n';
+  async function openFile(id, identity) {
+    await page.evaluate(({ id, identity, source }) => {
+      window.nextPickedFile = { id, identity, name: 'model.py', kind: 'file' };
+      window.savedFiles[id] = Array.from(new TextEncoder().encode(source));
+    }, { id, identity, source });
+    await page.locator('#bMore').click();
+    await page.locator('[data-act="ofile"]').click();
+  }
+  await page.goto('http://127.0.0.1:4173');
+  await openFile('folder-grant', '/project-a/model.py');
+  await expect(page.locator('#modelName')).toHaveValue('DiskModel');
+  await page.evaluate(() => new Promise(requestAnimationFrame));
+  await page.locator('#modelName').fill('LocalEdits');
+  await page.locator('#modelName').press('Tab');
+  await expect(page.locator('#fileBar')).toContainText('unsaved changes');
+  await page.locator('#bNew').click();
+  await expect(page.locator('#tabstrip .ctab.model')).toHaveCount(3);
+  await openFile('direct-grant', '/project-a/model.py');
+  await expect(page.locator('#modelName')).toHaveValue('LocalEdits');
+  await expect(page.locator('#tabstrip .ctab.model')).toHaveCount(3);
+  await expect(page.locator('#fileBar')).toContainText('unsaved changes');
+
+  await page.reload();
+  await page.locator('#tabstrip .ctab.model').first().click();
+  await openFile('new-process-grant', '/project-a/model.py');
+  await expect(page.locator('#modelName')).toHaveValue('LocalEdits');
+  await expect(page.locator('#tabstrip .ctab.model')).toHaveCount(3);
+  await expect(page.locator('#fileBar')).toContainText('unsaved changes');
+
+  // A matching basename is not sufficient: this is a different file.
+  await openFile('other-directory', '/project-b/model.py');
+  await expect(page.locator('#modelName')).toHaveValue('DiskModel');
+  await expect(page.locator('#tabstrip .ctab.model')).toHaveCount(4);
 });

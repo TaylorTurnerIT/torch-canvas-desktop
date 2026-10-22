@@ -16,6 +16,52 @@ page = page.replace(needle, needle + '''
       if (!shape || !shape.length || shape.some(d => !Number.isInteger(d) || d <= 0)) {
         return { error: `Set positive numeric sizes for ${p.title || p.name || n.type} before plotting variance.`, node: id };
       }''')
+needle = 'async function openHandle(h, path, root, inDir) {\n  try {'
+if page.count(needle) != 1:
+    raise RuntimeError('Expected exactly one native file-open handler')
+page = page.replace(needle, needle + '''
+    // Native and browser file handles identify files independently of basename.
+    // Reuse the live document without rereading or replacing unsaved changes.
+    for (const doc of S.docs) {
+      const file = doc.id === S.cur ? S.file : doc.file;
+      const source = file && file.handle ? null : doc.sourceFile;
+      let same = h._nativeIdentity && source && source.identity === h._nativeIdentity;
+      if (!same && file && file.handle) same = file.handle === h;
+      if (!same && file && file.handle && typeof h.isSameEntry === 'function') {
+        try { same = await h.isSameEntry(file.handle); } catch {}
+      }
+      if (same) {
+        if (!file || !file.handle) {
+          const disk = await h.getFile();
+          const attached = Object.assign({}, source, { handle: h, lastModified: disk.lastModified, changedOnDisk: (await disk.text()) !== source.diskText });
+          doc.file = attached;
+          if (doc.id === S.cur) S.file = attached;
+        }
+        if (doc.id !== S.cur) activateDoc(doc.id);
+        else { renderFileBar(); renderTabs(); save(); }
+        toast(`Switched to ${(file || source).name}.`);
+        return;
+      }
+    }''')
+# Remember file identity without persisting filesystem permission. Reopening a
+# file after restarting reattaches a freshly granted handle to its saved tab.
+needle = 'from: S.docs.map(d => d.fromLib || null), cur:'
+if page.count(needle) != 1:
+    raise RuntimeError('Expected exactly one document autosave record')
+page = page.replace(needle, '''from: S.docs.map(d => d.fromLib || null), sourceFiles: S.docs.map(d => {
+    const f = d.id === S.cur ? S.file : d.file;
+    if (f && f.handle && f.handle._nativeIdentity) return { identity: f.handle._nativeIdentity, name: f.name, path: f.path, kind: f.kind, root: f.root, used: f.used, diskText: f.diskText, savedCode: f.savedCode };
+    return d.sourceFile || null;
+  }), cur:''')
+needle = "const fromOf = new Map();"
+page = page.replace(needle, needle + '''
+const sourceOf = new Map();
+if (saved && saved.v === 2 && Array.isArray(saved.docs) && Array.isArray(saved.sourceFiles)) saved.docs.forEach((g, i) => {
+  const source = saved.sourceFiles[i];
+  if (g && source && typeof source.identity === 'string') sourceOf.set(g, source);
+});''')
+page = page.replace('fromLib: fromOf.get(r) || null', 'sourceFile: sourceOf.get(r) || null, fromLib: fromOf.get(r) || null')
+page = page.replace("on('fbClose', () => { S.file = null;", "on('fbClose', () => { const doc = docById(S.cur); if (doc) doc.sourceFile = null; S.file = null; save();")
 # Use native system fonts: no remote styles, fonts, scripts, or runtime server.
 page = re.sub(r'<link[^>]+href="https://fonts.googleapis.com[^>]+>\n?', '', page)
 page = page.replace('<title>Torch Canvas</title>', '<!doctype html>\n<html lang="en">\n<head>\n<meta charset="utf-8">\n<meta name="viewport" content="width=device-width, initial-scale=1">\n<title>Torch Canvas</title>')
@@ -31,7 +77,7 @@ page = page.replace('async function offerFile(name, data) {', '''async function 
     return;
   }''')
 # Native handles are session grants, not durable browser file handles.
-page = page.replace("async function rememberHandles() { try", "async function rememberHandles() { if (window.torchDesktop) return; try")
+page = page.replace("async function rememberHandles() { try", "async function rememberHandles() { if (window.torchDesktop) { save(); return; } try")
 page = page.replace("idb.get('last').then", "(window.torchDesktop ? Promise.resolve(null) : idb.get('last')).then")
 page = page.replace('id="exDlModel">Download model.py', 'id="exDlModel">Save model.py')
 page = page.replace('id="exDlTrain">Download train.py', 'id="exDlTrain">Save train.py')
