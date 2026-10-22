@@ -35,6 +35,8 @@ test.beforeEach(async ({ page }) => {
       if (command === 'marimo_stop') return;
       if (command === 'native_reopen') return window.reopenable && window.reopenable[args.identity] || null;
       if (command === 'native_take_opened') return window.openedFiles.splice(0);
+      if (command === 'native_watch') { if (window.rejectWatch) throw new Error('watch unavailable'); return; }
+      if (command === 'native_unwatch') return;
       throw new Error('Unexpected native command: ' + command);
     } } };
   });
@@ -373,11 +375,76 @@ test('the marimo tab stays selected when the file changes on disk', async ({ pag
   await page.keyboard.press('Control+o');
   await page.locator('#tabMarimo').click();
   await expect(page.locator('#marimoFrames iframe')).toHaveCount(1);
-  // Another program (marimo) rewrites the file; the poll reloads the diagram.
+  // Another program (marimo) rewrites the file; the watcher reloads the diagram.
   await page.evaluate(text => { window.savedFiles['nb.py'] = Array.from(new TextEncoder().encode(text)); }, notebook.replace('nn.Linear(16, n_out)', 'nn.Linear(16, 9)'));
   await page.evaluate(() => { window.mtimes = { 'nb.py': 456 }; });
+  // The native watcher reports the change; the poll is skipped while the file is watched.
+  await page.evaluate(() => window.tauriListeners['torch-file-changed']({ id: 'nb.py' }));
   await expect.poll(() => page.evaluate(() => torchCanvas.state.g.nodes.find(n => n.params.name === 'fc2').params.out), { timeout: 8000 }).toBe('9');
   await expect(page.locator('#tabMarimo')).toHaveAttribute('aria-selected', 'true');
   await expect(page.locator('#marimoPane')).toBeVisible();
   await expect(page.locator('#marimoFrames iframe')).toHaveCount(1);
+});
+
+// Native watching: the page asks for a watch on the open file, and a torch-file-changed event reloads it
+// without waiting for the 5 s poll. The clock is controlled so the poll can be run on demand.
+async function openNotebookWithClock(page) {
+  await page.clock.install();
+  await page.goto('http://127.0.0.1:4173');
+  await page.clock.pauseAt(Date.now() + 1000);
+  const notebook = fs.readFileSync('tests/fixtures/marimo-net.py', 'utf8');
+  await page.evaluate(text => {
+    window.savedFiles['nb.py'] = Array.from(new TextEncoder().encode(text));
+    window.nextPickedFile = { id: 'nb.py', identity: '/test/nb.py', name: 'nb.py', kind: 'file' };
+  }, notebook);
+  await page.keyboard.press('Control+o');
+  await expect(page.locator('#fileBar')).toContainText('nb.py');
+  return notebook;
+}
+const nativeCallsNamed = (page, command) => page.evaluate(name => window.nativeCalls.filter(c => c.command === name).map(c => c.args.id), command);
+
+test('opening a file asks the native side to watch it once', async ({ page }) => {
+  await openNotebookWithClock(page);
+  await expect.poll(() => page.evaluate(() => window.__torchNativeWatch)).toBe(true);
+  expect(await nativeCallsNamed(page, 'native_watch')).toEqual(['nb.py']);
+  // Redraws of the same file do not ask again.
+  await page.evaluate(() => torchCanvas.commit(() => { torchCanvas.state.g.nodes.find(n => n.type === 'linear' && n.params.name === 'fc1').params.out = '32'; }));
+  await page.evaluate(() => torchCanvas.commit(() => { torchCanvas.state.g.nodes.find(n => n.type === 'linear' && n.params.name === 'fc1').params.out = '48'; }));
+  expect(await nativeCallsNamed(page, 'native_watch')).toEqual(['nb.py']);
+});
+
+test('a torch-file-changed event reloads the diagram without waiting for the poll', async ({ page }) => {
+  const notebook = await openNotebookWithClock(page);
+  await page.evaluate(text => {
+    window.savedFiles['nb.py'] = Array.from(new TextEncoder().encode(text));
+    window.mtimes = { 'nb.py': 456 };
+  }, notebook.replace('nn.Linear(16, n_out)', 'nn.Linear(16, 9)'));
+  await page.evaluate(() => window.tauriListeners['torch-file-changed']({ id: 'nb.py' }));
+  await expect.poll(() => page.evaluate(() => torchCanvas.state.g.nodes.find(n => n.params.name === 'fc2').params.out), { timeout: 2000 }).toBe('9');
+});
+
+test('the 5 s poll is skipped while the active file is watched', async ({ page }) => {
+  await openNotebookWithClock(page);
+  await expect.poll(() => page.evaluate(() => window.__torchNativeWatch)).toBe(true);
+  const reads = await page.evaluate(() => window.nativeCalls.filter(c => c.command === 'native_read').length);
+  await page.clock.runFor(10000);
+  expect(await page.evaluate(() => window.nativeCalls.filter(c => c.command === 'native_read').length)).toBe(reads);
+});
+
+test('the 5 s poll keeps running when native_watch fails', async ({ page }) => {
+  await page.clock.install();
+  await page.goto('http://127.0.0.1:4173');
+  await page.clock.pauseAt(Date.now() + 1000);
+  await page.evaluate(() => { window.rejectWatch = true; });
+  await page.evaluate(text => {
+    window.savedFiles['nb.py'] = Array.from(new TextEncoder().encode(text));
+    window.nextPickedFile = { id: 'nb.py', identity: '/test/nb.py', name: 'nb.py', kind: 'file' };
+  }, fs.readFileSync('tests/fixtures/marimo-net.py', 'utf8'));
+  await page.keyboard.press('Control+o');
+  await expect(page.locator('#fileBar')).toContainText('nb.py');
+  await expect.poll(() => nativeCallsNamed(page, 'native_watch')).toEqual(['nb.py']);
+  expect(await page.evaluate(() => window.__torchNativeWatch)).toBeFalsy();
+  const reads = await page.evaluate(() => window.nativeCalls.filter(c => c.command === 'native_read').length);
+  await page.clock.runFor(5000);
+  await expect.poll(() => page.evaluate(() => window.nativeCalls.filter(c => c.command === 'native_read').length)).toBeGreaterThan(reads);
 });

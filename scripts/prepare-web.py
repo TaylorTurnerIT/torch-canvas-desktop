@@ -124,7 +124,12 @@ page = page.replace('</style>', """.codewrap { position: relative; min-width: 10
   .resizer::after { content: ""; position: absolute; inset: 0 -4px; }
 }
 </style>""", 1)
-live = '\n'.join((ROOT / f"scripts/patches/{name}.js").read_text().rstrip() for name in ("live-code", "recents", "marimo-pane", "resizers", "open-files"))
+# Poll the open file every 5 s only when native watching is not active (see scripts/patches/file-watch.js).
+needle = 'setInterval(checkDisk, 5000);'
+if page.count(needle) != 1:
+    raise RuntimeError('Expected exactly one disk poll interval')
+page = page.replace(needle, 'setInterval(() => { if (!window.__torchNativeWatch) checkDisk(); }, 5000);')
+live = '\n'.join((ROOT / f"scripts/patches/{name}.js").read_text().rstrip() for name in ("live-code", "recents", "marimo-pane", "resizers", "open-files", "file-watch"))
 end = page.rindex('})();\n</script>')
 page = page[:end] + live + '\n' + page[end:]
 for old, new, why in [

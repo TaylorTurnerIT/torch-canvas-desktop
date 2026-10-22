@@ -1,14 +1,16 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
+use notify::{EventKind, RecommendedWatcher, RecursiveMode, Watcher};
 use serde::Serialize;
 use std::{
     collections::HashMap,
+    ffi::OsStr,
     fs,
     io::{BufRead, BufReader},
     net::{Ipv4Addr, SocketAddr, TcpListener, TcpStream},
     path::{Component, Path, PathBuf},
     process::{Child, Command, Stdio},
-    sync::{Arc, Mutex},
+    sync::{mpsc, Arc, Mutex},
     time::{Duration, Instant},
 };
 #[cfg(unix)]
@@ -346,6 +348,100 @@ fn native_child(
     files.grant(child)
 }
 
+// ── Native file watching: `torch-file-changed` tells the page the open file changed on disk ──
+const FILE_CHANGED: &str = "torch-file-changed";
+const WATCH_QUIET: Duration = Duration::from_millis(150);
+
+// Watchers keyed by grant id. Dropping a watcher stops it.
+#[derive(Default)]
+struct Watches(Mutex<HashMap<String, RecommendedWatcher>>);
+
+#[derive(Clone, Serialize)]
+struct FileChanged {
+    id: String,
+}
+
+// Editors save by replacing the file, which kills a watch on the file itself. So the watch is on its
+// directory, and only events naming the file count.
+fn names_file(event_path: &Path, name: &OsStr) -> bool {
+    event_path.file_name() == Some(name)
+}
+
+// Reads do not change a file. Ignoring them keeps the page's own reads from re-triggering a check.
+fn is_change(kind: &EventKind) -> bool {
+    !matches!(kind, EventKind::Access(_))
+}
+
+// Call `fire` once no signal has arrived for `quiet`. A burst of signals becomes one call.
+// Dropping the sender ends the loop without a call, because the file is no longer watched.
+fn debounce(rx: mpsc::Receiver<()>, quiet: Duration, mut fire: impl FnMut()) {
+    while rx.recv().is_ok() {
+        loop {
+            match rx.recv_timeout(quiet) {
+                Ok(()) => continue,
+                Err(mpsc::RecvTimeoutError::Timeout) => {
+                    fire();
+                    break;
+                }
+                Err(mpsc::RecvTimeoutError::Disconnected) => return,
+            }
+        }
+    }
+}
+
+// Watch the directory of `path` and call `on_change` after each debounced change to that file.
+fn start_watch(
+    path: &Path,
+    on_change: impl Fn() + Send + 'static,
+) -> Result<RecommendedWatcher, String> {
+    let name = path.file_name().ok_or("Missing filename")?.to_owned();
+    let dir = path.parent().ok_or("Missing parent")?.to_path_buf();
+    let (tx, rx) = mpsc::channel::<()>();
+    let mut watcher = notify::recommended_watcher(move |event: notify::Result<notify::Event>| {
+        if let Ok(event) = event {
+            if is_change(&event.kind) && event.paths.iter().any(|p| names_file(p, &name)) {
+                let _ = tx.send(());
+            }
+        }
+    })
+    .map_err(error)?;
+    watcher
+        .watch(&dir, RecursiveMode::NonRecursive)
+        .map_err(error)?;
+    std::thread::spawn(move || debounce(rx, WATCH_QUIET, on_change));
+    Ok(watcher)
+}
+
+#[tauri::command]
+fn native_watch(
+    id: String,
+    app: tauri::AppHandle,
+    files: State<'_, Files>,
+    watches: State<'_, Watches>,
+) -> Result<(), String> {
+    let grant = files.get(&id)?;
+    if grant.directory {
+        return Err("Only files can be watched".into());
+    }
+    let path = checked_path(&grant)?;
+    let mut map = watches.0.lock().map_err(error)?;
+    if map.contains_key(&id) {
+        return Ok(());
+    }
+    let target = id.clone();
+    let watcher = start_watch(&path, move || {
+        let _ = app.emit(FILE_CHANGED, FileChanged { id: target.clone() });
+    })?;
+    map.insert(id, watcher);
+    Ok(())
+}
+
+#[tauri::command]
+fn native_unwatch(id: String, watches: State<'_, Watches>) -> Result<(), String> {
+    watches.0.lock().map_err(error)?.remove(&id);
+    Ok(())
+}
+
 // ── marimo: run `marimo edit` for an opened notebook and hand the page to an iframe ──
 struct Server {
     child: Child,
@@ -513,6 +609,7 @@ fn main() {
         .manage(Files::default())
         .manage(Marimo::default())
         .manage(Opened::default())
+        .manage(Watches::default())
         .invoke_handler(tauri::generate_handler![
             native_pick,
             native_read,
@@ -521,6 +618,8 @@ fn main() {
             native_child,
             native_take_opened,
             native_reopen,
+            native_watch,
+            native_unwatch,
             marimo_start,
             marimo_stop
         ])
@@ -667,6 +766,79 @@ mod tests {
         assert_eq!(fs::read_dir(&root).unwrap().count(), 1);
         fs::remove_file(&file).unwrap();
         fs::remove_dir(root).unwrap();
+    }
+
+    #[test]
+    fn watch_filter_matches_only_the_granted_file_name() {
+        let name = OsStr::new("model.py");
+        assert!(names_file(Path::new("/a/model.py"), name));
+        assert!(!names_file(Path::new("/a/model.py.tmp"), name));
+        assert!(!names_file(Path::new("/a/.model.py.torch-canvas-1"), name));
+        assert!(!names_file(Path::new("/a/other.py"), name));
+    }
+
+    #[test]
+    fn reads_are_not_changes() {
+        use notify::event::{AccessKind, CreateKind, ModifyKind, RemoveKind};
+        assert!(!is_change(&EventKind::Access(AccessKind::Read)));
+        assert!(is_change(&EventKind::Create(CreateKind::File)));
+        assert!(is_change(&EventKind::Modify(ModifyKind::Any)));
+        assert!(is_change(&EventKind::Remove(RemoveKind::File)));
+    }
+
+    #[test]
+    fn debounce_collapses_bursts_and_stops_when_unwatched() {
+        use std::sync::atomic::{AtomicUsize, Ordering};
+        let (tx, rx) = mpsc::channel::<()>();
+        let fired = Arc::new(AtomicUsize::new(0));
+        let count = fired.clone();
+        let worker = std::thread::spawn(move || {
+            debounce(rx, Duration::from_millis(150), move || {
+                count.fetch_add(1, Ordering::SeqCst);
+            })
+        });
+        for _ in 0..5 {
+            tx.send(()).unwrap();
+        }
+        std::thread::sleep(Duration::from_millis(600));
+        assert_eq!(fired.load(Ordering::SeqCst), 1);
+        tx.send(()).unwrap();
+        std::thread::sleep(Duration::from_millis(600));
+        assert_eq!(fired.load(Ordering::SeqCst), 2);
+        // A pending signal is dropped when the watcher goes away.
+        tx.send(()).unwrap();
+        drop(tx);
+        worker.join().unwrap();
+        assert_eq!(fired.load(Ordering::SeqCst), 2);
+    }
+
+    // Real FSEvents/inotify run. The save is retried because a watch can start a moment after its first event.
+    #[test]
+    fn watcher_sees_atomic_save_of_its_file_and_ignores_siblings() {
+        let dir = std::env::temp_dir().join(format!("torch-canvas-watch-{}", std::process::id()));
+        fs::create_dir_all(&dir).unwrap();
+        let dir = dir.canonicalize().unwrap();
+        let file = dir.join("model.py");
+        fs::write(&file, b"first").unwrap();
+        let (tx, rx) = mpsc::channel::<()>();
+        let watcher = start_watch(&file, move || {
+            let _ = tx.send(());
+        })
+        .unwrap();
+        std::thread::sleep(Duration::from_millis(300));
+        fs::write(dir.join("sibling.txt"), b"unrelated").unwrap();
+        assert!(rx.recv_timeout(Duration::from_millis(600)).is_err(), "sibling write fired");
+        let mut seen = false;
+        for attempt in 0..25 {
+            write_atomic(&file, format!("save {attempt}").as_bytes()).unwrap();
+            if rx.recv_timeout(Duration::from_millis(200)).is_ok() {
+                seen = true;
+                break;
+            }
+        }
+        assert!(seen, "no change event for an atomic save");
+        drop(watcher);
+        fs::remove_dir_all(dir).unwrap();
     }
 
     #[cfg(unix)]

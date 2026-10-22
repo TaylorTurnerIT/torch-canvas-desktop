@@ -17,7 +17,8 @@ Both the web app and the desktop app must keep working. A change that only passe
 1. Replaces the dimension evaluator with `scripts/patches/eval-dim.js`. The evaluator uses an arithmetic parser, so the desktop Content Security Policy can run symbolic sizes without dynamic code compilation.
 2. Inserts `scripts/patches/source-sync.js` inside the `NN` IIFE, before its `return`. It keeps marimo decorators and setup-cell imports on save, and it patches only changed code when the diagram changes.
 3. Adds the variance size check, the native file-open reuse logic, the desktop save path, the Tauri credit, and the CSS and markup for the editor, marimo pane, and dividers.
-4. Appends `scripts/patches/live-code.js`, `recents.js`, `marimo-pane.js`, `resizers.js`, and `open-files.js` at the end of the main app IIFE. The order matters.
+4. Appends `scripts/patches/live-code.js`, `recents.js`, `marimo-pane.js`, `resizers.js`, `open-files.js`, and `file-watch.js` at the end of the main app IIFE. The order matters.
+5. Replaces the 5 s disk poll (`setInterval(checkDisk, 5000)`) with a version that skips the poll while `window.__torchNativeWatch` is set. `file-watch.js` sets it once the native watcher covers the active file.
 
 The script raises an error if any anchor string does not match exactly once. If upstream changes, the script fails at that anchor. Fix the anchor and the patch together; do not loosen the match.
 
@@ -62,6 +63,7 @@ The WebKit suite needs `npx playwright install webkit` once. It starts a static 
 
 - File access uses scoped grants. `native_pick` opens a native dialog and returns a handle. `native_read`, `native_write`, `native_entries`, and `native_child` operate only on granted paths. `checked_path` and `child_path` reject traversal and symlink escapes. Grants last for the process.
 - `write_atomic` writes a temp file and renames it into place, so file watchers such as marimo never read a partial file. All saves go through it.
+- File watching: `native_watch` and `native_unwatch` take a grant id. The watch covers the file's parent directory (non-recursive) because atomic saves replace the file, and it emits `torch-file-changed` with `{ id }` after a 150 ms quiet period. Watchers live in `Watches` state, one per id. Only granted files can be watched.
 - Recent files: `remember` records the canonical identity of each file the user picked or opened, newest first, capped at 50, in `recent-files.json` under the app data directory. `native_reopen` reopens only identities in that list that still exist. Do not widen it to arbitrary paths.
 - Files opened from Finder or `open -a` arrive as `RunEvent::Opened`. `grant_opened` grants them, queues them, and emits `torch-open`. The page calls `native_take_opened` on that event and once at startup (`open-files.js`).
 - marimo: `marimo_start` and `marimo_stop` manage one `marimo edit` process per opened notebook.
@@ -90,7 +92,7 @@ The WebKit suite needs `npx playwright install webkit` once. It starts a static 
 
 These rules describe how Torch Canvas writes a marimo `.py` file. They come from `scripts/patches/source-sync.js` and `live-code.js`.
 
-- Edit the `.py` file directly. The app watches the open file every 1.5 seconds while the window is visible and redraws when the text changes on disk, unless the editor has unsaved changes.
+- Edit the `.py` file directly. The app checks the open file on focus, when the window becomes visible, and every 5 seconds. In the desktop app the native watcher reports changes at once and the timer is skipped. It redraws when the text changes on disk, unless the editor has unsaved changes.
 - Model classes must be top-level `@app.class_definition` cells. The sync code recognizes only classes that start at column 0. A class nested inside an `@app.cell` is not treated as a model class.
 - Imports belong in the `with app.setup:` block. When a regenerated class needs `torch`, `nn`, or `F` and the import is missing, the sync adds it to that block.
 - Saving keeps unchanged code byte for byte. A diagram edit changes only:

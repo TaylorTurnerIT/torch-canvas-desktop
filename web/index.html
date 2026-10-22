@@ -7097,9 +7097,12 @@ async function reloadFromDisk(auto) {
     toast(auto ? `${f.name} changed on disk; the diagram was updated.` : `Reloaded ${f.name}.`);
   } catch (e) { toast(`Couldn't reload ${f.name}: ${e.message}`); }
 }
-// Watch the open file: follow edits made in another editor when the diagram has no unsaved changes.
-setInterval(async () => {
-  const f = S.file; if (!f || !f.handle || document.visibilityState !== 'visible' || S.drag) return;
+// Follow edits made in another editor when the diagram has no unsaved changes. Browsers have no file-change
+// events, so this runs at once on window focus and when the tab becomes visible, and every 5 s as a fallback.
+let checking = false;
+async function checkDisk() {
+  const f = S.file; if (!f || !f.handle || document.visibilityState !== 'visible' || S.drag || checking) return;
+  checking = true;
   try {
     const file = await f.handle.getFile();
     if (file.lastModified === f.lastModified) return;
@@ -7107,8 +7110,11 @@ setInterval(async () => {
     const text = await file.text(); if (text === f.diskText) return;
     if (!isDirty()) reloadFromDisk(true);
     else { f.changedOnDisk = true; renderFileBar(); }
-  } catch {}
-}, 1500);
+  } catch {} finally { checking = false; }
+}
+window.addEventListener('focus', checkDisk);
+document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') checkDisk(); });
+setInterval(() => { if (!window.__torchNativeWatch) checkDisk(); }, 5000);
 
 async function openFolder() {
   if (!('showDirectoryPicker' in window)) return toast('Opening folders needs Chrome or Edge.');
@@ -7888,6 +7894,31 @@ async function openRecent(i) {
   const events = window.__TAURI__.event;
   if (events && events.listen) events.listen('torch-open', take);
   take();
+})();
+// Native file watching: the desktop app asks the native side to watch the open file. Changes arrive as
+// `torch-file-changed` and run checkDisk at once. While the active file is watched, the 5 s poll is skipped.
+(() => {
+  if (!window.__TAURI__) return;
+  const invoke = window.__TAURI__.core.invoke;
+  const events = window.__TAURI__.event;
+  const requested = new Set(); // native ids already sent to native_watch, so each is sent once
+  const watched = new Set(); // native ids the native side confirmed
+  const activeId = () => (S.file && S.file.handle && S.file.handle._nativeId) || null;
+  // The poll is skipped only while the active file itself is watched.
+  const syncFlag = () => { const id = activeId(); window.__torchNativeWatch = !!id && watched.has(id); };
+  async function ensureWatch() {
+    const id = activeId();
+    if (id && !requested.has(id)) {
+      requested.add(id);
+      try { await invoke('native_watch', { id }); watched.add(id); } catch {}
+    }
+    syncFlag();
+  }
+  if (events && events.listen) events.listen('torch-file-changed', () => checkDisk());
+  // renderFileBar runs whenever the open file changes, so each new active file is watched here.
+  const renderBar = renderFileBar;
+  renderFileBar = function () { renderBar.apply(this, arguments); ensureWatch(); };
+  ensureWatch();
 })();
 })();
 </script>
