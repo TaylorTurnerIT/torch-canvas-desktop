@@ -29,7 +29,7 @@ test.beforeEach(async ({ page }) => {
         return { id: args.name || 'model.py', identity: '/test/' + (args.name || 'model.py'), name: args.name || 'model.py', kind: args.mode === 'directory' ? 'directory' : 'file' };
       }
       if (command === 'native_write') { window.savedFiles[args.id] = args.bytes; return; }
-      if (command === 'native_read') return { bytes: window.savedFiles[args.id] || [], lastModified: 123 };
+      if (command === 'native_read') return { bytes: window.savedFiles[args.id] || [], lastModified: (window.mtimes && window.mtimes[args.id]) || 123 };
       if (command === 'native_child') return { id: args.name, identity: '/test/' + args.name, name: args.name, kind: 'file' };
       if (command === 'marimo_start') return { url: 'http://127.0.0.1:4173/desktop.js', project: '/test/project' };
       if (command === 'marimo_stop') return;
@@ -361,4 +361,23 @@ test('choosing a recent file reopens it without a dialog', async ({ page }) => {
   await expect(page.locator('#modelName')).toHaveValue('Again');
   await expect(page.locator('#fileBar')).toContainText('again.py');
   expect(await page.evaluate(() => window.nativeCalls.map(c => c.command))).not.toContain('native_pick');
+});
+
+test('the marimo tab stays selected when the file changes on disk', async ({ page }) => {
+  await page.goto('http://127.0.0.1:4173');
+  const notebook = fs.readFileSync('tests/fixtures/marimo-net.py', 'utf8');
+  await page.evaluate(text => {
+    window.savedFiles['nb.py'] = Array.from(new TextEncoder().encode(text));
+    window.nextPickedFile = { id: 'nb.py', identity: '/test/nb.py', name: 'nb.py', kind: 'file' };
+  }, notebook);
+  await page.keyboard.press('Control+o');
+  await page.locator('#tabMarimo').click();
+  await expect(page.locator('#marimoFrames iframe')).toHaveCount(1);
+  // Another program (marimo) rewrites the file; the poll reloads the diagram.
+  await page.evaluate(text => { window.savedFiles['nb.py'] = Array.from(new TextEncoder().encode(text)); }, notebook.replace('nn.Linear(16, n_out)', 'nn.Linear(16, 9)'));
+  await page.evaluate(() => { window.mtimes = { 'nb.py': 456 }; });
+  await expect.poll(() => page.evaluate(() => torchCanvas.state.g.nodes.find(n => n.params.name === 'fc2').params.out), { timeout: 8000 }).toBe('9');
+  await expect(page.locator('#tabMarimo')).toHaveAttribute('aria-selected', 'true');
+  await expect(page.locator('#marimoPane')).toBeVisible();
+  await expect(page.locator('#marimoFrames iframe')).toHaveCount(1);
 });

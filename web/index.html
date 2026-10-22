@@ -7660,6 +7660,8 @@ async function openRecent(i) {
   const tabCode = $('#tabCode'), tabMarimo = $('#tabMarimo'), pane = $('#marimoPane'), frames = $('#marimoFrames');
   const status = $('#marimoStatus'), auto2 = $('#oAuto2'), auto = $('#oAuto');
   const sessions = new Map(); // file identity -> { state, url, project, error, frame }
+  // The chosen tab is remembered per file. A reload from disk briefly clears S.file, which must not reset it.
+  const chosen = new Map();
   let tab = 'code';
 
   // A tab restored after a restart carries no marimo flag; work it out from the text.
@@ -7671,7 +7673,7 @@ async function openRecent(i) {
     detect();
     const ok = eligible();
     tabMarimo.hidden = !ok;
-    if (!ok) tab = 'code';
+    tab = ok ? chosen.get(S.file.handle._nativeIdentity) || 'code' : 'code';
     right.dataset.tab = tab;
     tabCode.setAttribute('aria-selected', String(tab === 'code'));
     tabMarimo.setAttribute('aria-selected', String(tab === 'marimo'));
@@ -7714,8 +7716,9 @@ async function openRecent(i) {
     render();
   }
 
-  tabCode.onclick = () => { tab = 'code'; render(); };
-  tabMarimo.onclick = () => { tab = 'marimo'; render(); start(); };
+  const choose = which => { if (eligible()) chosen.set(S.file.handle._nativeIdentity, which); render(); };
+  tabCode.onclick = () => choose('code');
+  tabMarimo.onclick = () => { choose('marimo'); start(); };
   $('#marimoStop').onclick = stop;
   $('#marimoReload').onclick = () => { const s = current(); if (s && s.frame) s.frame.src = s.url; };
   auto2.onchange = () => { auto.checked = auto2.checked; auto.dispatchEvent(new Event('change')); };
