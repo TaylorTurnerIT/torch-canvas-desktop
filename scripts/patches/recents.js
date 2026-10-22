@@ -27,3 +27,15 @@ function openRecent(i) {
   toast(`Choose ${x.title} again. File access doesn't carry over between sessions.`);
   openFileDialog();
 }
+// First run of this feature: start from the tabs that are already open.
+(() => {
+  let stored = null; try { stored = localStorage.getItem('torchcanvas.recents'); } catch {}
+  if (stored !== null) return;
+  for (const d of S.docs.slice().reverse()) {
+    const f = d.id === S.cur ? S.file : d.file, src = (f && f.handle && f.handle._nativeIdentity ? { identity: f.handle._nativeIdentity, name: f.name } : d.sourceFile);
+    const lib = d.fromLib && S.library.find(l => l.file === d.fromLib);
+    if (src && src.identity) recordRecent({ kind: 'file', key: src.identity, title: src.name, note: src.identity.slice(0, src.identity.lastIndexOf('/')) });
+    else if (lib) recordRecent({ kind: 'lib', key: lib.file, title: lib.title, note: lib.kind === 'block' ? 'Block' : 'Example' });
+  }
+  try { if (localStorage.getItem('torchcanvas.recents') === null) localStorage.setItem('torchcanvas.recents', '[]'); } catch {}
+})();

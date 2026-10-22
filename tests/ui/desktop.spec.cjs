@@ -331,3 +331,16 @@ test('Open / import lists up to five recent models, newest first, and hides the 
   await expect(page.locator('.ctx [data-act^="recent:"]')).toHaveCount(5);
   await page.screenshot({ path: 'test-results/recents.png' });
 });
+
+test('recents start from tabs that were already open', async ({ page }) => {
+  await page.goto('http://127.0.0.1:4173');
+  await page.evaluate(() => { window.savedFiles['old.py'] = Array.from(new TextEncoder().encode('import torch.nn as nn\n\nclass Old(nn.Module):\n    def __init__(self):\n        super().__init__()\n        self.fc = nn.Linear(2, 2)\n\n    def forward(self, x):\n        return self.fc(x)\n')); window.nextPickedFile = { id: 'old.py', identity: '/test/old.py', name: 'old.py', kind: 'file' }; });
+  await page.keyboard.press('Control+o');
+  await expect(page.locator('#modelName')).toHaveValue('Old');
+  // Simulate the state before this feature existed: tabs saved, no recents key.
+  await page.evaluate(() => localStorage.removeItem('torchcanvas.recents'));
+  await page.reload();
+  await page.locator('#bMore').click();
+  await expect(page.locator('.ctx [data-act^="recent:"]')).toHaveCount(1);
+  await expect(page.locator('.ctx [data-act^="recent:"]')).toContainText('old.py');
+});
