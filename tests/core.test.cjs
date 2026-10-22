@@ -138,3 +138,13 @@ test('syncSource applies diagram edits to hand-written code without regenerating
   const renamed = parse(src); renamed.name = 'Renamed';
   assert.match(NN.syncSource(src, renamed, {}), /^class Renamed\(nn\.Module\):/m);
 });
+
+test('a size set through a symbol reaches a literal file', () => {
+  const base = NN.generate(NN.presetResidualMLP(), { literalDims: true }).code;
+  const g = NN.importPython(base).graph;
+  g.symbols.d256 = 64;
+  NN.syncWidths(g);
+  const out = NN.syncSource(base, g, { gen: { literalDims: true, shapeComments: true } });
+  assert.notEqual(out, base);
+  assert.match(out, /nn\.Linear\(784, 64, bias=False\)/);
+});
