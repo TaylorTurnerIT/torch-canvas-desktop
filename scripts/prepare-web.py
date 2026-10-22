@@ -122,9 +122,18 @@ page = page.replace('</style>', """.codewrap { position: relative; min-width: 10
   .resizer::after { content: ""; position: absolute; inset: 0 -4px; }
 }
 </style>""", 1)
-live = '\n'.join((ROOT / f"scripts/patches/{name}.js").read_text().rstrip() for name in ("live-code", "marimo-pane", "resizers", "open-files"))
+live = '\n'.join((ROOT / f"scripts/patches/{name}.js").read_text().rstrip() for name in ("live-code", "recents", "marimo-pane", "resizers", "open-files"))
 end = page.rindex('})();\n</script>')
 page = page[:end] + live + '\n' + page[end:]
+for old, new, why in [
+    ("function openLibrary(entry) {\n  if (!entry) return;", "function openLibrary(entry) {\n  if (!entry) return;\n  recordRecent({ kind: 'lib', key: entry.file, title: entry.title, note: entry.kind === 'block' ? 'Block' : 'Example' });", 'recent examples'),
+    ("    // Native and browser file handles identify files independently of basename.", "    if (h.kind === 'file') recordRecent({ kind: 'file', key: h._nativeIdentity || path || h.name, title: h.name, note: h._nativeIdentity ? h._nativeIdentity.slice(0, h._nativeIdentity.lastIndexOf('/')) : 'File' });\n    // Native and browser file handles identify files independently of basename.", 'recent files'),
+    ("title=\"Close (Esc)\">×</button></div>`\n    + (nets.length ?", "title=\"Close (Esc)\">×</button></div>`\n    + recentMenu()\n    + (nets.length ?", 'recent menu'),
+    ("      if (a.startsWith('lib:')) return openLibrary(", "      if (a.startsWith('recent:')) return openRecent(+a.slice(7));\n      if (a.startsWith('lib:')) return openLibrary(", 'recent dispatch'),
+]:
+    if page.count(old) != 1:
+        raise RuntimeError('Expected exactly one ' + why)
+    page = page.replace(old, new)
 # Use native system fonts: no remote styles, fonts, scripts, or runtime server.
 page = re.sub(r'<link[^>]+href="https://fonts.googleapis.com[^>]+>\n?', '', page)
 page = re.sub(r'(<link rel="icon"[^>]*href=")[^"]+("[^>]*>)', r'\g<1>logo.png\2', page, count=1)

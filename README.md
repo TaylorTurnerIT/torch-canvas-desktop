@@ -41,6 +41,8 @@ On Taylor's Mac, `~/Applications/Torch Canvas.app` links to this checkout's buil
 
 - **marimo pane**: with a marimo notebook open, the **marimo** tab beside **PyTorch** starts `marimo edit --headless --watch` for it and embeds the page. It uses `uv run` in the notebook's nearest `pyproject.toml` project (`--locked` when `uv.lock` exists), or `marimo` on your PATH otherwise. The first start can take a while. The server listens only on `127.0.0.1` on a random port without an access token, and stops with **Stop** or when the app quits. Turn on **auto-save** to have diagram and code edits reach marimo as you make them. Drag the dividers beside the palette and the right pane to resize them; double-click a divider to reset it, or focus it and use the arrow keys. Sizes persist.
 
+- **Open / import** lists up to five recently opened examples and files at the top, newest first, and hides the list when there are none. A recent file switches to its tab if it is still open; otherwise it asks you to choose the file again, because file access does not carry over between sessions.
+
 File access is granted by native file/folder selection and lasts for the current app process. Reopen files or folders after restarting. Saved tabs retain canonical file identity and the previous source baseline, but never filesystem permission. Reopening a file restores access to its existing tab. The adapter supports the File System Access API operations used by Torch Canvas; it is not a general implementation of that browser API. Python is exported as text; the desktop app does not execute models or install PyTorch.
 
 ## Source and attribution

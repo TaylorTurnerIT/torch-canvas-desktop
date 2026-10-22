@@ -308,3 +308,26 @@ test('dividers resize the side panes, persist, and reset on double-click', async
   await page.keyboard.press('ArrowLeft');
   expect(Math.abs((await width('.right')) - (before + 24))).toBeLessThan(8);
 });
+
+test('Open / import lists up to five recent models, newest first, and hides the list when empty', async ({ page }) => {
+  await page.goto('http://127.0.0.1:4173');
+  const recent = () => page.locator('.ctx .hd', { hasText: 'Recent' });
+  await page.locator('#bMore').click();
+  await expect(recent()).toHaveCount(0);
+  const titles = [];
+  for (let i = 0; i < 6; i++) {
+    await page.keyboard.press('Escape');
+    await page.locator('#bMore').click();
+    const item = page.locator('.ctx [data-act^="lib:"]').nth(i + (i > 0 ? 0 : 0));
+    titles.push((await item.locator('span').nth(1).evaluate(e => e.firstChild.textContent)).trim());
+    await item.click();
+  }
+  await page.locator('#bMore').click();
+  await expect(recent()).toHaveCount(1);
+  const shown = await page.locator('.ctx [data-act^="recent:"]').evaluateAll(els => els.map(e => e.querySelector('span:nth-child(2)').firstChild.textContent.trim()));
+  expect(shown).toEqual(titles.slice(1).reverse());
+  await page.reload();
+  await page.locator('#bMore').click();
+  await expect(page.locator('.ctx [data-act^="recent:"]')).toHaveCount(5);
+  await page.screenshot({ path: 'test-results/recents.png' });
+});
