@@ -4,10 +4,16 @@ use serde::Serialize;
 use std::{
     collections::HashMap,
     fs,
+    io::{BufRead, BufReader},
+    net::{Ipv4Addr, SocketAddr, TcpListener, TcpStream},
     path::{Component, Path, PathBuf},
-    sync::Mutex,
+    process::{Child, Command, Stdio},
+    sync::{Arc, Mutex},
+    time::{Duration, Instant},
 };
-use tauri::State;
+#[cfg(unix)]
+use std::os::unix::process::CommandExt;
+use tauri::{Manager, State};
 
 #[derive(Clone)]
 struct Grant {
@@ -254,18 +260,196 @@ fn native_child(
     files.grant(child)
 }
 
+// ── marimo: run `marimo edit` for an opened notebook and hand the page to an iframe ──
+struct Server {
+    child: Child,
+    url: String,
+}
+
+#[derive(Default)]
+struct Marimo(Mutex<HashMap<String, Server>>);
+
+#[derive(Serialize)]
+struct MarimoInfo {
+    url: String,
+    project: String,
+}
+
+// The nearest ancestor with a pyproject.toml is the Python project the notebook belongs to.
+fn project_root(file: &Path) -> Option<PathBuf> {
+    file.parent()?
+        .ancestors()
+        .find(|dir| dir.join("pyproject.toml").is_file())
+        .map(Path::to_path_buf)
+}
+
+// Arguments for `sh -c 'exec "$@"'`: the project's own environment when it has one.
+fn marimo_command(root: Option<&Path>, file: &Path, port: u16) -> Result<Vec<String>, String> {
+    let mut cmd: Vec<String> = match root {
+        Some(root) => {
+            let mut c: Vec<String> = vec!["uv".into(), "run".into()];
+            if root.join("uv.lock").is_file() {
+                c.push("--locked".into());
+            }
+            c.extend(["marimo".into(), "edit".into()]);
+            c
+        }
+        None => vec!["marimo".into(), "edit".into()],
+    };
+    let file = file.to_str().ok_or("File path is not valid UTF-8")?;
+    cmd.extend(
+        [
+            "--headless",
+            "--no-token",
+            "--watch",
+            "--no-sandbox",
+            "--skip-update-check",
+            "--host",
+            "127.0.0.1",
+            "--port",
+        ]
+        .map(String::from),
+    );
+    cmd.push(port.to_string());
+    cmd.push("--".into());
+    cmd.push(file.into());
+    Ok(cmd)
+}
+
+fn free_port() -> Result<u16, String> {
+    let listener = TcpListener::bind((Ipv4Addr::LOCALHOST, 0)).map_err(error)?;
+    Ok(listener.local_addr().map_err(error)?.port())
+}
+
+fn stop_server(mut server: Server) {
+    // `uv run` starts marimo as a child, so signal the whole process group.
+    let _ = Command::new("kill")
+        .args(["-TERM", &format!("-{}", server.child.id())])
+        .status();
+    let _ = server.child.kill();
+    let _ = server.child.wait();
+}
+
+fn start_server(file: &Path) -> Result<(Server, PathBuf), String> {
+    let root = project_root(file);
+    let cwd = root
+        .clone()
+        .or_else(|| file.parent().map(Path::to_path_buf))
+        .ok_or("Missing parent")?;
+    let port = free_port()?;
+    let args = marimo_command(root.as_deref(), file, port)?;
+    // A login shell finds uv and marimo the way a terminal does; an app launched
+    // from the Dock has only a minimal PATH.
+    let shell = std::env::var("SHELL").unwrap_or_else(|_| "/bin/zsh".into());
+    let mut child = Command::new(shell)
+        .args(["-l", "-c", "exec \"$@\"", "marimo"])
+        .args(&args)
+        .current_dir(&cwd)
+        .stdin(Stdio::null())
+        .stdout(Stdio::null())
+        .stderr(Stdio::piped())
+        .process_group(0)
+        .spawn()
+        .map_err(error)?;
+    let log = Arc::new(Mutex::new(Vec::<String>::new()));
+    if let Some(stderr) = child.stderr.take() {
+        let log = log.clone();
+        std::thread::spawn(move || {
+            for line in BufReader::new(stderr).lines().map_while(Result::ok) {
+                let mut log = log.lock().unwrap();
+                log.push(line);
+                if log.len() > 12 {
+                    log.remove(0);
+                }
+            }
+        });
+    }
+    let addr = SocketAddr::from((Ipv4Addr::LOCALHOST, port));
+    let deadline = Instant::now() + Duration::from_secs(180);
+    loop {
+        if TcpStream::connect_timeout(&addr, Duration::from_millis(200)).is_ok() {
+            let url = format!("http://127.0.0.1:{port}/");
+            return Ok((Server { child, url }, cwd));
+        }
+        let exited = child.try_wait().map_err(error)?.is_some();
+        if exited || Instant::now() > deadline {
+            let tail = log.lock().unwrap().join("\n");
+            stop_server(Server { child, url: String::new() });
+            return Err(if exited {
+                format!("marimo exited before it was ready.\n{tail}")
+            } else {
+                format!("marimo did not start within 3 minutes.\n{tail}")
+            });
+        }
+        std::thread::sleep(Duration::from_millis(250));
+    }
+}
+
+#[tauri::command]
+async fn marimo_start(
+    id: String,
+    files: State<'_, Files>,
+    marimo: State<'_, Marimo>,
+) -> Result<MarimoInfo, String> {
+    let grant = files.get(&id)?;
+    let path = checked_path(&grant)?;
+    if grant.directory || path.extension().and_then(|e| e.to_str()) != Some("py") {
+        return Err("marimo needs a Python notebook file".into());
+    }
+    {
+        let mut map = marimo.0.lock().map_err(error)?;
+        if let Some(server) = map.get_mut(&id) {
+            if server.child.try_wait().map_err(error)?.is_none() {
+                let project = project_root(&path).unwrap_or_else(|| path.clone());
+                return Ok(MarimoInfo { url: server.url.clone(), project: project.display().to_string() });
+            }
+            map.remove(&id);
+        }
+    }
+    let (server, cwd) = tauri::async_runtime::spawn_blocking(move || start_server(&path))
+        .await
+        .map_err(error)??;
+    let info = MarimoInfo { url: server.url.clone(), project: cwd.display().to_string() };
+    marimo.0.lock().map_err(error)?.insert(id, server);
+    Ok(info)
+}
+
+#[tauri::command]
+fn marimo_stop(id: String, marimo: State<'_, Marimo>) -> Result<(), String> {
+    if let Some(server) = marimo.0.lock().map_err(error)?.remove(&id) {
+        stop_server(server);
+    }
+    Ok(())
+}
+
 fn main() {
     tauri::Builder::default()
         .manage(Files::default())
+        .manage(Marimo::default())
         .invoke_handler(tauri::generate_handler![
             native_pick,
             native_read,
             native_write,
             native_entries,
-            native_child
+            native_child,
+            marimo_start,
+            marimo_stop
         ])
-        .run(tauri::generate_context!())
-        .expect("Failed to run Torch Canvas");
+        .build(tauri::generate_context!())
+        .expect("Failed to build Torch Canvas")
+        .run(|app, event| {
+            if let tauri::RunEvent::Exit = event {
+                let servers: Vec<Server> = app
+                    .state::<Marimo>()
+                    .0
+                    .lock()
+                    .map(|mut map| map.drain().map(|(_, s)| s).collect())
+                    .unwrap_or_default();
+                for server in servers {
+                    stop_server(server);
+                }
+            }
+        });
 }
 
 #[cfg(test)]
@@ -281,6 +465,41 @@ mod tests {
             child_path(Path::new("/tmp"), "model.py").unwrap(),
             Path::new("/tmp/model.py")
         );
+    }
+
+    #[test]
+    fn marimo_uses_the_notebooks_own_project() {
+        let root = std::env::temp_dir().join(format!("torch-canvas-marimo-{}", std::process::id()));
+        fs::create_dir_all(root.join("src/pkg")).unwrap();
+        fs::write(root.join("pyproject.toml"), b"").unwrap();
+        let file = root.join("src/pkg/notebook.py");
+        assert_eq!(project_root(&file).as_deref(), Some(root.as_path()));
+        let plain = marimo_command(Some(&root), &file, 9).unwrap();
+        assert_eq!(plain[..4], ["uv", "run", "marimo", "edit"]);
+        fs::write(root.join("uv.lock"), b"").unwrap();
+        let locked = marimo_command(Some(&root), &file, 9).unwrap();
+        assert_eq!(locked[..5], ["uv", "run", "--locked", "marimo", "edit"]);
+        assert!(locked.contains(&"--no-token".to_string()) && locked.contains(&"--watch".to_string()));
+        assert_eq!(locked[locked.len() - 2], "--");
+        assert_eq!(marimo_command(None, &file, 9).unwrap()[..2], ["marimo", "edit"]);
+        fs::remove_dir_all(root).unwrap();
+    }
+
+    // Real run: MARIMO_TEST_FILE=/path/to/notebook.py cargo test -- --ignored marimo_runs
+    #[test]
+    #[ignore]
+    fn marimo_runs_and_stops() {
+        let file = PathBuf::from(std::env::var("MARIMO_TEST_FILE").unwrap());
+        let (server, _) = start_server(&file).unwrap();
+        let mut page = TcpStream::connect(server.url.trim_start_matches("http://").trim_end_matches('/')).unwrap();
+        std::io::Write::write_all(&mut page, b"GET / HTTP/1.0\r\n\r\n").unwrap();
+        let mut body = String::new();
+        std::io::Read::read_to_string(&mut page, &mut body).unwrap();
+        assert!(body.starts_with("HTTP/1.1 200"), "{body}");
+        let port = server.url.rsplit(':').next().unwrap().trim_end_matches('/').parse::<u16>().unwrap();
+        stop_server(server);
+        std::thread::sleep(Duration::from_millis(500));
+        assert!(TcpStream::connect_timeout(&SocketAddr::from((Ipv4Addr::LOCALHOST, port)), Duration::from_millis(200)).is_err());
     }
 
     #[test]

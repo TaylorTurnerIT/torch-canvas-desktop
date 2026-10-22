@@ -90,7 +90,9 @@ for old, new, why in [
     ("kind: 'py', diskText: gen, used, savedCode: gen, lastModified: f.lastModified };", "kind: 'py', text: gen, diskText: gen, used, savedCode: gen, lastModified: f.lastModified };", 'save as text'),
     ("marimo: k === 'py' && NN.isMarimo(text), diskText: text,", "marimo: k === 'py' && NN.isMarimo(text), text: k === 'py' ? text : undefined, diskText: text,", 'open text'),
     ("diskText: f.diskText, savedCode: f.savedCode };", "diskText: f.diskText, savedCode: f.savedCode, text: f.text };", 'persist text'),
-    ('<pre class="code" id="code"></pre></div>', '<div class="codewrap"><pre class="code" id="code" aria-hidden="true"></pre><textarea id="codeEdit" wrap="off" spellcheck="false" autocapitalize="off" autocomplete="off" aria-label="PyTorch code"></textarea></div></div>', 'editor markup'),
+    ('<pre class="code" id="code"></pre></div>', '<div class="codewrap"><pre class="code" id="code" aria-hidden="true"></pre><textarea id="codeEdit" wrap="off" spellcheck="false" autocapitalize="off" autocomplete="off" aria-label="PyTorch code"></textarea></div></div><div id="marimoPane" hidden><div class="marimo-head"><span id="marimoStatus"></span><label title="Write the file shortly after each edit, so marimo follows"><input type="checkbox" id="oAuto2"> auto-save</label><button class="btn" id="marimoWide" title="Make this pane wider or narrower">Wide</button><button class="btn" id="marimoReload">Reload</button><button class="btn" id="marimoStop" title="Stop the marimo server">Stop</button></div><div id="marimoFrames"></div></div>', 'editor markup'),
+    ('<div class="tabs"><span class="tab" aria-selected="true" style="cursor:default">PyTorch</span></div>',
+     '<div class="tabs"><button class="tab" id="tabCode" aria-selected="true">PyTorch</button><button class="tab" id="tabMarimo" aria-selected="false" hidden>marimo</button></div>', 'right tabs'),
     ('<span class="spacer"></span>\n        <button class="btn" id="bCopy">', '<label id="autoLabel" hidden title="Write the file shortly after each edit, so a running marimo notebook follows"><input type="checkbox" id="oAuto"> auto-save</label>\n        <span class="spacer"></span>\n        <button class="btn" id="bCopy">', 'auto-save toggle'),
 ]:
     if page.count(old) != 1:
@@ -101,8 +103,18 @@ page = page.replace('</style>', """.codewrap { position: relative; min-width: 10
 #codeEdit { position: absolute; inset: 0; width: 100%; height: 100%; margin: 0; padding: 10px 14px 24px 4.4em; border: 0; border-radius: 0; outline: 0; resize: none; overflow: hidden; white-space: pre; tab-size: 4; background: transparent; color: transparent; caret-color: var(--ink); font: 12px/1.6 var(--mono); }
 #codeEdit::selection { background: color-mix(in srgb, var(--sel) 30%, transparent); color: transparent; }
 .warns li.err { color: var(--err); }
+.right[data-tab="marimo"] #codeBar, .right[data-tab="marimo"] #codePane { display: none; }
+#marimoPane { grid-row: 2 / 4; display: grid; grid-template-rows: auto minmax(0, 1fr); min-height: 0; }
+#marimoPane[hidden] { display: none; }
+.marimo-head { display: flex; align-items: center; gap: 8px; padding: 8px 12px; border-bottom: 1px solid var(--line); font-size: 12px; color: var(--muted); }
+.marimo-head #marimoStatus { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.marimo-head #marimoStatus.err { color: var(--err); white-space: pre-wrap; }
+.marimo-head label { display: flex; align-items: center; gap: 5px; cursor: pointer; }
+#marimoFrames { min-height: 0; position: relative; }
+#marimoFrames iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; background: #fff; }
+.main[data-wide="1"] { grid-template-columns: 228px minmax(0, 1fr) minmax(340px, 58%); }
 </style>""", 1)
-live = (ROOT / "scripts/patches/live-code.js").read_text().rstrip()
+live = '\n'.join((ROOT / f"scripts/patches/{name}.js").read_text().rstrip() for name in ("live-code", "marimo-pane"))
 end = page.rindex('})();\n</script>')
 page = page[:end] + live + '\n' + page[end:]
 # Use native system fonts: no remote styles, fonts, scripts, or runtime server.

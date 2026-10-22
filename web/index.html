@@ -410,6 +410,16 @@ details summary { cursor: pointer; color: var(--muted); font-size: 12.5px; }
 #codeEdit { position: absolute; inset: 0; width: 100%; height: 100%; margin: 0; padding: 10px 14px 24px 4.4em; border: 0; border-radius: 0; outline: 0; resize: none; overflow: hidden; white-space: pre; tab-size: 4; background: transparent; color: transparent; caret-color: var(--ink); font: 12px/1.6 var(--mono); }
 #codeEdit::selection { background: color-mix(in srgb, var(--sel) 30%, transparent); color: transparent; }
 .warns li.err { color: var(--err); }
+.right[data-tab="marimo"] #codeBar, .right[data-tab="marimo"] #codePane { display: none; }
+#marimoPane { grid-row: 2 / 4; display: grid; grid-template-rows: auto minmax(0, 1fr); min-height: 0; }
+#marimoPane[hidden] { display: none; }
+.marimo-head { display: flex; align-items: center; gap: 8px; padding: 8px 12px; border-bottom: 1px solid var(--line); font-size: 12px; color: var(--muted); }
+.marimo-head #marimoStatus { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.marimo-head #marimoStatus.err { color: var(--err); white-space: pre-wrap; }
+.marimo-head label { display: flex; align-items: center; gap: 5px; cursor: pointer; }
+#marimoFrames { min-height: 0; position: relative; }
+#marimoFrames iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; background: #fff; }
+.main[data-wide="1"] { grid-template-columns: 228px minmax(0, 1fr) minmax(340px, 58%); }
 body { margin: 0; }
 .desktop-credit { font: 11px var(--sans); color: var(--muted); white-space: nowrap; margin-left: 8px; }
 </style>
@@ -482,7 +492,7 @@ body { margin: 0; }
     </div>
 
     <div class="right">
-      <div class="tabs"><span class="tab" aria-selected="true" style="cursor:default">PyTorch</span></div>
+      <div class="tabs"><button class="tab" id="tabCode" aria-selected="true">PyTorch</button><button class="tab" id="tabMarimo" aria-selected="false" hidden>marimo</button></div>
       <div id="codeBar" class="codebar">
         <label><input type="checkbox" id="oShapes" checked> shape comments</label>
         <label><input type="checkbox" id="oSilu"> fuse σ(x)·x → F.silu</label>
@@ -491,7 +501,7 @@ body { margin: 0; }
         <span class="spacer"></span>
         <button class="btn" id="bCopy">Copy code</button>
       </div>
-      <div class="pane" id="codePane"><ul class="warns" id="warns" hidden></ul><div class="codewrap"><pre class="code" id="code" aria-hidden="true"></pre><textarea id="codeEdit" wrap="off" spellcheck="false" autocapitalize="off" autocomplete="off" aria-label="PyTorch code"></textarea></div></div>
+      <div class="pane" id="codePane"><ul class="warns" id="warns" hidden></ul><div class="codewrap"><pre class="code" id="code" aria-hidden="true"></pre><textarea id="codeEdit" wrap="off" spellcheck="false" autocapitalize="off" autocomplete="off" aria-label="PyTorch code"></textarea></div></div><div id="marimoPane" hidden><div class="marimo-head"><span id="marimoStatus"></span><label title="Write the file shortly after each edit, so marimo follows"><input type="checkbox" id="oAuto2"> auto-save</label><button class="btn" id="marimoWide" title="Make this pane wider or narrower">Wide</button><button class="btn" id="marimoReload">Reload</button><button class="btn" id="marimoStop" title="Stop the marimo server">Stop</button></div><div id="marimoFrames"></div></div>
     </div>
   </div>
 </div>
@@ -7587,6 +7597,76 @@ window.addEventListener('resize', () => render());
     try { localStorage.setItem('torchcanvas.autosave', auto.checked ? '1' : '0'); } catch {}
     renderCode();
   });
+})();
+
+// marimo pane: runs `marimo edit` for the open notebook (native side) and shows it beside the diagram.
+(() => {
+  const invoke = window.__TAURI__ && window.__TAURI__.core.invoke;
+  const right = document.querySelector('.right'), main = document.querySelector('.main');
+  const tabCode = $('#tabCode'), tabMarimo = $('#tabMarimo'), pane = $('#marimoPane'), frames = $('#marimoFrames');
+  const status = $('#marimoStatus'), auto2 = $('#oAuto2'), auto = $('#oAuto');
+  const sessions = new Map(); // file identity -> { state, url, project, error, frame }
+  let tab = 'code';
+
+  const eligible = () => !!invoke && !!S.file && S.file.kind === 'py' && !!S.file.marimo && !!S.file.handle && !!S.file.handle._nativeId;
+  const current = () => (eligible() ? sessions.get(S.file.handle._nativeIdentity) : null);
+
+  function render() {
+    const ok = eligible();
+    tabMarimo.hidden = !ok;
+    if (!ok) tab = 'code';
+    right.dataset.tab = tab;
+    tabCode.setAttribute('aria-selected', String(tab === 'code'));
+    tabMarimo.setAttribute('aria-selected', String(tab === 'marimo'));
+    pane.hidden = tab !== 'marimo';
+    auto2.checked = auto.checked;
+    const s = current();
+    for (const [, x] of sessions) if (x.frame) x.frame.hidden = x !== s;
+    $('#marimoStop').hidden = !s;
+    $('#marimoReload').hidden = !(s && s.state === 'ready');
+    if (!s) status.textContent = '';
+    else if (s.state === 'starting') status.textContent = 'Starting marimo. The first run can take a while while uv prepares the environment.';
+    else if (s.state === 'error') status.textContent = s.error;
+    else status.textContent = s.project;
+    status.className = s && s.state === 'error' ? 'err' : '';
+  }
+
+  async function start() {
+    if (!eligible()) return;
+    const key = S.file.handle._nativeIdentity, id = S.file.handle._nativeId;
+    let s = sessions.get(key);
+    if (s && s.state !== 'error') return render();
+    if (s && s.frame) s.frame.remove();
+    s = { state: 'starting' }; sessions.set(key, s); render();
+    try {
+      const info = await invoke('marimo_start', { id });
+      if (sessions.get(key) !== s) return; // stopped while starting
+      const frame = document.createElement('iframe');
+      frame.title = 'marimo'; frame.src = info.url; frame.setAttribute('allow', 'clipboard-read; clipboard-write');
+      frames.appendChild(frame);
+      Object.assign(s, { state: 'ready', url: info.url, project: info.project, frame });
+    } catch (e) { if (sessions.get(key) === s) Object.assign(s, { state: 'error', error: String(e && e.message || e) }); }
+    render();
+  }
+  async function stop() {
+    if (!eligible()) return;
+    const key = S.file.handle._nativeIdentity, s = sessions.get(key);
+    sessions.delete(key);
+    if (s && s.frame) s.frame.remove();
+    try { await invoke('marimo_stop', { id: S.file.handle._nativeId }); } catch {}
+    render();
+  }
+
+  tabCode.onclick = () => { tab = 'code'; render(); };
+  tabMarimo.onclick = () => { tab = 'marimo'; render(); start(); };
+  $('#marimoStop').onclick = stop;
+  $('#marimoReload').onclick = () => { const s = current(); if (s && s.frame) s.frame.src = s.url; };
+  $('#marimoWide').onclick = () => { main.dataset.wide = main.dataset.wide === '1' ? '0' : '1'; };
+  auto2.onchange = () => { auto.checked = auto2.checked; auto.dispatchEvent(new Event('change')); };
+
+  const base = renderFileBar;
+  renderFileBar = function () { base(); render(); };
+  render();
 })();
 })();
 </script>

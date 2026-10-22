@@ -29,6 +29,8 @@ test.beforeEach(async ({ page }) => {
       if (command === 'native_write') { window.savedFiles[args.id] = args.bytes; return; }
       if (command === 'native_read') return { bytes: window.savedFiles[args.id] || [], lastModified: 123 };
       if (command === 'native_child') return { id: args.name, identity: '/test/' + args.name, name: args.name, kind: 'file' };
+      if (command === 'marimo_start') return { url: 'http://127.0.0.1:4173/logo.png', project: '/test/project' };
+      if (command === 'marimo_stop') return;
       throw new Error('Unexpected native command: ' + command);
     } } };
   });
@@ -217,5 +219,32 @@ test('marimo notebook: code panel and diagram edit the same file text', async ({
   await expect.poll(() => page.evaluate(() => new TextDecoder().decode(new Uint8Array(window.savedFiles['nb.py'])))).toContain('nn.Linear(16, 7)');
   const saved = await page.evaluate(() => new TextDecoder().decode(new Uint8Array(window.savedFiles['nb.py'])));
   expect(saved).toBe(notebook.replace('nn.Linear(16, n_out)', 'nn.Linear(16, 7)'));
+  expect(errors).toEqual([]);
+});
+
+test('marimo pane starts the notebook server, embeds it, and stops it', async ({ page }) => {
+  const errors = [];
+  page.on('pageerror', e => errors.push(e.message));
+  await page.goto('http://127.0.0.1:4173');
+  await expect(page.locator('#tabMarimo')).toBeHidden();
+  await page.evaluate(text => {
+    window.savedFiles['nb.py'] = Array.from(new TextEncoder().encode(text));
+    window.nextPickedFile = { id: 'nb.py', identity: '/test/nb.py', name: 'nb.py', kind: 'file' };
+  }, fs.readFileSync('tests/fixtures/marimo-net.py', 'utf8'));
+  await page.keyboard.press('Control+o');
+  await expect(page.locator('#tabMarimo')).toBeVisible();
+  await page.locator('#tabMarimo').click();
+  await expect(page.locator('#marimoFrames iframe')).toHaveAttribute('src', 'http://127.0.0.1:4173/logo.png');
+  await expect(page.locator('#marimoStatus')).toHaveText('/test/project');
+  await expect(page.locator('#codePane')).toBeHidden();
+  await page.screenshot({ path: 'test-results/marimo-pane.png' });
+  expect(await page.evaluate(() => window.nativeCalls.filter(c => c.command === 'marimo_start').map(c => c.args))).toEqual([{ id: 'nb.py' }]);
+  await page.locator('#tabCode').click();
+  await expect(page.locator('#codeEdit')).toBeVisible();
+  await expect(page.locator('#marimoFrames iframe')).toHaveCount(1);
+  await page.locator('#tabMarimo').click();
+  await page.locator('#marimoStop').click();
+  await expect(page.locator('#marimoFrames iframe')).toHaveCount(0);
+  expect(await page.evaluate(() => window.nativeCalls.filter(c => c.command === 'marimo_stop').length)).toBe(1);
   expect(errors).toEqual([]);
 });
