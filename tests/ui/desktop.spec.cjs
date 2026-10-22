@@ -33,6 +33,7 @@ test.beforeEach(async ({ page }) => {
       if (command === 'native_child') return { id: args.name, identity: '/test/' + args.name, name: args.name, kind: 'file' };
       if (command === 'marimo_start') return { url: 'http://127.0.0.1:4173/logo.png', project: '/test/project' };
       if (command === 'marimo_stop') return;
+      if (command === 'native_reopen') return window.reopenable && window.reopenable[args.identity] || null;
       if (command === 'native_take_opened') return window.openedFiles.splice(0);
       throw new Error('Unexpected native command: ' + command);
     } } };
@@ -343,4 +344,21 @@ test('recents start from tabs that were already open', async ({ page }) => {
   await page.locator('#bMore').click();
   await expect(page.locator('.ctx [data-act^="recent:"]')).toHaveCount(1);
   await expect(page.locator('.ctx [data-act^="recent:"]')).toContainText('old.py');
+});
+
+test('choosing a recent file reopens it without a dialog', async ({ page }) => {
+  await page.goto('http://127.0.0.1:4173');
+  const source = 'import torch.nn as nn\n\nclass Again(nn.Module):\n    def __init__(self):\n        super().__init__()\n        self.fc = nn.Linear(2, 2)\n\n    def forward(self, x):\n        return self.fc(x)\n';
+  await page.evaluate(text => { window.savedFiles['again.py'] = Array.from(new TextEncoder().encode(text)); window.nextPickedFile = { id: 'again.py', identity: '/test/again.py', name: 'again.py', kind: 'file' }; }, source);
+  await page.keyboard.press('Control+o');
+  await expect(page.locator('#modelName')).toHaveValue('Again');
+  await page.locator('#fileBar button', { hasText: 'Close file' }).click();
+  await page.locator('#tabstrip .ctab.model', { hasText: 'Again' }).locator('.x, [aria-label^="Close"]').first().click();
+  await expect(page.locator('#modelName')).not.toHaveValue('Again');
+  await page.evaluate(() => { window.reopenable = { '/test/again.py': { id: 'again.py', identity: '/test/again.py', name: 'again.py', kind: 'file' } }; window.nativeCalls.length = 0; });
+  await page.locator('#bMore').click();
+  await page.locator('.ctx [data-act^="recent:"]', { hasText: 'again.py' }).click();
+  await expect(page.locator('#modelName')).toHaveValue('Again');
+  await expect(page.locator('#fileBar')).toContainText('again.py');
+  expect(await page.evaluate(() => window.nativeCalls.map(c => c.command))).not.toContain('native_pick');
 });

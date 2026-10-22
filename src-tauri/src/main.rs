@@ -25,6 +25,40 @@ struct Grant {
 #[derive(Default)]
 struct Files(Mutex<HashMap<String, Grant>>);
 
+// Paths the user chose through a native dialog or the system, kept so Recent can reopen them.
+// Only paths recorded here can be reopened without another dialog.
+const REMEMBERED_MAX: usize = 50;
+
+fn read_remembered(store: &Path) -> Vec<String> {
+    fs::read(store)
+        .ok()
+        .and_then(|bytes| serde_json::from_slice(&bytes).ok())
+        .unwrap_or_default()
+}
+
+fn remember_in(store: &Path, identity: &str) {
+    let mut list = read_remembered(store);
+    list.retain(|p| p != identity);
+    list.insert(0, identity.to_owned());
+    list.truncate(REMEMBERED_MAX);
+    if let Some(dir) = store.parent() {
+        let _ = fs::create_dir_all(dir);
+    }
+    if let Ok(bytes) = serde_json::to_vec(&list) {
+        let _ = write_atomic(store, &bytes);
+    }
+}
+
+fn remembered_store(app: &tauri::AppHandle) -> Option<PathBuf> {
+    app.path().app_data_dir().ok().map(|dir| dir.join("recent-files.json"))
+}
+
+fn remember(app: &tauri::AppHandle, identity: &str) {
+    if let Some(store) = remembered_store(app) {
+        remember_in(&store, identity);
+    }
+}
+
 // Files the system asked this app to open (Finder, `open -a`), waiting for the page to take them.
 #[derive(Default)]
 struct Opened(Mutex<Vec<Handle>>);
@@ -112,6 +146,7 @@ impl Files {
 async fn native_pick(
     mode: String,
     name: Option<String>,
+    app: tauri::AppHandle,
     files: State<'_, Files>,
 ) -> Result<Option<Handle>, String> {
     let dialog = rfd::AsyncFileDialog::new();
@@ -147,12 +182,34 @@ async fn native_pick(
     let directory = mode == "directory";
     // A selected file grants only that exact path. A folder grants its descendants.
     let root = path.clone();
+    let handle = files.grant(Grant {
+        path,
+        root,
+        directory,
+    })?;
+    if !directory {
+        remember(&app, &handle.identity);
+    }
+    Ok(Some(handle))
+}
+
+// Reopen a file the user chose in an earlier session. Only remembered paths qualify.
+#[tauri::command]
+fn native_reopen(
+    identity: String,
+    app: tauri::AppHandle,
+    files: State<'_, Files>,
+) -> Result<Option<Handle>, String> {
+    let allowed = remembered_store(&app)
+        .map(|store| read_remembered(&store))
+        .unwrap_or_default();
+    let path = PathBuf::from(&identity);
+    if !allowed.contains(&identity) || !path.is_file() {
+        return Ok(None);
+    }
+    let path = path.canonicalize().map_err(error)?;
     files
-        .grant(Grant {
-            path,
-            root,
-            directory,
-        })
+        .grant(Grant { root: path.clone(), path, directory: false })
         .map(Some)
 }
 
@@ -181,6 +238,7 @@ fn grant_opened(app: &tauri::AppHandle, urls: &[tauri::Url]) {
         }
         let grant = Grant { root: path.clone(), path, directory: false };
         if let (Ok(handle), Ok(mut queue)) = (files.grant(grant), opened.0.lock()) {
+            remember(app, &handle.identity);
             queue.push(handle);
         }
     }
@@ -462,6 +520,7 @@ fn main() {
             native_entries,
             native_child,
             native_take_opened,
+            native_reopen,
             marimo_start,
             marimo_stop
         ])
@@ -533,6 +592,22 @@ mod tests {
         stop_server(server);
         std::thread::sleep(Duration::from_millis(500));
         assert!(TcpStream::connect_timeout(&SocketAddr::from((Ipv4Addr::LOCALHOST, port)), Duration::from_millis(200)).is_err());
+    }
+
+    #[test]
+    fn remembered_paths_are_newest_first_deduplicated_and_capped() {
+        let dir = std::env::temp_dir().join(format!("torch-canvas-store-{}", std::process::id()));
+        let store = dir.join("recent-files.json");
+        assert!(read_remembered(&store).is_empty());
+        for i in 0..60 {
+            remember_in(&store, &format!("/a/{i}.py"));
+        }
+        remember_in(&store, "/a/55.py");
+        let list = read_remembered(&store);
+        assert_eq!(list.len(), REMEMBERED_MAX);
+        assert_eq!(list[0], "/a/55.py");
+        assert_eq!(list.iter().filter(|p| *p == "/a/55.py").count(), 1);
+        fs::remove_dir_all(dir).unwrap();
     }
 
     #[test]

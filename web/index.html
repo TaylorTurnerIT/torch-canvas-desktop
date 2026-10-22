@@ -7628,15 +7628,16 @@ function recentMenu() {
   if (!list.length) return '';
   return `<div class="hd">Recent</div>` + list.map((x, i) => item('recent:' + i, x.title, x.note || '')).join('') + '<hr>';
 }
-function openRecent(i) {
+async function openRecent(i) {
   const x = liveRecents()[i]; if (!x) return;
   if (x.kind === 'lib') return openLibrary(S.library.find(l => l.file === x.key));
-  // A file's tab is still open: switch to it. File access does not outlive the session, so otherwise choose it again.
-  for (const d of S.docs) {
-    const f = d.id === S.cur ? S.file : d.file, id = (f && f.handle && f.handle._nativeIdentity) || (d.sourceFile && d.sourceFile.identity);
-    if (id && id === x.key) { if (d.id !== S.cur) activateDoc(d.id); return toast(`Switched to ${x.title}.`); }
+  // The native side reopens files you chose before, and only those. A moved or deleted file falls back to the picker.
+  if (window.__TAURI__) {
+    let info = null;
+    try { info = await window.__TAURI__.core.invoke('native_reopen', { identity: x.key }); } catch {}
+    if (info) return openHandle(window.torchDesktop.handle(info), info.name);
   }
-  toast(`Choose ${x.title} again. File access doesn't carry over between sessions.`);
+  toast(`Couldn't reopen ${x.title}. Choose it again.`);
   openFileDialog();
 }
 // First run of this feature: start from the tabs that are already open.
