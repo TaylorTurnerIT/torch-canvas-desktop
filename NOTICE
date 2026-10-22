@@ -1,0 +1,12 @@
+Torch Canvas
+Original author: Jesse Roberts
+Original publication: https://www.jessetnroberts.com/torch-canvas/
+Source retrieved: 2026-10-22
+
+The original application's logic, interface, icon, and bundled examples are
+attributed to Jesse Roberts. The original source snapshot is preserved in
+upstream/torch-canvas.html; provenance is recorded in upstream/source.json.
+
+This private repository contains a local Tauri desktop adaptation. No upstream
+license was identified in the retrieved page. No license grant or transfer of
+ownership of the original work is asserted by this adaptation.
