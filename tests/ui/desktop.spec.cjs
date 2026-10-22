@@ -183,3 +183,39 @@ test('reopening the same file reuses its edited tab, including after reload', as
   await expect(page.locator('#modelName')).toHaveValue('DiskModel');
   await expect(page.locator('#tabstrip .ctab.model')).toHaveCount(4);
 });
+
+test('marimo notebook: code panel and diagram edit the same file text', async ({ page }) => {
+  const errors = [];
+  page.on('pageerror', e => errors.push(e.message));
+  const notebook = fs.readFileSync('tests/fixtures/marimo-net.py', 'utf8');
+  await page.goto('http://127.0.0.1:4173');
+  await page.evaluate(text => {
+    window.savedFiles['nb.py'] = Array.from(new TextEncoder().encode(text));
+    window.nextPickedFile = { id: 'nb.py', identity: '/test/nb.py', name: 'nb.py', kind: 'file' };
+  }, notebook);
+  await page.keyboard.press('Control+o');
+  await expect(page.locator('#fileBar')).toContainText('marimo');
+  const editor = page.locator('#codeEdit');
+  await expect(editor).toHaveValue(notebook);
+  // Diagram edit: only the touched statement changes; comments, docstrings, extra methods stay.
+  await page.evaluate(() => torchCanvas.commit(() => { torchCanvas.state.g.nodes.find(n => n.type === 'linear' && n.params.name === 'fc1').params.out = '32'; }));
+  const edited = await editor.inputValue();
+  expect(edited).toContain('self.fc1 = nn.Linear(n_in, 32)');
+  for (const kept of ['# keep me', '"""Doc."""', 'def predict', '@app.class_definition', '"""Tiny net."""']) expect(edited).toContain(kept);
+  await expect(page.locator('#fileBar')).toContainText('unsaved changes');
+  // Code edit: the diagram follows while typing.
+  await editor.fill(notebook.replace('nn.Linear(16, n_out)', 'nn.Linear(16, 5)'));
+  await expect.poll(() => page.evaluate(() => torchCanvas.state.g.nodes.find(n => n.type === 'linear' && n.params.name === 'fc2').params.out)).toBe('5');
+  // A syntax error is reported and the diagram is kept.
+  await editor.fill(notebook.replace('nn.Linear(16, n_out)', 'nn.Linear(16, '));
+  await expect(page.locator('#warns .err')).toBeVisible();
+  await expect.poll(() => page.evaluate(() => torchCanvas.state.g.nodes.some(n => n.params.name === 'fc2'))).toBe(true);
+  await editor.fill(notebook.replace('nn.Linear(16, n_out)', 'nn.Linear(16, 7)'));
+  await expect(page.locator('#warns .err')).toHaveCount(0);
+  await page.screenshot({ path: 'test-results/marimo.png' });
+  await page.keyboard.press('Control+s');
+  await expect.poll(() => page.evaluate(() => new TextDecoder().decode(new Uint8Array(window.savedFiles['nb.py'])))).toContain('nn.Linear(16, 7)');
+  const saved = await page.evaluate(() => new TextDecoder().decode(new Uint8Array(window.savedFiles['nb.py'])));
+  expect(saved).toBe(notebook.replace('nn.Linear(16, n_out)', 'nn.Linear(16, 7)'));
+  expect(errors).toEqual([]);
+});

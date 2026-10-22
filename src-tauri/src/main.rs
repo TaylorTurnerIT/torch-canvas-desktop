@@ -179,7 +179,25 @@ fn native_write(id: String, bytes: Vec<u8>, files: State<'_, Files>) -> Result<(
     if g.directory {
         return Err("Cannot write a directory".into());
     }
-    fs::write(checked_path(&g)?, bytes).map_err(error)
+    write_atomic(&checked_path(&g)?, &bytes)
+}
+
+// Replace the file in one step so a watcher such as marimo never reads a
+// truncated notebook, and keep the existing permissions.
+fn write_atomic(path: &Path, bytes: &[u8]) -> Result<(), String> {
+    let name = path.file_name().ok_or("Missing filename")?.to_string_lossy();
+    let temp = path.with_file_name(format!(".{name}.torch-canvas-{}", std::process::id()));
+    let result = (|| {
+        fs::write(&temp, bytes).map_err(error)?;
+        if let Ok(meta) = fs::metadata(path) {
+            fs::set_permissions(&temp, meta.permissions()).map_err(error)?;
+        }
+        fs::rename(&temp, path).map_err(error)
+    })();
+    if result.is_err() {
+        let _ = fs::remove_file(&temp);
+    }
+    result
 }
 
 #[tauri::command]
@@ -308,6 +326,19 @@ mod tests {
         fs::remove_file(root.join("model.py")).unwrap();
         fs::remove_file(root.join("other/model.py")).unwrap();
         fs::remove_dir(root.join("other")).unwrap();
+        fs::remove_dir(root).unwrap();
+    }
+
+    #[test]
+    fn atomic_write_replaces_contents_and_leaves_no_temp_file() {
+        let root = std::env::temp_dir().join(format!("torch-canvas-atomic-{}", std::process::id()));
+        fs::create_dir(&root).unwrap();
+        let file = root.join("notebook.py");
+        fs::write(&file, b"old").unwrap();
+        write_atomic(&file, b"new").unwrap();
+        assert_eq!(fs::read(&file).unwrap(), b"new");
+        assert_eq!(fs::read_dir(&root).unwrap().count(), 1);
+        fs::remove_file(&file).unwrap();
         fs::remove_dir(root).unwrap();
     }
 

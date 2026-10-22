@@ -83,3 +83,58 @@ test('training exporter produces valid Python', () => {
   const parsed = spawnSync('python3', ['-c', 'import ast,sys; ast.parse(sys.stdin.read())'], { input: result.train, encoding: 'utf8' });
   assert.equal(parsed.status, 0, parsed.stderr);
 });
+
+test('saving into a marimo notebook keeps its decorators and setup imports', () => {
+  const nb = [
+    'import marimo', '__generated_with = "0.25.1"', 'app = marimo.App()', '',
+    'with app.setup:', '    import marimo as mo', '    import torch.nn as nn', '', '',
+    '@app.class_definition', 'class Net(nn.Module):', '    def __init__(self):', '        super().__init__()',
+    '        self.fc = nn.Linear(4, 2)', '', '    def forward(self, x):', '        return self.fc(x)', '', '',
+    '@app.cell', 'def _():', '    mo.md("hi")', '    return', '', '',
+    'if __name__ == "__main__":', '    app.run()', '',
+  ].join('\n');
+  assert.ok(NN.isMarimo(nb));
+  const res = NN.importPython(nb, {});
+  const g = res.graph;
+  const gen = NN.generate(g, { className: g.name }).code;
+  const out = NN.mergeIntoSource(nb, gen, res.usedClasses);
+  assert.match(out, /^@app\.class_definition\nclass Net\(nn\.Module\):/m);
+  assert.doesNotMatch(out, /^import torch/m);
+  assert.match(out, /^@app\.cell\ndef _\(\):\n    mo\.md\("hi"\)/m);
+  // Missing imports go into the setup cell, never to column 0.
+  const noTorch = nb.replace('    import torch.nn as nn\n', '    import torch.nn as nn\n    import torch\n');
+  const out2 = NN.mergeIntoSource(noTorch.replace(/^    import torch\n/m, ''), gen, res.usedClasses);
+  assert.doesNotMatch(out2, /^import torch/m);
+  assert.equal(spawnSync('python3', ['-c', 'import ast,sys; ast.parse(sys.stdin.read())'], { input: out }).status, 0);
+});
+
+test('plain Python files still merge without marimo handling', () => {
+  const src = 'import torch.nn as nn\n\n\nclass Net(nn.Module):\n    def __init__(self):\n        super().__init__()\n        self.fc = nn.Linear(4, 2)\n\n    def forward(self, x):\n        return self.fc(x)\n';
+  assert.ok(!NN.isMarimo(src));
+  const res = NN.importPython(src, {});
+  const out = NN.mergeIntoSource(src, NN.generate(res.graph, { className: res.graph.name }).code, res.usedClasses);
+  assert.doesNotMatch(out, /@app/);
+});
+
+test('syncSource applies diagram edits to hand-written code without regenerating it', () => {
+  const src = fs.readFileSync('tests/fixtures/marimo-net.py', 'utf8');
+  const parse = text => NN.importPython(text, {}).graph;
+  assert.equal(NN.syncSource(src, parse(src), {}), src);
+  // A size edit rewrites one statement and leaves comments, docstrings, and other methods.
+  const sized = parse(src);
+  sized.nodes.find(n => n.params.name === 'fc1').params.out = '32';
+  const out = NN.syncSource(src, sized, {});
+  assert.equal(out, src.replace('nn.Linear(n_in, 16)', 'nn.Linear(n_in, 32)'));
+  // An added layer inserts its constructor statement and rewrites forward, keeping the docstring.
+  const edited = src
+    .replace('        self.act = nn.ReLU()\n', '        self.act = nn.ReLU()\n        self.drop = nn.Dropout(0.1)\n')
+    .replace('self.fc2(self.act(self.fc1(x)))', 'self.fc2(self.drop(self.act(self.fc1(x))))');
+  const grown = NN.syncSource(src, parse(edited), {});
+  for (const kept of ['# keep me', '"""Doc."""', 'def predict', '@app.class_definition', 'n_in, 16)']) assert.ok(grown.includes(kept), kept);
+  assert.match(grown, /self\.drop = nn\.Dropout\(0\.1\)/);
+  assert.equal(NN.syncSource(grown, parse(edited), {}), grown);
+  assert.equal(spawnSync('python3', ['-c', 'import ast,sys; ast.parse(sys.stdin.read())'], { input: grown }).status, 0);
+  // Renaming the model renames its class.
+  const renamed = parse(src); renamed.name = 'Renamed';
+  assert.match(NN.syncSource(src, renamed, {}), /^class Renamed\(nn\.Module\):/m);
+});
