@@ -1,10 +1,13 @@
-"""Derive the offline desktop page from the byte-preserved upstream snapshot."""
+"""Derive the offline desktop page from upstream sources via build.js."""
 from pathlib import Path
 import re
+import subprocess
 
 ROOT = Path(__file__).resolve().parents[1]
-page = (ROOT / "upstream/torch-canvas.html").read_text()
-# Preserve the snapshot while applying desktop compatibility fixes to its core.
+# build.js writes ./index.html from src.html, core.js, engine.js, export.js and the examples library.
+subprocess.run(["node", "build.js"], cwd=ROOT, check=True)
+page = (ROOT / "index.html").read_text()
+# Apply desktop compatibility fixes to the built upstream page.
 evaluator = (ROOT / "scripts/patches/eval-dim.js").read_text().rstrip()
 page, count = re.subn(r'  function evalDim\(expr, symbols\) \{.*?\n  \}(?=\n  function dimEq)', lambda _: evaluator, page, flags=re.S)
 if count != 1:

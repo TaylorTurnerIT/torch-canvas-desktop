@@ -1,11 +1,10 @@
 Torch Canvas
 Original author: Jesse Roberts
 Original publication: https://www.jessetnroberts.com/torch-canvas/
-Source retrieved: 2026-10-22
 
 The original application's logic, interface, icon, and bundled examples are
-attributed to Jesse Roberts. The original source snapshot is preserved in
-upstream/torch-canvas.html; provenance is recorded in upstream/source.json.
+attributed to Jesse Roberts. The original source is the upstream repository
+recorded in upstream/source.json; the desktop build runs build.js on it.
 
 This repository is a fork of https://github.com/JesseTNRoberts/torch-canvas,
 which is released under the MIT License (see LICENSE, Copyright (c) 2026 Jesse

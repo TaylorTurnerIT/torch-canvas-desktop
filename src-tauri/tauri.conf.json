@@ -4,8 +4,8 @@
   "version": "0.1.0",
   "identifier": "com.taylorturnerit.torch-canvas",
   "build": {
-    "beforeDevCommand": "npm run prepare:web",
-    "beforeBuildCommand": "npm run prepare:web",
+    "beforeDevCommand": "npm run desktop:prepare",
+    "beforeBuildCommand": "npm run desktop:prepare",
     "frontendDist": "../web"
   },
   "app": {

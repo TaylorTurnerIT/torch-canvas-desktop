@@ -2,7 +2,6 @@ const { test } = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const vm = require('node:vm');
-const crypto = require('node:crypto');
 const { spawnSync } = require('node:child_process');
 const html = fs.readFileSync('web/index.html', 'utf8');
 const scripts = [...html.matchAll(/<script(?: [^>]*)?>([\s\S]*?)<\/script>/g)].map(m => m[1]).filter(Boolean);
@@ -41,10 +40,11 @@ test('unresolved or nonpositive prediction sizes return a useful error', () => {
   }
 });
 
-test('upstream snapshot matches recorded provenance', () => {
+test('upstream provenance names the repository, author, and license', () => {
   const meta = JSON.parse(fs.readFileSync('upstream/source.json'));
-  assert.equal(crypto.createHash('sha256').update(fs.readFileSync('upstream/torch-canvas.html')).digest('hex'), meta.sha256);
+  assert.equal(meta.repo, 'https://github.com/JesseTNRoberts/torch-canvas');
   assert.equal(meta.author, 'Jesse Roberts');
+  assert.match(meta.license, /^MIT/);
 });
 
 test('default graph generates parseable Python and imports back', () => {
