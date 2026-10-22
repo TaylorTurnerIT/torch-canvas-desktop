@@ -54,6 +54,7 @@
   window.showSaveFilePicker = async (options = {}) => pick('save', options.suggestedName);
   window.showDirectoryPicker = async () => pick('directory');
   window.torchDesktop = {
+    handle,
     async save(name, data) {
       try {
         const file = await pick('save', name);

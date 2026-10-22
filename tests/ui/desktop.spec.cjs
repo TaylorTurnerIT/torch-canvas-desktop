@@ -19,7 +19,9 @@ test.beforeEach(async ({ page }) => {
     window.nativeCalls = [];
     window.savedFiles = {};
     window.cancelNextPick = false;
-    window.__TAURI__ = { core: { invoke: async (command, args) => {
+    window.tauriListeners = {};
+    window.openedFiles = [];
+    window.__TAURI__ = { event: { listen: async (name, fn) => { window.tauriListeners[name] = fn; } }, core: { invoke: async (command, args) => {
       window.nativeCalls.push({ command, args });
       if (command === 'native_pick') {
         if (window.cancelNextPick) { window.cancelNextPick = false; return null; }
@@ -31,6 +33,7 @@ test.beforeEach(async ({ page }) => {
       if (command === 'native_child') return { id: args.name, identity: '/test/' + args.name, name: args.name, kind: 'file' };
       if (command === 'marimo_start') return { url: 'http://127.0.0.1:4173/logo.png', project: '/test/project' };
       if (command === 'marimo_stop') return;
+      if (command === 'native_take_opened') return window.openedFiles.splice(0);
       throw new Error('Unexpected native command: ' + command);
     } } };
   });
@@ -266,4 +269,16 @@ test('marimo tab returns for a restored notebook tab after reopening its file', 
   await open();
   await expect(page.locator('#tabMarimo')).toBeVisible();
   await expect(page.locator('#fileBar')).toContainText('marimo');
+});
+
+test('files the system opens with the app open in the editor', async ({ page }) => {
+  await page.goto('http://127.0.0.1:4173');
+  await page.evaluate(text => {
+    window.savedFiles['finder.py'] = Array.from(new TextEncoder().encode(text));
+    window.openedFiles.push({ id: 'finder.py', identity: '/test/finder.py', name: 'finder.py', kind: 'file' });
+    return window.tauriListeners['torch-open']();
+  }, fs.readFileSync('tests/fixtures/marimo-net.py', 'utf8'));
+  await expect(page.locator('#fileBar')).toContainText('finder.py');
+  await expect(page.locator('#modelName')).toHaveValue('Net');
+  await expect(page.locator('#tabMarimo')).toBeVisible();
 });

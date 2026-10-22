@@ -13,7 +13,7 @@ use std::{
 };
 #[cfg(unix)]
 use std::os::unix::process::CommandExt;
-use tauri::{Manager, State};
+use tauri::{Emitter, Manager, State};
 
 #[derive(Clone)]
 struct Grant {
@@ -24,6 +24,10 @@ struct Grant {
 
 #[derive(Default)]
 struct Files(Mutex<HashMap<String, Grant>>);
+
+// Files the system asked this app to open (Finder, `open -a`), waiting for the page to take them.
+#[derive(Default)]
+struct Opened(Mutex<Vec<Handle>>);
 
 #[derive(Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -157,6 +161,30 @@ async fn native_pick(
 struct FileData {
     bytes: Vec<u8>,
     last_modified: u64,
+}
+
+#[tauri::command]
+fn native_take_opened(opened: State<'_, Opened>) -> Result<Vec<Handle>, String> {
+    Ok(std::mem::take(&mut *opened.0.lock().map_err(error)?))
+}
+
+// Opening a file from the system is the user's selection: grant exactly that file.
+fn grant_opened(app: &tauri::AppHandle, urls: &[tauri::Url]) {
+    let files = app.state::<Files>();
+    let opened = app.state::<Opened>();
+    for url in urls {
+        let Ok(path) = url.to_file_path().and_then(|p| p.canonicalize().map_err(|_| ())) else {
+            continue;
+        };
+        if !path.is_file() {
+            continue;
+        }
+        let grant = Grant { root: path.clone(), path, directory: false };
+        if let (Ok(handle), Ok(mut queue)) = (files.grant(grant), opened.0.lock()) {
+            queue.push(handle);
+        }
+    }
+    let _ = app.emit("torch-open", ());
 }
 
 #[tauri::command]
@@ -426,18 +454,23 @@ fn main() {
     tauri::Builder::default()
         .manage(Files::default())
         .manage(Marimo::default())
+        .manage(Opened::default())
         .invoke_handler(tauri::generate_handler![
             native_pick,
             native_read,
             native_write,
             native_entries,
             native_child,
+            native_take_opened,
             marimo_start,
             marimo_stop
         ])
         .build(tauri::generate_context!())
         .expect("Failed to build Torch Canvas")
         .run(|app, event| {
+            if let tauri::RunEvent::Opened { urls } = &event {
+                grant_opened(app, urls);
+            }
             if let tauri::RunEvent::Exit = event {
                 let servers: Vec<Server> = app
                     .state::<Marimo>()

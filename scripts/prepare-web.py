@@ -114,7 +114,7 @@ page = page.replace('</style>', """.codewrap { position: relative; min-width: 10
 #marimoFrames iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; background: #fff; }
 .main[data-wide="1"] { grid-template-columns: 228px minmax(0, 1fr) minmax(340px, 58%); }
 </style>""", 1)
-live = '\n'.join((ROOT / f"scripts/patches/{name}.js").read_text().rstrip() for name in ("live-code", "marimo-pane"))
+live = '\n'.join((ROOT / f"scripts/patches/{name}.js").read_text().rstrip() for name in ("live-code", "marimo-pane", "open-files"))
 end = page.rindex('})();\n</script>')
 page = page[:end] + live + '\n' + page[end:]
 # Use native system fonts: no remote styles, fonts, scripts, or runtime server.
