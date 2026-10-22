@@ -25,8 +25,6 @@ npm run build
 
 The current configuration targets a macOS `.app` with an ad hoc signature for local use. Developer ID signing and notarization are not configured.
 
-On Taylor's Mac, `~/Applications/Torch Canvas.app` links to this checkout's built bundle. The Dock pins the actual built bundle path so macOS recognizes the running app instead of showing a separate alias icon. Each `npm run build` updates the app behind the Dock entry. Quit and reopen the app to load a new build. Editing source files still requires rebuilding.
-
 ## Use
 
 - Create models on the canvas or open one of the bundled examples through **Open / import**.
@@ -49,11 +47,11 @@ File access is granted by native file/folder selection and lasts for the current
 
 `upstream/torch-canvas.html` is the unmodified page fetched on October 22, 2026. `upstream/source.json` records its URL, author, retrieval time, and SHA-256 digest. `scripts/prepare-web.py` derives `web/index.html` and applies desktop compatibility patches. The dimension evaluator uses an arithmetic parser instead of dynamic JavaScript compilation, so symbolic sizes and variance plots work under the desktop Content Security Policy. Unresolved or nonpositive prediction sizes produce a descriptive error. `web/desktop.js` adapts file operations to scoped Rust commands in `src-tauri/src/main.rs`.
 
-The offline page uses system fonts instead of fetching Google Fonts. The desktop app and header use the user-supplied logo in `assets/logo.png`. Jesse Roberts is credited in the window title and editor header; the original page and icon remain preserved in the upstream snapshot.
+The offline page uses system fonts instead of fetching Google Fonts. The author's original icon is preserved, and Jesse Roberts is credited in the window title and editor header.
 
 The Content Security Policy explicitly permits style attributes used by the SVG plots and arrowheads. Script and style elements retain Tauri's nonce/hash protection. UI tests reproduce Tauri's generated nonce policy and check plot strokes, point colors, legends, and arrowheads in both light and dark mode.
 
-No upstream license was identified in the retrieved page. This private port does not assert permission to relicense or redistribute Jesse Roberts's work. See [NOTICE](NOTICE).
+This repository is a fork of [JesseTNRoberts/torch-canvas](https://github.com/JesseTNRoberts/torch-canvas), which is MIT licensed. See [LICENSE](LICENSE) and [NOTICE](NOTICE). The upstream files (`index.html`, `core.js`, `examples/` and the rest at the repository root) are the original web app; the desktop port lives in `web/`, `src-tauri/`, `scripts/`, and `tests/`.
 
 ## Validation
 

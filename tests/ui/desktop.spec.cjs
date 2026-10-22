@@ -31,7 +31,7 @@ test.beforeEach(async ({ page }) => {
       if (command === 'native_write') { window.savedFiles[args.id] = args.bytes; return; }
       if (command === 'native_read') return { bytes: window.savedFiles[args.id] || [], lastModified: 123 };
       if (command === 'native_child') return { id: args.name, identity: '/test/' + args.name, name: args.name, kind: 'file' };
-      if (command === 'marimo_start') return { url: 'http://127.0.0.1:4173/logo.png', project: '/test/project' };
+      if (command === 'marimo_start') return { url: 'http://127.0.0.1:4173/desktop.js', project: '/test/project' };
       if (command === 'marimo_stop') return;
       if (command === 'native_reopen') return window.reopenable && window.reopenable[args.identity] || null;
       if (command === 'native_take_opened') return window.openedFiles.splice(0);
@@ -238,7 +238,7 @@ test('marimo pane starts the notebook server, embeds it, and stops it', async ({
   await page.keyboard.press('Control+o');
   await expect(page.locator('#tabMarimo')).toBeVisible();
   await page.locator('#tabMarimo').click();
-  await expect(page.locator('#marimoFrames iframe')).toHaveAttribute('src', 'http://127.0.0.1:4173/logo.png');
+  await expect(page.locator('#marimoFrames iframe')).toHaveAttribute('src', 'http://127.0.0.1:4173/desktop.js');
   await expect(page.locator('#marimoStatus')).toHaveText('/test/project');
   await expect(page.locator('#codePane')).toBeHidden();
   await page.screenshot({ path: 'test-results/marimo-pane.png' });

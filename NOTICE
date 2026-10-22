@@ -7,6 +7,8 @@ The original application's logic, interface, icon, and bundled examples are
 attributed to Jesse Roberts. The original source snapshot is preserved in
 upstream/torch-canvas.html; provenance is recorded in upstream/source.json.
 
-This private repository contains a local Tauri desktop adaptation. No upstream
-license was identified in the retrieved page. No license grant or transfer of
-ownership of the original work is asserted by this adaptation.
+This repository is a fork of https://github.com/JesseTNRoberts/torch-canvas,
+which is released under the MIT License (see LICENSE, Copyright (c) 2026 Jesse
+Roberts). It adds a local Tauri desktop adaptation: the desktop shell, native
+file access, the code editor, marimo integration, and tests. The original
+copyright and permission notice in LICENSE apply to the whole work.
