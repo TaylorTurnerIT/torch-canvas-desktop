@@ -419,7 +419,13 @@ details summary { cursor: pointer; color: var(--muted); font-size: 12.5px; }
 .marimo-head label { display: flex; align-items: center; gap: 5px; cursor: pointer; }
 #marimoFrames { min-height: 0; position: relative; }
 #marimoFrames iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; background: #fff; }
-.main[data-wide="1"] { grid-template-columns: 228px minmax(0, 1fr) minmax(340px, 58%); }
+.resizer { display: none; }
+@media (min-width: 981px) {
+  .main { grid-template-columns: var(--left-w, 228px) 5px minmax(0, 1fr) 5px var(--right-w, minmax(340px, 34%)); }
+  .resizer { display: block; position: relative; z-index: 2; cursor: col-resize; touch-action: none; background: var(--line); opacity: .55; transition: opacity .12s, background .12s; }
+  .resizer:hover, .resizer.drag, .resizer:focus-visible { background: var(--stream); opacity: 1; outline: 0; }
+  .resizer::after { content: ""; position: absolute; inset: 0 -4px; }
+}
 body { margin: 0; }
 .desktop-credit { font: 11px var(--sans); color: var(--muted); white-space: nowrap; margin-left: 8px; }
 </style>
@@ -470,6 +476,7 @@ body { margin: 0; }
         <p class="hint"><kbd>Shift</kbd>-drag to box-select · <kbd>⌫</kbd> delete · <kbd>Ctrl</kbd><kbd>C</kbd>/<kbd>V</kbd> copy/paste · <kbd>Ctrl</kbd><kbd>S</kbd> save to file · <kbd>F</kbd> fit view · <kbd>Esc</kbd> back to the model tab · right-click a layer for more options</p>
       </section>
     </aside>
+    <div class="resizer" id="resizeLeft" role="separator" aria-orientation="vertical" aria-label="Resize the component palette" tabindex="0" title="Drag to resize. Double-click to reset."></div>
 
     <div class="canvas-wrap" id="wrap">
       <div class="tabstrip" id="tabstrip" role="tablist" aria-label="Open networks"></div>
@@ -491,6 +498,7 @@ body { margin: 0; }
       <div class="canvas-ctl"><button class="btn" id="zVar" title="Plot the expected forward and backward variance at each Linear right after init">Plot variance</button><button class="btn" id="zSizes" aria-pressed="false" title="Show the tensor size on every branch">Show sizes</button><button class="btn" id="zSvg" title="Save the diagram exactly as shown (with the size labels where you placed them) as an SVG">Export SVG</button><button class="btn" id="zOut" aria-label="Zoom out">−</button><button class="btn" id="zFit">Fit</button><button class="btn" id="zIn" aria-label="Zoom in">+</button></div>
     </div>
 
+    <div class="resizer" id="resizeRight" role="separator" aria-orientation="vertical" aria-label="Resize the code and marimo pane" tabindex="0" title="Drag to resize. Double-click to reset."></div>
     <div class="right">
       <div class="tabs"><button class="tab" id="tabCode" aria-selected="true">PyTorch</button><button class="tab" id="tabMarimo" aria-selected="false" hidden>marimo</button></div>
       <div id="codeBar" class="codebar">
@@ -501,7 +509,7 @@ body { margin: 0; }
         <span class="spacer"></span>
         <button class="btn" id="bCopy">Copy code</button>
       </div>
-      <div class="pane" id="codePane"><ul class="warns" id="warns" hidden></ul><div class="codewrap"><pre class="code" id="code" aria-hidden="true"></pre><textarea id="codeEdit" wrap="off" spellcheck="false" autocapitalize="off" autocomplete="off" aria-label="PyTorch code"></textarea></div></div><div id="marimoPane" hidden><div class="marimo-head"><span id="marimoStatus"></span><label title="Write the file shortly after each edit, so marimo follows"><input type="checkbox" id="oAuto2"> auto-save</label><button class="btn" id="marimoWide" title="Make this pane wider or narrower">Wide</button><button class="btn" id="marimoReload">Reload</button><button class="btn" id="marimoStop" title="Stop the marimo server">Stop</button></div><div id="marimoFrames"></div></div>
+      <div class="pane" id="codePane"><ul class="warns" id="warns" hidden></ul><div class="codewrap"><pre class="code" id="code" aria-hidden="true"></pre><textarea id="codeEdit" wrap="off" spellcheck="false" autocapitalize="off" autocomplete="off" aria-label="PyTorch code"></textarea></div></div><div id="marimoPane" hidden><div class="marimo-head"><span id="marimoStatus"></span><label title="Write the file shortly after each edit, so marimo follows"><input type="checkbox" id="oAuto2"> auto-save</label><button class="btn" id="marimoReload">Reload</button><button class="btn" id="marimoStop" title="Stop the marimo server">Stop</button></div><div id="marimoFrames"></div></div>
     </div>
   </div>
 </div>
@@ -7664,12 +7672,59 @@ window.addEventListener('resize', () => render());
   tabMarimo.onclick = () => { tab = 'marimo'; render(); start(); };
   $('#marimoStop').onclick = stop;
   $('#marimoReload').onclick = () => { const s = current(); if (s && s.frame) s.frame.src = s.url; };
-  $('#marimoWide').onclick = () => { main.dataset.wide = main.dataset.wide === '1' ? '0' : '1'; };
   auto2.onchange = () => { auto.checked = auto2.checked; auto.dispatchEvent(new Event('change')); };
 
   const base = renderFileBar;
   renderFileBar = function () { detect(); base(); render(); };
   render();
+})();
+
+// Draggable dividers between the palette, the canvas, and the right pane.
+(() => {
+  const main = document.querySelector('.main'), KEY = 'torchcanvas.panes';
+  const bars = { left: $('#resizeLeft'), right: $('#resizeRight') };
+  let size = { left: null, right: null };
+  try { size = Object.assign(size, JSON.parse(localStorage.getItem(KEY) || '{}')); } catch {}
+  const MIN = { left: 160, right: 280, center: 320 };
+  const bounds = () => {
+    const total = main.getBoundingClientRect().width, bar = 10;
+    return {
+      left: [MIN.left, Math.max(MIN.left, total - (size.right || 340) - MIN.center - bar)],
+      right: [MIN.right, Math.max(MIN.right, total - (size.left || 228) - MIN.center - bar)],
+    };
+  };
+  function apply() {
+    for (const side of ['left', 'right']) {
+      if (size[side]) main.style.setProperty('--' + side + '-w', size[side] + 'px');
+      else main.style.removeProperty('--' + side + '-w');
+    }
+  }
+  let notify = 0;
+  const changed = () => { cancelAnimationFrame(notify); notify = requestAnimationFrame(() => window.dispatchEvent(new Event('resize'))); };
+  function set(side, px) {
+    const [lo, hi] = bounds()[side];
+    size[side] = Math.round(Math.min(hi, Math.max(lo, px)));
+    apply(); changed();
+  }
+  const save = () => { try { localStorage.setItem(KEY, JSON.stringify(size)); } catch {} };
+  const current = side => (side === 'left' ? document.querySelector('aside') : document.querySelector('.right')).getBoundingClientRect().width;
+  for (const side of ['left', 'right']) {
+    const bar = bars[side];
+    bar.addEventListener('pointerdown', e => {
+      e.preventDefault(); bar.setPointerCapture(e.pointerId); bar.classList.add('drag');
+      const rect = main.getBoundingClientRect();
+      const move = ev => set(side, side === 'left' ? ev.clientX - rect.left : rect.right - ev.clientX);
+      const up = () => { bar.classList.remove('drag'); bar.removeEventListener('pointermove', move); bar.removeEventListener('pointerup', up); bar.removeEventListener('pointercancel', up); save(); };
+      bar.addEventListener('pointermove', move); bar.addEventListener('pointerup', up); bar.addEventListener('pointercancel', up);
+    });
+    bar.addEventListener('dblclick', () => { size[side] = null; apply(); save(); changed(); });
+    bar.addEventListener('keydown', e => {
+      const dir = { ArrowLeft: -1, ArrowRight: 1 }[e.key]; if (!dir) return;
+      e.preventDefault(); set(side, current(side) + (side === 'left' ? 1 : -1) * dir * 24); save();
+    });
+  }
+  apply();
+  window.addEventListener('resize', () => { for (const side of ['left', 'right']) if (size[side]) { const [lo, hi] = bounds()[side]; if (size[side] > hi) size[side] = hi; } apply(); });
 })();
 
 // Files the system opens with this app (Finder, `open -a`) arrive as scoped handles from the native side.

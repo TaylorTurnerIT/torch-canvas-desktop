@@ -64,7 +64,6 @@
   tabMarimo.onclick = () => { tab = 'marimo'; render(); start(); };
   $('#marimoStop').onclick = stop;
   $('#marimoReload').onclick = () => { const s = current(); if (s && s.frame) s.frame.src = s.url; };
-  $('#marimoWide').onclick = () => { main.dataset.wide = main.dataset.wide === '1' ? '0' : '1'; };
   auto2.onchange = () => { auto.checked = auto2.checked; auto.dispatchEvent(new Event('change')); };
 
   const base = renderFileBar;

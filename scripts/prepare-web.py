@@ -90,7 +90,9 @@ for old, new, why in [
     ("kind: 'py', diskText: gen, used, savedCode: gen, lastModified: f.lastModified };", "kind: 'py', text: gen, diskText: gen, used, savedCode: gen, lastModified: f.lastModified };", 'save as text'),
     ("marimo: k === 'py' && NN.isMarimo(text), diskText: text,", "marimo: k === 'py' && NN.isMarimo(text), text: k === 'py' ? text : undefined, diskText: text,", 'open text'),
     ("diskText: f.diskText, savedCode: f.savedCode };", "diskText: f.diskText, savedCode: f.savedCode, text: f.text };", 'persist text'),
-    ('<pre class="code" id="code"></pre></div>', '<div class="codewrap"><pre class="code" id="code" aria-hidden="true"></pre><textarea id="codeEdit" wrap="off" spellcheck="false" autocapitalize="off" autocomplete="off" aria-label="PyTorch code"></textarea></div></div><div id="marimoPane" hidden><div class="marimo-head"><span id="marimoStatus"></span><label title="Write the file shortly after each edit, so marimo follows"><input type="checkbox" id="oAuto2"> auto-save</label><button class="btn" id="marimoWide" title="Make this pane wider or narrower">Wide</button><button class="btn" id="marimoReload">Reload</button><button class="btn" id="marimoStop" title="Stop the marimo server">Stop</button></div><div id="marimoFrames"></div></div>', 'editor markup'),
+    ('<pre class="code" id="code"></pre></div>', '<div class="codewrap"><pre class="code" id="code" aria-hidden="true"></pre><textarea id="codeEdit" wrap="off" spellcheck="false" autocapitalize="off" autocomplete="off" aria-label="PyTorch code"></textarea></div></div><div id="marimoPane" hidden><div class="marimo-head"><span id="marimoStatus"></span><label title="Write the file shortly after each edit, so marimo follows"><input type="checkbox" id="oAuto2"> auto-save</label><button class="btn" id="marimoReload">Reload</button><button class="btn" id="marimoStop" title="Stop the marimo server">Stop</button></div><div id="marimoFrames"></div></div>', 'editor markup'),
+    ('    </aside>\n', '    </aside>\n    <div class="resizer" id="resizeLeft" role="separator" aria-orientation="vertical" aria-label="Resize the component palette" tabindex="0" title="Drag to resize. Double-click to reset."></div>\n', 'left divider'),
+    ('\n    <div class="right">', '\n    <div class="resizer" id="resizeRight" role="separator" aria-orientation="vertical" aria-label="Resize the code and marimo pane" tabindex="0" title="Drag to resize. Double-click to reset."></div>\n    <div class="right">', 'right divider'),
     ('<div class="tabs"><span class="tab" aria-selected="true" style="cursor:default">PyTorch</span></div>',
      '<div class="tabs"><button class="tab" id="tabCode" aria-selected="true">PyTorch</button><button class="tab" id="tabMarimo" aria-selected="false" hidden>marimo</button></div>', 'right tabs'),
     ('<span class="spacer"></span>\n        <button class="btn" id="bCopy">', '<label id="autoLabel" hidden title="Write the file shortly after each edit, so a running marimo notebook follows"><input type="checkbox" id="oAuto"> auto-save</label>\n        <span class="spacer"></span>\n        <button class="btn" id="bCopy">', 'auto-save toggle'),
@@ -112,9 +114,15 @@ page = page.replace('</style>', """.codewrap { position: relative; min-width: 10
 .marimo-head label { display: flex; align-items: center; gap: 5px; cursor: pointer; }
 #marimoFrames { min-height: 0; position: relative; }
 #marimoFrames iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; background: #fff; }
-.main[data-wide="1"] { grid-template-columns: 228px minmax(0, 1fr) minmax(340px, 58%); }
+.resizer { display: none; }
+@media (min-width: 981px) {
+  .main { grid-template-columns: var(--left-w, 228px) 5px minmax(0, 1fr) 5px var(--right-w, minmax(340px, 34%)); }
+  .resizer { display: block; position: relative; z-index: 2; cursor: col-resize; touch-action: none; background: var(--line); opacity: .55; transition: opacity .12s, background .12s; }
+  .resizer:hover, .resizer.drag, .resizer:focus-visible { background: var(--stream); opacity: 1; outline: 0; }
+  .resizer::after { content: ""; position: absolute; inset: 0 -4px; }
+}
 </style>""", 1)
-live = '\n'.join((ROOT / f"scripts/patches/{name}.js").read_text().rstrip() for name in ("live-code", "marimo-pane", "open-files"))
+live = '\n'.join((ROOT / f"scripts/patches/{name}.js").read_text().rstrip() for name in ("live-code", "marimo-pane", "resizers", "open-files"))
 end = page.rindex('})();\n</script>')
 page = page[:end] + live + '\n' + page[end:]
 # Use native system fonts: no remote styles, fonts, scripts, or runtime server.

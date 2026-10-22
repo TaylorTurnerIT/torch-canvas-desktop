@@ -282,3 +282,29 @@ test('files the system opens with the app open in the editor', async ({ page }) 
   await expect(page.locator('#modelName')).toHaveValue('Net');
   await expect(page.locator('#tabMarimo')).toBeVisible();
 });
+
+test('dividers resize the side panes, persist, and reset on double-click', async ({ page }) => {
+  await page.goto('http://127.0.0.1:4173');
+  const width = sel => page.locator(sel).evaluate(e => e.getBoundingClientRect().width);
+  const before = await width('.right');
+  const bar = await page.locator('#resizeRight').boundingBox();
+  await page.mouse.move(bar.x + 2, bar.y + 200);
+  await page.mouse.down();
+  await page.mouse.move(bar.x - 298, bar.y + 200, { steps: 5 });
+  await page.mouse.up();
+  expect(Math.abs((await width('.right')) - (before + 300))).toBeLessThan(8);
+  const leftBar = await page.locator('#resizeLeft').boundingBox();
+  await page.mouse.move(leftBar.x + 2, leftBar.y + 200);
+  await page.mouse.down();
+  await page.mouse.move(leftBar.x + 62, leftBar.y + 200, { steps: 5 });
+  await page.mouse.up();
+  expect(Math.abs((await width('aside')) - 288)).toBeLessThan(8);
+  await page.screenshot({ path: 'test-results/resized.png' });
+  await page.reload();
+  expect(Math.abs((await width('.right')) - (before + 300))).toBeLessThan(8);
+  await page.locator('#resizeRight').dblclick();
+  expect(Math.abs((await width('.right')) - before)).toBeLessThan(8);
+  await page.locator('#resizeRight').focus();
+  await page.keyboard.press('ArrowLeft');
+  expect(Math.abs((await width('.right')) - (before + 24))).toBeLessThan(8);
+});
