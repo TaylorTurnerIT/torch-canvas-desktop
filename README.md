@@ -25,6 +25,8 @@ npm run build
 
 The current configuration targets a macOS `.app` with an ad hoc signature for local use. Developer ID signing and notarization are not configured.
 
+On Taylor's Mac, `~/Applications/Torch Canvas.app` links to this checkout's built bundle, and the Dock pins that link. Each `npm run build` updates the app behind the Dock entry. Quit and reopen the app to load a new build. Editing source files still requires rebuilding.
+
 ## Use
 
 - Create models on the canvas or open one of the bundled examples through **Open / import**.
