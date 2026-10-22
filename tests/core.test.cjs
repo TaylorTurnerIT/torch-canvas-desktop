@@ -10,6 +10,37 @@ const ctx = vm.createContext({ console, setTimeout, clearTimeout, performance })
 vm.runInContext(scripts.slice(0, 3).join('\n') + '\nglobalThis.api = { NN, NNVar, NNExport, library: window.TC_LIBRARY };', Object.assign(ctx, { window: {} }));
 const { NN, NNVar, NNExport, library } = ctx.api;
 
+test('symbolic sizes and variance work when dynamic code compilation is blocked', () => {
+  const restricted = vm.createContext({}, { codeGeneration: { strings: false, wasm: false } });
+  vm.runInContext(scripts[0] + '\nglobalThis.api = { NN, NNVar };', restricted);
+  assert.equal(restricted.api.NN.evalDim('d / heads', { d: 256, heads: 8 }), 32);
+  const result = restricted.api.NNVar.predict(restricted.api.NN.presetResidualMLP(), {});
+  assert.equal(result.error, undefined);
+  assert.ok(result.layers.length > 0);
+});
+
+test('dimension arithmetic preserves precedence and rejects invalid sizes', () => {
+  for (const [expression, value] of [
+    ['2 + 3 * 4', 14], ['(2 + 3) * 4', 20], ['17 // 3', 5],
+    ['2 ** 3 ** 2', 512], ['2 ** -2', 0], ['(-2) ** 2', 4],
+    ['-17 / 3', -6], ['.5 * 8', 4], ['3 - -2', 5],
+    ['1 / 0', null], ['missing + 1', null], ['2 +', null],
+    ['2(3)', null], ['(2 + 3', null], ['globalThis.process.exit()', null],
+    ['-2 ** 2', null], ['++2', null], ['2--2', null], ['1.5', 1.5],
+  ]) assert.equal(NN.evalDim(expression, {}), value, expression);
+  assert.equal(NN.evalDim('large / 2', { large: 1e22 }), 5e21);
+});
+
+test('unresolved or nonpositive prediction sizes return a useful error', () => {
+  for (const value of [undefined, 0, -1]) {
+    const graph = NN.presetResidualMLP();
+    graph.symbols.o = value;
+    const result = NNVar.predict(graph, {});
+    assert.match(result.error, /positive numeric sizes/);
+    assert.ok(result.node);
+  }
+});
+
 test('upstream snapshot matches recorded provenance', () => {
   const meta = JSON.parse(fs.readFileSync('upstream/source.json'));
   assert.equal(crypto.createHash('sha256').update(fs.readFileSync('upstream/torch-canvas.html')).digest('hex'), meta.sha256);

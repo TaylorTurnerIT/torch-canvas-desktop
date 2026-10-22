@@ -4,6 +4,18 @@ import re
 
 ROOT = Path(__file__).resolve().parents[1]
 page = (ROOT / "upstream/torch-canvas.html").read_text()
+# Preserve the snapshot while applying desktop compatibility fixes to its core.
+evaluator = (ROOT / "scripts/patches/eval-dim.js").read_text().rstrip()
+page, count = re.subn(r'  function evalDim\(expr, symbols\) \{.*?\n  \}(?=\n  function dimEq)', lambda _: evaluator, page, flags=re.S)
+if count != 1:
+    raise RuntimeError('Expected exactly one upstream dimension evaluator')
+needle = '      const n = byId.get(id), p = n.params, shape = shapeOf(id);'
+if page.count(needle) != 1:
+    raise RuntimeError('Expected exactly one variance prediction loop')
+page = page.replace(needle, needle + '''
+      if (!shape || !shape.length || shape.some(d => !Number.isInteger(d) || d <= 0)) {
+        return { error: `Set positive numeric sizes for ${p.title || p.name || n.type} before plotting variance.`, node: id };
+      }''')
 # Use native system fonts: no remote styles, fonts, scripts, or runtime server.
 page = re.sub(r'<link[^>]+href="https://fonts.googleapis.com[^>]+>\n?', '', page)
 page = page.replace('<title>Torch Canvas</title>', '<!doctype html>\n<html lang="en">\n<head>\n<meta charset="utf-8">\n<meta name="viewport" content="width=device-width, initial-scale=1">\n<title>Torch Canvas</title>')

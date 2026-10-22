@@ -2,6 +2,11 @@ const { test, expect } = require('@playwright/test');
 const fs = require('node:fs');
 
 test.beforeEach(async ({ page }) => {
+  const csp = require('../../src-tauri/tauri.conf.json').app.security.csp;
+  await page.route('http://127.0.0.1:4173/**', async route => {
+    const response = await route.fetch();
+    await route.fulfill({ response, headers: { ...response.headers(), 'content-security-policy': csp } });
+  });
   await page.addInitScript(() => {
     window.nativeCalls = [];
     window.savedFiles = {};
@@ -30,8 +35,10 @@ test('editor loads offline, edits, persists, and exports through native bridge',
   await expect(page.locator('#modelName')).toHaveValue('ResidualMLP');
   await expect(page.locator('.node').first()).toBeVisible();
   await page.locator('#bNew').click();
+  await page.evaluate(() => new Promise(requestAnimationFrame));
   await page.locator('#modelName').fill('DesktopTest');
   await page.locator('#modelName').press('Tab');
+  await expect.poll(() => page.evaluate(() => JSON.parse(localStorage.getItem('torchcanvas.graph.v1')).docs.some(g => g.name === 'DesktopTest'))).toBe(true);
   await page.reload();
   await expect(page.locator('#modelName')).toHaveValue('DesktopTest');
   await page.keyboard.press('Control+s');
@@ -75,4 +82,23 @@ test('native save cancellation writes nothing', async ({ page }) => {
   });
   expect(result).toBe(false);
   expect(await page.evaluate(() => window.nativeCalls.filter(c => c.command === 'native_write'))).toEqual([]);
+});
+
+test('default model plots variance through a background worker', async ({ page }) => {
+  const workers = [];
+  page.on('worker', worker => workers.push(worker));
+  await page.goto('http://127.0.0.1:4173');
+  await page.locator('#zVar').click();
+  await expect(page.locator('#varPane .var-plot')).toBeVisible();
+  await expect(page.locator('#varPane')).not.toContainText("Couldn't compute");
+  expect(workers).toHaveLength(1);
+  await page.screenshot({ path: 'test-results/variance.png' });
+});
+
+test('variance also works when workers are unavailable', async ({ page }) => {
+  await page.addInitScript(() => { window.Worker = undefined; });
+  await page.goto('http://127.0.0.1:4173');
+  await page.locator('#zVar').click();
+  await expect(page.locator('#varPane .var-plot')).toBeVisible();
+  await expect(page.locator('#varPane')).not.toContainText("Couldn't compute");
 });

@@ -37,7 +37,7 @@ File access is granted by native file/folder selection and lasts for the current
 
 ## Source and attribution
 
-`upstream/torch-canvas.html` is the unmodified page fetched on October 22, 2026. `upstream/source.json` records its URL, author, retrieval time, and SHA-256 digest. `scripts/prepare-web.py` derives `web/index.html` while retaining the original application scripts. `web/desktop.js` adapts file operations to scoped Rust commands in `src-tauri/src/main.rs`.
+`upstream/torch-canvas.html` is the unmodified page fetched on October 22, 2026. `upstream/source.json` records its URL, author, retrieval time, and SHA-256 digest. `scripts/prepare-web.py` derives `web/index.html` and applies desktop compatibility patches. The dimension evaluator uses an arithmetic parser instead of dynamic JavaScript compilation, so symbolic sizes and variance plots work under the desktop Content Security Policy. Unresolved or nonpositive prediction sizes produce a descriptive error. `web/desktop.js` adapts file operations to scoped Rust commands in `src-tauri/src/main.rs`.
 
 The offline page uses system fonts instead of fetching Google Fonts. The author's original icon is preserved, and Jesse Roberts is credited in the window title and editor header.
 
@@ -52,4 +52,4 @@ npm run test:ui
 cargo test --release --manifest-path src-tauri/Cargo.toml
 ```
 
-Source tests check snapshot integrity, generated Python syntax, import round trips, bundled example generation, variance prediction, and training generation. WebKit tests cover editing, reload persistence, native bridge saves, SVG/Python/ZIP export, folder export, and cancellation. The UI tests mock native dialogs and file commands. Rust tests check handle grants, path traversal, and symlink boundaries. Real native picker interaction is not covered by these tests.
+Source tests check snapshot integrity, generated Python syntax, import round trips, bundled example generation, variance prediction, and training generation. Dimension evaluation and variance are also tested with dynamic compilation disabled. WebKit tests use the desktop Content Security Policy and cover editing, reload persistence, native bridge saves, SVG/Python/ZIP export, folder export, cancellation, and variance with and without workers. The UI tests mock native dialogs and file commands. Rust tests check handle grants, path traversal, and symlink boundaries. Real native picker interaction is not covered by these tests.
