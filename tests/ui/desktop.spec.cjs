@@ -248,3 +248,22 @@ test('marimo pane starts the notebook server, embeds it, and stops it', async ({
   expect(await page.evaluate(() => window.nativeCalls.filter(c => c.command === 'marimo_stop').length)).toBe(1);
   expect(errors).toEqual([]);
 });
+
+test('marimo tab returns for a restored notebook tab after reopening its file', async ({ page }) => {
+  const notebook = fs.readFileSync('tests/fixtures/marimo-net.py', 'utf8');
+  const open = async () => {
+    await page.evaluate(text => {
+      window.savedFiles['nb.py'] = Array.from(new TextEncoder().encode(text));
+      window.nextPickedFile = { id: 'nb.py', identity: '/test/nb.py', name: 'nb.py', kind: 'file' };
+    }, notebook);
+    await page.keyboard.press('Control+o');
+  };
+  await page.goto('http://127.0.0.1:4173');
+  await open();
+  await expect(page.locator('#tabMarimo')).toBeVisible();
+  await page.reload();
+  await page.locator('#tabstrip .ctab.model').last().click();
+  await open();
+  await expect(page.locator('#tabMarimo')).toBeVisible();
+  await expect(page.locator('#fileBar')).toContainText('marimo');
+});

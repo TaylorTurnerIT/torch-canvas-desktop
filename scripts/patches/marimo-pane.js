@@ -8,10 +8,13 @@
   const sessions = new Map(); // file identity -> { state, url, project, error, frame }
   let tab = 'code';
 
+  // A tab restored after a restart carries no marimo flag; work it out from the text.
+  const detect = () => { const f = S.file; if (f && f.kind === 'py') f.marimo = NN.isMarimo(typeof f.text === 'string' ? f.text : f.diskText || ''); };
   const eligible = () => !!invoke && !!S.file && S.file.kind === 'py' && !!S.file.marimo && !!S.file.handle && !!S.file.handle._nativeId;
   const current = () => (eligible() ? sessions.get(S.file.handle._nativeIdentity) : null);
 
   function render() {
+    detect();
     const ok = eligible();
     tabMarimo.hidden = !ok;
     if (!ok) tab = 'code';
@@ -65,6 +68,6 @@
   auto2.onchange = () => { auto.checked = auto2.checked; auto.dispatchEvent(new Event('change')); };
 
   const base = renderFileBar;
-  renderFileBar = function () { base(); render(); };
+  renderFileBar = function () { detect(); base(); render(); };
   render();
 })();
