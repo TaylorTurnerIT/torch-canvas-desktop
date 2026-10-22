@@ -40,7 +40,7 @@ File access is granted by native file/folder selection and lasts for the current
 
 `upstream/torch-canvas.html` is the unmodified page fetched on October 22, 2026. `upstream/source.json` records its URL, author, retrieval time, and SHA-256 digest. `scripts/prepare-web.py` derives `web/index.html` and applies desktop compatibility patches. The dimension evaluator uses an arithmetic parser instead of dynamic JavaScript compilation, so symbolic sizes and variance plots work under the desktop Content Security Policy. Unresolved or nonpositive prediction sizes produce a descriptive error. `web/desktop.js` adapts file operations to scoped Rust commands in `src-tauri/src/main.rs`.
 
-The offline page uses system fonts instead of fetching Google Fonts. The author's original icon is preserved, and Jesse Roberts is credited in the window title and editor header.
+The offline page uses system fonts instead of fetching Google Fonts. The desktop app and header use the user-supplied logo in `assets/logo.png`. Jesse Roberts is credited in the window title and editor header; the original page and icon remain preserved in the upstream snapshot.
 
 The Content Security Policy explicitly permits style attributes used by the SVG plots and arrowheads. Script and style elements retain Tauri's nonce/hash protection. UI tests reproduce Tauri's generated nonce policy and check plot strokes, point colors, legends, and arrowheads in both light and dark mode.
 
