@@ -23,7 +23,7 @@ Build a macOS application bundle:
 npm run build
 ```
 
-The current configuration targets a macOS `.app`. Signing and notarization are not configured.
+The current configuration targets a macOS `.app` with an ad hoc signature for local use. Developer ID signing and notarization are not configured.
 
 ## Use
 
