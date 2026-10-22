@@ -1,0 +1,19 @@
+{
+  "name": "TrainingTest",
+  "symbols": {"e": 8, "d_in": 4, "o": 2},
+  "nodes": [
+    {"id":"input","type":"input","x":150,"y":500,"params":{"name":"x","shape":"e, d_in"}},
+    {"id":"linear","type":"linear","x":150,"y":350,"params":{"in":"d_in","out":"o","bias":true,"name":"projection","init":"default"}},
+    {"id":"output","type":"output","x":150,"y":200,"params":{"name":"out"}},
+    {"id":"target","type":"input","x":400,"y":350,"params":{"name":"target","shape":"e, o"}},
+    {"id":"loss","type":"loss","x":300,"y":200,"params":{"fn":"mse","mode":"given","weight":"1"}}
+  ],
+  "edges": [
+    {"id":"a","from":"input","to":"linear","port":0},
+    {"id":"b","from":"linear","to":"output","port":0},
+    {"id":"c","from":"linear","to":"loss","port":0},
+    {"id":"d","from":"target","to":"loss","port":1}
+  ],
+  "groups": [],
+  "blocks": {}
+}
