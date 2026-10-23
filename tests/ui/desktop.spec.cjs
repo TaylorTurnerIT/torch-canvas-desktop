@@ -448,3 +448,12 @@ test('the 5 s poll keeps running when native_watch fails', async ({ page }) => {
   await page.clock.runFor(5000);
   await expect.poll(() => page.evaluate(() => window.nativeCalls.filter(c => c.command === 'native_read').length)).toBeGreaterThan(reads);
 });
+
+test('auto-save is on by default and remembers being turned off', async ({ page }) => {
+  await page.goto('http://127.0.0.1:4173');
+  expect(await page.evaluate(() => document.querySelector('#oAuto').checked)).toBe(true);
+  await page.evaluate(() => { const box = document.querySelector('#oAuto'); box.checked = false; box.dispatchEvent(new Event('change', { bubbles: true })); });
+  expect(await page.evaluate(() => localStorage.getItem('torchcanvas.autosave'))).toBe('0');
+  await page.reload();
+  expect(await page.evaluate(() => document.querySelector('#oAuto').checked)).toBe(false);
+});

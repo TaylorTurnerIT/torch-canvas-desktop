@@ -106,7 +106,7 @@ Open a marimo notebook (a `.py` file with `import marimo` and `marimo.App(...)`)
 - The server runs locally, on a random port on `127.0.0.1`, without an access token. It stops when you press **Stop** or quit the app.
 - If the notebook is inside a project with a `pyproject.toml`, the server runs with `uv run` in that project (adding `--locked` when `uv.lock` exists). Otherwise it uses `marimo` from your PATH. The first start can take a while while `uv` prepares the environment.
 - **Reload** reloads the embedded page.
-- **auto-save** writes the file shortly after each diagram or code edit, so the running notebook follows your changes. It is off by default.
+- **auto-save** writes the file shortly after each diagram or code edit, so the running notebook follows your changes. It is on by default; untick it to save by hand. Your choice is remembered.
 
 The **PyTorch** code panel is an editor for the open file. Model classes must be top-level `@app.class_definition` cells, and new classes keep that decorator. Imports for regenerated classes go in the `with app.setup:` block. Saving keeps code you did not change and patches only the constructor statements, signature defaults, and methods that the diagram changed. Comments inside a rewritten `forward` body are lost. Renaming the model renames only its class.
 

@@ -7640,7 +7640,8 @@ window.__tc = { S, route, drawFrom, box, keyOf, byId, switchTo, openLibrary, fin
   let timer = null, saveTimer = null, typing = false, codeError = null;
   S.live = false;
   window.torchCanvas = { state: S, commit }; // test hook
-  try { auto.checked = localStorage.getItem('torchcanvas.autosave') === '1'; } catch {}
+  auto.checked = true; // on unless the user turned it off
+  try { auto.checked = localStorage.getItem('torchcanvas.autosave') !== '0'; } catch {}
 
   const fileMode = () => !!S.file && S.file.kind === 'py' && typeof S.file.text === 'string';
   const paint = text => { pre.innerHTML = text.replace(/\n$/, '').split('\n').map((ln, i) => `<span class="ln" data-n="${i + 1}">${highlight(ln) || ' '}</span>`).join(''); };
