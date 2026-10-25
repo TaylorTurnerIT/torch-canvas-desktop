@@ -529,3 +529,90 @@ test('a completed gate can recover an older return-None file and auto-save it', 
   expect(saved).toContain('def predict(self, x):');
   expect(saved).toContain('TRAINING_SETTING = 123');
 });
+
+// press a button drawn on the canvas; looked up at the moment of the press, since the canvas redraws often
+const press = (page, selector) => page.evaluate(sel => document.querySelector(sel).dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, button: 0 })), selector);
+
+test('a block can be drawn open in place, inside its frame, without touching the model', async ({ page }) => {
+  const errors = [];
+  page.on('pageerror', e => errors.push(e.message));
+  await page.goto('http://127.0.0.1:4173');
+  await page.locator('#bMore').click();
+  await page.locator('[data-act="lib:networks/02_residual_mlp_block.json"]').evaluate(b => b.click());
+  await expect(page.locator('.node.t-block')).toHaveCount(1);
+  const state = () => page.evaluate(() => {
+    const S = torchCanvas.state, use = S.g.nodes.find(n => n.type === 'block');
+    return { use: use.id, nodes: S.g.nodes.length, edges: S.g.edges.length, code: document.querySelector('#codeEdit').value, json: JSON.stringify(S.root) };
+  });
+  const before = await state();
+  await expect(page.locator('.pvf')).toHaveCount(0);
+  // the Inside button on the box draws its layers where it stood
+  await press(page, '.node [data-peek]');
+  await expect(page.locator('.pvf')).toHaveCount(1);
+  await expect(page.locator('.pv-title')).toHaveText('GatedBlock × 3');
+  await expect(page.locator('.node.t-block')).toHaveCount(0);
+  const inner = await page.locator('.node.pv').count();
+  expect(inner).toBeGreaterThan(5);
+  expect(await page.locator('.node.pv[data-node]').count()).toBe(0);
+  // what is drawn inside the frame is flat (nothing to hover or click), and the frame drags like any other block
+  await expect(page.locator('.node.pv .n-box').first()).toHaveCSS('pointer-events', 'none');
+  await expect(page.locator('.eg.pv .edge-hit').first()).toHaveCSS('pointer-events', 'none');
+  await expect(page.locator('.pvf .pv-box')).toHaveCSS('cursor', 'grab');
+  // connections to the block end at anchors on its frame; the ones inside are drawn, not editable
+  await expect(page.locator('.pvanc')).toHaveCount(2);
+  const into = await page.evaluate(() => { const S = torchCanvas.state, use = S.g.nodes.find(n => n.type === 'block'); return S.g.edges.find(e => e.to === use.id).id; });
+  await expect(page.locator(`[data-edge="${into}"]`)).toHaveCount(1);
+  await expect(page.locator('.eg.pv [data-edge]')).toHaveCount(0);
+  // the connection into the block can be reshaped while it is open, and keeps its shape when folded
+  const grab = await page.evaluate(id => { const el = document.querySelector(`[data-edge="${id}"]`), p = el.getPointAtLength(el.getTotalLength() / 2), m = el.getScreenCTM(); return [m.a * p.x + m.e, m.d * p.y + m.f]; }, into);
+  await page.mouse.move(grab[0], grab[1]); await page.mouse.down(); await page.mouse.move(grab[0] + 25, grab[1] + 25, { steps: 4 }); await page.mouse.up();
+  expect(await page.evaluate(id => !!torchCanvas.state.g.edges.find(e => e.id === id).route, into)).toBe(true);
+  await page.evaluate(id => { delete torchCanvas.state.g.edges.find(e => e.id === id).route; }, into);
+  await page.evaluate(() => torchCanvas.commit(() => {}));
+  // the stream runs on into the block's first layer and out of its last one: no Input or Output arrow of the block is drawn
+  await expect(page.locator('.node.pv.t-io')).toHaveCount(0);
+  await expect(page.locator('.pvb [data-openblock]')).toHaveCount(1);
+  // nothing in the model changed
+  expect(await state()).toEqual(before);
+  // a click on one of its layers selects the block use and shows the block's details
+  const at = await page.locator('.node.pv .n-box').first().boundingBox();
+  await page.mouse.click(at.x + at.width / 2, at.y + at.height / 2);
+  await expect(page.locator('.pvf.sel')).toHaveCount(1);
+  await expect(page.locator('#f-peek')).toBeChecked();
+  // the inspector's checkbox and the frame's Fold button both put it back
+  await page.locator('#f-peek').evaluate(el => { el.checked = false; el.dispatchEvent(new Event('change', { bubbles: true })); });
+  await expect(page.locator('.pvf')).toHaveCount(0);
+  await expect(page.locator('.node.t-block')).toHaveCount(1);
+  await press(page, '.node [data-peek]');
+  await expect(page.locator('.pvf')).toHaveCount(1);
+  await press(page, '.pvb [data-peek]');
+  await expect(page.locator('.pvf')).toHaveCount(0);
+  expect(await state()).toEqual(before);
+  expect(errors).toEqual([]);
+});
+
+test('blocks inside blocks open in their own frames, and a layer in a frame cannot be wired from', async ({ page }) => {
+  const errors = [];
+  page.on('pageerror', e => errors.push(e.message));
+  await page.goto('http://127.0.0.1:4173');
+  await page.locator('#bMore').click();
+  await page.locator('[data-act="lib:networks/22_ijepa_small.json"]').evaluate(b => b.click());
+  await expect(page.locator('#modelName')).toHaveValue('IJEPA');
+  await expect(page.locator('.node.t-block').first()).toBeVisible();
+  for (let round = 0; round < 3; round++) {
+    const n = await page.locator('.node [data-peek]').count();
+    for (let i = 0; i < n; i++) await press(page, '.node [data-peek]');
+  }
+  await expect(page.locator('.node.t-block')).toHaveCount(0);
+  expect(await page.locator('.pvf').count()).toBeGreaterThan(3);
+  await expect(page.locator('.node.pv .port')).toHaveCount(0);
+  await expect(page.locator('.pv [data-lindim], .pv [data-out]')).toHaveCount(0);
+  // every layer sits inside some frame
+  const outside = await page.evaluate(() => {
+    const frames = [...document.querySelectorAll('.pvf .pv-box')].map(r => r.getBoundingClientRect());
+    return [...document.querySelectorAll('.node.pv .n-box')].filter(b => { const r = b.getBoundingClientRect(); return !frames.some(f => r.left >= f.left - 1 && r.right <= f.right + 1 && r.top >= f.top - 1 && r.bottom <= f.bottom + 1); }).length;
+  });
+  expect(outside).toBe(0);
+  await page.locator('#zFit').click();
+  expect(errors).toEqual([]);
+});

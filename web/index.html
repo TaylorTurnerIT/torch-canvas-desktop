@@ -175,6 +175,27 @@ kbd { font-family: var(--mono); font-size: 10.5px; border: 1px solid var(--line)
 .node .openbtn rect { fill: var(--blk-bd); stroke: var(--bg); stroke-width: 1.5; }
 .node .openbtn text { fill: var(--bg) !important; font-family: var(--sans); font-size: 10.5px; font-weight: 600; pointer-events: none; }
 .node .openbtn:hover rect { filter: brightness(1.12); }
+.openbtn .ico { fill: none; stroke: var(--bg); stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; pointer-events: none; }
+/* a block drawn open: its layers inside a purple frame */
+.pvf .pv-box { fill: var(--blk-bg); fill-opacity: .4; stroke: var(--blk-bd); stroke-width: 1.4; }
+.pvf .pv-back { fill: var(--blk-bg); fill-opacity: .7; stroke: var(--blk-bd); stroke-width: .9; opacity: .65; }
+.pvf.sel .pv-box { stroke: var(--sel); stroke-width: 2.2; }
+.pv-title { fill: var(--blk-ink); font-size: 12.5px; font-weight: 600; pointer-events: none; }
+.pvb .openbtn { cursor: pointer; }
+.pvb .openbtn rect { fill: var(--blk-bd); stroke: var(--bg); stroke-width: 1.5; }
+.pvb .openbtn text { fill: var(--bg) !important; font-family: var(--sans); font-size: 10.5px; font-weight: 600; pointer-events: none; }
+.pvb .openbtn:hover rect, .node .openbtn:hover rect { filter: brightness(1.12); }
+/* what is drawn inside a frame is flat: no hovering, no clicking; the frame itself is the block, so it drags like one */
+.pvf { cursor: grab; }
+.pvb .openbtn { pointer-events: all; }
+.pvanc { cursor: default; }
+.pvanc .pv-port { fill: var(--blk-bd); stroke: var(--bg); stroke-width: 1.5; }
+.pvanc.out .pv-port { cursor: crosshair; }
+.pv-plate { fill: var(--blk-bg); pointer-events: none; }
+.pvt { pointer-events: none; }
+.node.pv, .node.pv *, .eg.pv, .eg.pv *, .tie-link.pv, .tie-link.pv *, .delay-link.pv, .delay-link.pv * { pointer-events: none !important; }
+.node.pv .openbtn, .node.pv .openbtn rect { pointer-events: all !important; cursor: pointer; }
+.node.pv .port { display: none; }
 .drawer { position: absolute; top: 48px; right: 12px; bottom: 12px; width: min(340px, calc(100% - 24px)); background: var(--panel); border: 1px solid var(--line); border-radius: 12px; box-shadow: 0 14px 40px rgba(20, 18, 40, .18); display: flex; flex-direction: column; z-index: 4; overflow: hidden; animation: slidein .16s ease-out; }
 @keyframes slidein { from { transform: translateX(16px); opacity: 0; } to { transform: none; opacity: 1; } }
 .drawer-hd { display: flex; align-items: center; gap: 8px; padding: 9px 10px 9px 14px; border-bottom: 1px solid var(--line); font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: .07em; color: var(--muted); }
@@ -526,7 +547,7 @@ body { margin: 0; }
           <marker id="ar-bad" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0.8 L7.5,4 L0,7.2 z" style="fill:var(--err)"/></marker>
           <marker id="ar-sel" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0,0.8 L7.5,4 L0,7.2 z" style="fill:var(--sel)"/></marker>
         </defs>
-        <g id="vp"><g id="gGroups"></g><g id="gEdges"></g><g id="gNodes"></g><g id="gOver"></g></g>
+        <g id="vp"><g id="gGroups"></g><g id="gEdges"></g><g id="gNodes"></g><g id="gFrameTop"></g><g id="gOver"></g></g>
       </svg>
       <div class="legend" id="legend"><span style="--c:var(--scaled)">scaled path inside SiLU</span></div>
       <div class="blockbar" id="blockBar" hidden></div>
@@ -1828,6 +1849,56 @@ const NN = (() => {
     const d = expandBlocks(flat), org = new Map(origin);
     for (const [id, o2] of d.origin) { const o1 = origin.get(o2.use); org.set(id, o1 ? { use: o1.use, inner: o2.inner, rep: o1.rep } : o2); }
     return { flat: d.flat, origin: org, outsOf };
+  }
+  // Draw some block uses open: each use whose key is in `open` is replaced, in a copy of g, by one copy of the layers
+  // inside it (a repeated use shows one copy). A use's key is keyOf(node), or its id; a use nested in an opened one has
+  // the opened use's key, ">", and its own name inside the block, so it can be told apart again after the diagram is
+  // rebuilt from code (which gives every node a new id). Every block node of the copy carries its key as pk.
+  // The connections to the use keep their ids and end at an anchor on the block's edge: a stand-in node (a dropout that
+  // passes its input on, flagged with .anchor) per input, which also feeds the layers inside, and per output, which the
+  // layers inside feed. Everything inside is made of new connections (flagged pv). Only for drawing: the code is unchanged.
+  // place(use, nodes, edges, { blk, ins, anchors }, flat) is called per opened use once its layers and anchors are in
+  // flat.nodes, so a caller can position them; copies carry the block's own coordinates until it does.
+  function inlineBlocks(g, open, place, keyOf) {
+    const clone = o => JSON.parse(JSON.stringify(o)), isIO = z => z.type === 'input' || z.type === 'output';
+    const flat = { name: g.name, symbols: Object.assign({}, g.symbols), nodes: g.nodes.map(clone), edges: g.edges.map(clone), groups: (g.groups || []).slice(), blocks: g.blocks };
+    for (const n of flat.nodes) if (n.type === 'block') n.pk = keyOf ? keyOf(n) : n.id;
+    for (let pass = 0; pass < 8; pass++) {
+      const uses = flat.nodes.filter(n => n.type === 'block' && open.has(n.pk) && flat.blocks && flat.blocks[n.params.block] && flat.blocks[n.params.block].graph.nodes.some(z => !isIO(z)));
+      if (!uses.length) break;
+      const { shapes } = inferShapes(flat), ix = index(flat);
+      for (const n of uses) {
+        const blk = flat.blocks[n.params.block], src = ix.inKeys.get(n.id).slice(), ins = blockInputs(blk), outNs = blockOutputs(blk);
+        const map = bindBlock(flat, n, src.map(s => (s ? shapes.get(s) : null))), pre = n.id + '::';
+        const idm = new Map(), nodes = [], edges = [], hold = !!(n.params.frozen || n.params.follows);
+        const anchor = (kind, k) => ({ id: `${pre}$${kind}${k}`, type: 'dropout', x: n.x, y: n.y, params: { p: '0' }, anchor: { use: n.pk, kind, k } });
+        const anchors = { ins: ins.map((_, k) => anchor('in', k)), outs: outNs.map((_, j) => anchor('out', j)) };
+        for (const m of blk.graph.nodes) {
+          if (isIO(m)) continue;
+          const c = clone(m); c.id = pre + m.id; substDims(c, map); if (c.params.tie) c.params.tie = pre + c.params.tie; if (hold) c.params.frozen = true;
+          if (c.type === 'block') c.pk = n.pk + '>' + (m.params.name || (flat.blocks[m.params.block] || {}).name || 'block');
+          idm.set(m.id, c.id); nodes.push(c);
+        }
+        const link = (id, key, to, port) => { const [f, o] = splitKey(key); const c = { id, from: f, to, port, pv: true }; if (o) c.out = o; edges.push(c); };
+        for (const e of blk.graph.edges) {
+          const k = ins.findIndex(z => z.id === e.from), j = outNs.findIndex(z => z.id === e.to);
+          const from = k >= 0 ? anchors.ins[k].id : idm.has(e.from) ? (e.out ? idm.get(e.from) + '@' + e.out : idm.get(e.from)) : null;
+          if (!from) continue;
+          if (j >= 0) link(`${pre}$to${j}`, from, anchors.outs[j].id, 0);
+          else if (idm.has(e.to)) { const c = clone(e); c.id = pre + e.id; delete c.out; link(c.id, from, idm.get(e.to), e.port); Object.assign(edges[edges.length - 1], { route: c.route, style: c.style, lbl: c.lbl }); }
+        }
+        // the connections to and from the use now end at its anchors
+        flat.edges = flat.edges.filter(e => !(e.to === n.id && !anchors.ins[e.port]));
+        for (const e of flat.edges) {
+          if (e.to === n.id) { e.to = anchors.ins[e.port].id; e.port = 0; }
+          if (e.from === n.id) { const a = anchors.outs[e.out || 0]; if (a) { e.from = a.id; delete e.out; } else e.from = null; }
+        }
+        flat.edges = flat.edges.filter(e => e.from).concat(edges);
+        flat.nodes = flat.nodes.filter(z => z.id !== n.id).concat(nodes, anchors.ins, anchors.outs);
+        if (place) place(n, nodes, edges, { blk, ins, anchors }, flat);
+      }
+    }
+    return flat;
   }
   // Class text for a block nobody uses yet (so every block still appears in the code)
   function blockClassCode(blk, opts, blocks) { const c = blockClass(blk, opts || {}, blocks); return c ? c.text : ''; }
@@ -4471,7 +4542,7 @@ const NN = (() => {
   }
   mergeIntoSource.sync = syncSource;
 
-  return { carryDiagram, lowerReshapes, reshapeSteps, reshapeStepCode, reshapeShape, reshapeAxisSource, stepsToPattern, reshapeDescribe, reshapePlan, stepsShape, parseSizes, HELPER_OPS, indexInputRange, FREEZABLE, helperDoc, srcKey, splitKey, blockOutputs, blockClassCode, LOSSES, lossParts, lossPlan, weightShape, tieOwner, blockParams, blockInputs, expandBlocks, instantiateBlock, presetResidualMLPBlocks, NORMS, linkSizes, syncWidths, mergeIntoSource, isMarimo, syncSource: (...a) => mergeIntoSource.sync(...a), uid, BATCH, DEFAULTS, ACTS, INITS, initCode, makeNode, inCount, isCircle, index, topo, evalDim, evalScalar: (expr, symbols) => evalDim(expr, symbols, false), parseShape, inferShapes, paramCount, propagateWidth, generate, importPython, importFx, autoLayout, nodeSize, nodeLabel, presetResidualMLP, parse, identsIn };
+  return { carryDiagram, lowerReshapes, reshapeSteps, reshapeStepCode, reshapeShape, reshapeAxisSource, stepsToPattern, reshapeDescribe, reshapePlan, stepsShape, parseSizes, HELPER_OPS, indexInputRange, FREEZABLE, helperDoc, srcKey, splitKey, blockOutputs, blockClassCode, LOSSES, lossParts, lossPlan, weightShape, tieOwner, blockParams, blockInputs, expandBlocks, inlineBlocks, instantiateBlock, presetResidualMLPBlocks, NORMS, linkSizes, syncWidths, mergeIntoSource, isMarimo, syncSource: (...a) => mergeIntoSource.sync(...a), uid, BATCH, DEFAULTS, ACTS, INITS, initCode, makeNode, inCount, isCircle, index, topo, evalDim, evalScalar: (expr, symbols) => evalDim(expr, symbols, false), parseShape, inferShapes, paramCount, propagateWidth, generate, importPython, importFx, autoLayout, nodeSize, nodeLabel, presetResidualMLP, parse, identsIn };
 })();
 if (typeof module !== 'undefined') module.exports = NN;
 
@@ -6188,6 +6259,7 @@ const byId = id => S.g.nodes.find(n => n.id === id);
 const NICK_H = 13;
 const nickInside = n => !!(n.params.title && !NN.isCircle(n) && n.type !== 'block');
 function sizeOf(n) {
+  if (n.anchor) return { w: 8, h: 8 };
   const s = sizeOf0(n);
   if (!nickInside(n)) return s;
   return { w: Math.max(s.w, n.params.title.length * 6.3 + 22), h: s.h + NICK_H };
@@ -6485,6 +6557,136 @@ function blockContains(root, a, b, seen = new Set()) {
 }
 // a block's graph on the canvas sees the model's blocks (not saved with it)
 function attachBlocks(g) { if (g && g !== R()) Object.defineProperty(g, 'blocks', { value: R().blocks || {}, enumerable: false, configurable: true, writable: true }); }
+
+// ── blocks drawn open ──
+// A block use can be drawn open: its layers take the place of its box, inside a purple frame, wired to what feeds
+// and takes from the use, so the model reads as one picture however many blocks it has. Only the drawing changes
+// (the graph, the code and the editing all stay on the use); S.open holds the keys of the uses drawn open.
+// A key is the block's class and which of its uses this is (top to bottom), because building the diagram again from
+// edited code gives every node a new id.
+S.open = new Set();
+function useKeys() {
+  const m = new Map(), seen = {};
+  for (const n of S.g.nodes.filter(z => z.type === 'block').sort((a, b) => a.y - b.y || a.x - b.x)) {
+    const b = R().blocks && R().blocks[n.params.block], c = b ? b.name : n.params.block; seen[c] = (seen[c] || 0) + 1;
+    m.set(n.id, c + '#' + seen[c]);
+  }
+  return m;
+}
+const peekKey = n => (n.pk != null ? n.pk : useKeys().get(n.id));
+const FR_PAD = 16, FR_TOP = 30;
+// the little buttons at a block's bottom-right corner: arrows pointing out (draw it open) and in (fold it back)
+const PEEK_ICON = {
+  open: (x, y) => `<path class="ico" d="M${x - 3.5},${y + 3.5} L${x + 3.5},${y - 3.5} M${x + 0.5},${y - 3.5} H${x + 3.5} V${y - 0.5} M${x - 0.5},${y + 3.5} H${x - 3.5} V${y + 0.5}"/>`,
+  fold: (x, y) => `<path class="ico" d="M${x - 3.5},${y + 3.5} L${x - 0.5},${y + 0.5} M${x - 3.5},${y + 0.5} H${x - 0.5} V${y + 3.5} M${x + 3.5},${y - 3.5} L${x + 0.5},${y - 0.5} M${x + 3.5},${y - 0.5} H${x + 0.5} V${y - 3.5}"/>`,
+};
+function togglePeek(id) {
+  const opening = !S.open.has(id); opening ? S.open.add(id) : S.open.delete(id); render(); renderInspector();
+  // an opened block that doesn't fit on screen brings the whole picture into view
+  const pv = opening && previewGraph(), f = pv && pv.frames.find(z => z.use === id), r = svg.getBoundingClientRect();
+  if (f && (f.x * S.view.k + S.view.x < 0 || f.y * S.view.k + S.view.y < 0 || (f.x + f.w) * S.view.k + S.view.x > r.width || (f.y + f.h) * S.view.k + S.view.y > r.height)) fit();
+}
+// A copy of the graph with the open uses replaced by their layers, and the layers around moved apart to make room;
+// { g, frames } or null. Layers that came from a use carry pv (the real use they stand for) and are not editable here.
+function previewGraph() {
+  if (!S.open.size) return null;
+  const keys = useKeys();
+  if (!S.g.nodes.some(n => keys.has(n.id) && S.open.has(keys.get(n.id)))) return null;
+  const frames = [], inFrame = new Map(), moved = new Map();
+  const shift = (m, dx, dy) => {
+    if (!dx && !dy) return;
+    m.x += dx; m.y += dy; const sp = splitOf(m); if (sp) { sp.x += dx; sp.y += dy; }
+    if (m.params.tie_x != null && m.params.tie_x !== '' && Number.isFinite(+m.params.tie_x)) m.params.tie_x = +m.params.tie_x + dx;
+    const t = moved.get(m.id) || [0, 0]; moved.set(m.id, [t[0] + dx, t[1] + dy]);
+  };
+  const extent = ns => {
+    let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
+    for (const n of ns) for (const t of splitOf(n) ? [n, splitTab(n)] : [n]) { const b = box(t); x0 = Math.min(x0, b.x); y0 = Math.min(y0, b.y); x1 = Math.max(x1, b.x + b.w); y1 = Math.max(y1, b.y + b.h); }
+    return { x0, y0, x1, y1 };
+  };
+  const kids = fr => [fr, ...frames.filter(f => f.parent === fr).flatMap(kids)];
+  const flat = NN.inlineBlocks(S.g, S.open, (use, nodes, edges, { blk, ins, anchors }, g) => {
+    const O = box(use), parent = inFrame.get(use.id) || null, root = parent ? parent.root : use.id;
+    // the block's own column of layers lines up with the stream that enters the box
+    const a = ins[0], first = a && blk.graph.edges.find(e => e.from === a.id), t = first && blk.graph.nodes.find(z => z.id === first.to);
+    const vert = !a || !t || Math.abs(t.y - a.y) >= Math.abs(t.x - a.x);
+    const e0 = extent(nodes), cx = (e0.x0 + e0.x1) / 2, cy = (e0.y0 + e0.y1) / 2;
+    const dx = a && vert ? use.x - a.x : use.x - cx, dy = a && !vert ? use.y - a.y : use.y - cy + (FR_TOP - FR_PAD) / 2;
+    for (const m of nodes) shift(m, dx, dy);
+    const anch = [...anchors.ins, ...anchors.outs], members = [...nodes, ...anch];
+    for (const m of members) m.pv = root;
+    const f = { use: use.pk, root, blk, parent, anch, att: new Map(), ids: new Set(members.map(m => m.id)), od: parent ? parent.dir : flowDir(use), reps: Math.max(1, Math.floor(+use.params.repeat || 1)), dir: vert ? (t && a && t.y > a.y ? 'down' : 'up') : (t && a && t.x < a.x ? 'left' : 'right') };
+    const fit = fr => {
+      const ns = [...fr.ids].map(id => byFlat.get(id)).filter(z => z && !z.anchor), e = extent(ns);
+      let x0 = e.x0, y0 = e.y0, x1 = e.x1, y1 = e.y1;
+      for (const k of frames) if (k.parent === fr) { x0 = Math.min(x0, k.x); y0 = Math.min(y0, k.y); x1 = Math.max(x1, k.x + k.w); y1 = Math.max(y1, k.y + k.h); }
+      Object.assign(fr, { x: x0 - FR_PAD, y: y0 - FR_TOP, w: x1 - x0 + 2 * FR_PAD, h: y1 - y0 + FR_PAD + FR_TOP });
+    };
+    const byFlat = new Map(g.nodes.map(m => [m.id, m]));
+    fit(f);
+    // make room: what lies above the box moves up by the frame's extra height, what lies below moves down, and what
+    // stands beside it moves sideways; a frame that was already open moves as one piece
+    const top = Math.max(0, O.y - f.y), bottom = Math.max(0, f.y + f.h - (O.y + O.h)), left = Math.max(0, O.x - f.x), right = Math.max(0, f.x + f.w - (O.x + O.w));
+    const anc = new Set(); for (let p = parent; p; p = p.parent) anc.add(p);
+    const away = (px, py) => (py < O.y ? [0, -top] : py > O.y + O.h ? [0, bottom] : [px < use.x ? -left : right, 0]);
+    const unitOf = fr => { let u = fr; while (u.parent && !anc.has(u.parent)) u = u.parent; return u; };
+    // the connections to the block end at anchors on its frame: inputs on the side the stream comes from, outputs on
+    // the other (along the edge when there are several); each starts level with where its connection met the box
+    const vo = f.od === 'up' || f.od === 'down', IN = { up: 'bottom', down: 'top', right: 'left', left: 'right' }[f.od];
+    for (const [list, kind] of [[anchors.ins, 'in'], [anchors.outs, 'out']]) list.forEach((q, i) => {
+      const sp = vo ? Math.min(44, (O.w - 28) / Math.max(1, list.length - 1)) : Math.min(24, (O.h - 8) / Math.max(1, list.length - 1)), off = (i - (list.length - 1) / 2) * sp;
+      const side = kind === 'in' ? IN : { bottom: 'top', top: 'bottom', left: 'right', right: 'left' }[IN];
+      q.x = use.x + (vo ? off : 0); q.y = use.y + (vo ? 0 : off);
+      f.att.set(q.id, [side === 'left' ? O.x : side === 'right' ? O.x + O.w : q.x, side === 'top' ? O.y : side === 'bottom' ? O.y + O.h : q.y, side]);
+    });
+    const done = new Set(), mine = new Set(members);
+    for (const m of g.nodes) {
+      if (mine.has(m)) continue;
+      const fr = inFrame.get(m.id);
+      if (fr && !anc.has(fr)) {
+        const u = unitOf(fr); if (done.has(u)) continue; done.add(u);
+        const [mx, my] = away(u.x + u.w / 2, u.y + u.h / 2);
+        for (const d of kids(u)) { d.x += mx; d.y += my; for (const id of d.ids) { const z = byFlat.get(id); if (z) shift(z, mx, my); } }
+      } else { const [mx, my] = away(m.x, m.y); shift(m, mx, my); }
+    }
+    frames.push(f); for (const m of members) inFrame.set(m.id, f);
+    for (let p = parent; p; p = p.parent) fit(p);
+  }, n => keys.get(n.id));
+  // the anchors sit on the finished frame's edge; a connection to the block moved by how far its anchor is from where it met the box
+  const outAt = new Map();
+  for (const f of frames) for (const q of f.anch) {
+    const [ox, oy, side] = f.att.get(q.id);
+    if (side === 'left' || side === 'right') q.x = side === 'left' ? f.x : f.x + f.w; else q.y = side === 'top' ? f.y : f.y + f.h;
+    if (!f.parent) { moved.set(q.id, [q.x - ox, q.y - oy]); if (q.anchor.kind === 'out') outAt.set(f.root + ':' + q.anchor.k, [q.x, q.y]); }
+  }
+  // a connection you routed by hand keeps its bends only if both of its ends moved together; one of the model's own whose
+  // ends moved differently can't be reshaped while the block is open (it'd bend by one amount here and another folded)
+  const edgesInfo = new Map();
+  for (const e of flat.edges) {
+    const A = moved.get(e.from) || [0, 0], B = moved.get(e.to) || [0, 0], same = A[0] === B[0] && A[1] === B[1];
+    if (!e.pv) edgesInfo.set(e.id, same ? { shift: A } : { fixed: true });
+    if (e.route && Array.isArray(e.route.pts)) { if (!same) delete e.route; else if (A[0] || A[1]) e.route.pts = e.route.pts.map(p => [p[0] + A[0], p[1] + A[1]]); }
+  }
+  return { g: flat, frames, edges: edgesInfo, outAt };
+}
+// the frames of a previewed graph, behind its layers: the box, its name, and the Fold and Open buttons
+function frameSvg(pv) {
+  const STEP = REP_STEP;
+  let back = '', top = '';
+  for (const f of pv.frames) {
+    const k = Math.min(2, f.reps - 1), v = { up: [0, 1], down: [0, -1], left: [1, 0], right: [-1, 0] }[f.dir];
+    let h = '';
+    for (let i = k; i >= 1; i--) h += `<rect class="pv-back" x="${f.x + v[0] * i * STEP}" y="${f.y + v[1] * i * STEP}" width="${f.w}" height="${f.h}" rx="12"/>`;
+    h += `<rect class="pv-box" x="${f.x}" y="${f.y}" width="${f.w}" height="${f.h}" rx="12"/>`;
+    back += `<g class="pvf${S.sel.nodes.has(f.root) ? ' sel' : ''}" data-frame="${esc(f.root)}">${h}</g>`;
+    // the name and the buttons sit above the connections, so a wire never runs through them
+    const name = f.blk.name + (f.reps > 1 ? ` × ${f.reps}` : ''), bx = f.x + f.w - 44;
+    top += `<g class="pvt"><rect class="pv-plate" x="${f.x + 6}" y="${f.y + 5}" width="${name.length * 7.6 + 12}" height="19" rx="6"/><text class="pv-title" x="${f.x + 12}" y="${f.y + 19}">${esc(name)}</text></g>`
+      + `<g class="pvb"><g class="openbtn" data-peek="${esc(f.use)}"><title>Fold this block back into one box</title><rect x="${f.x + f.w - 24}" y="${f.y + f.h - 9}" width="28" height="18" rx="9"/>${PEEK_ICON.fold(f.x + f.w - 10, f.y + f.h)}</g>`
+      + `<g class="openbtn" data-openblock="${esc(f.blk.id)}"><title>Open this block to view or edit its inside (or double-click)</title><rect x="${bx}" y="${f.y - 9}" width="44" height="18" rx="9"/><text x="${bx + 22}" y="${f.y + 4}" text-anchor="middle">Open</text></g></g>`;
+  }
+  return { back, top };
+}
 
 function groupBox(gr) {
   let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
@@ -6791,9 +6993,15 @@ function crossings(routes) {
 // ── render ──
 function render() {
   analyze(); routeCache = null;
-  const { ix, shapes, errors } = S.info;
+  const { errors } = S.info;
   $('#vp').setAttribute('transform', `translate(${S.view.x},${S.view.y}) scale(${S.view.k})`);
   $('#emptyMsg').hidden = S.g.nodes.length > 0;
+  // blocks drawn open: everything below is drawn from a copy of the graph that has their layers in place of them
+  const real = [S.g, S.info], pv = previewGraph();
+  S.pv = pv;
+  if (pv) { S.g = pv.g; analyze(); pv.info = S.info; }
+  try {
+  const { ix, shapes, errors } = S.info;
   // groups
   let gh = '';
   const ginfo = groupValidity();
@@ -6803,7 +7011,8 @@ function render() {
     gh += `<rect class="gbox${sel ? ' sel' : ''}${ginfo.get(gr.id) ? '' : ' bad'}" x="${b.x}" y="${b.y}" width="${b.w}" height="${b.h}" rx="10"/>`;
     gh += `<text class="glabel" data-glabel="${gr.id}" x="${b.x + b.w / 2}" y="${b.y + b.h - 7}" text-anchor="middle">${esc(gr.label || gr.attr)}</text>`;
   }
-  $('#gGroups').innerHTML = ''; // reusable blocks are not shown for now
+  const fr = pv ? frameSvg(pv) : { back: '', top: '' }; // (reusable blocks are not shown for now)
+  $('#gGroups').innerHTML = fr.back; $('#gFrameTop').innerHTML = fr.top;
   // edges
   let eh = '';
   const routes = new Map(); for (const e of S.g.edges) { const r = route(e); if (r) routes.set(e.id, r); }
@@ -6821,7 +7030,7 @@ function render() {
       if (st.dash === 'dotted') look += `stroke-dasharray:0.1 ${Math.max(3, 2.6 * (w || 1.3))};stroke-linecap:round;`;
     }
     const showLbl = S.showSizes || S.sel.edges.has(e.id) || S.sel.nodes.has(e.from) || S.sel.nodes.has(e.to) || cls === 'bad' || (S.sel.group && (S.info.ix.groupOf.get(e.from) || {}).id === S.sel.group);
-    eh += `<g class="eg${showLbl ? ' show' : ''}"><path class="edge ${cls}" d="${r.d}" marker-end="${mk}"${look ? ` style="${look}"` : ''}/><path class="edge-hit" data-edge="${e.id}" d="${r.d}"><title>Drag to reshape this connection; right-click for its look</title></path>`;
+    eh += `<g class="eg${showLbl ? ' show' : ''}${e.pv ? ' pv' : ''}"><path class="edge ${cls}" d="${r.d}" marker-end="${mk}"${look ? ` style="${look}"` : ''}/><path class="edge-hit"${e.pv ? '' : ` data-edge="${e.id}"`} d="${r.d}">${e.pv ? '' : '<title>Drag to reshape this connection; right-click for its look</title>'}</path>`;
     const sh = shapes.get(keyOf(e));
     if (sh && r.label && r.label.L > 22) {
       const { a, b, vert } = r.label; const mx = (a[0] + b[0]) / 2, my = (a[1] + b[1]) / 2;
@@ -6829,10 +7038,10 @@ function render() {
       const lastSym = NN.identsIn(sh[sh.length - 1]).find(t => t !== NN.BATCH);
       const hot = S.focusDim && lastSym === S.focusDim ? ' hot' : '';
       const lc = cls === 'stream' ? ' stream' : cls === 'bad' ? ' bad' : '';
-      const ox = (e.lbl && +e.lbl.dx) || 0, oy = (e.lbl && +e.lbl.dy) || 0, tip = '<title>Drag to move this label; double-click to put it back; click to change the size</title>';
+      const ox = (e.lbl && +e.lbl.dx) || 0, oy = (e.lbl && +e.lbl.dy) || 0, tip = e.pv ? '' : '<title>Drag to move this label; double-click to put it back; click to change the size</title>', de = e.pv ? '' : ` data-dimedge="${e.id}"`;
       eh += vert
-        ? `<text class="elabel${lc}${hot}" data-dimedge="${e.id}" x="${mx + 6 + ox}" y="${my + 3.5 + oy}">${tip}${body}</text>`
-        : `<text class="elabel${lc}${hot}" data-dimedge="${e.id}" x="${mx + ox}" y="${my - 6 + oy}" text-anchor="middle">${tip}${body}</text>`;
+        ? `<text class="elabel${lc}${hot}"${de} x="${mx + 6 + ox}" y="${my + 3.5 + oy}">${tip}${body}</text>`
+        : `<text class="elabel${lc}${hot}"${de} x="${mx + ox}" y="${my - 6 + oy}" text-anchor="middle">${tip}${body}</text>`;
     }
     eh += '</g>';
   }
@@ -6849,19 +7058,25 @@ function render() {
     const d = finish([[right ? A.x + A.w : A.x, ya], [lane, ya], [lane, yb], [right ? B.x + B.w : B.x, yb]]).d;
     const on = S.sel.nodes.has(n.id) || S.sel.nodes.has(o.id);
     const tip = fo ? `${tieName(n)} follows ${tieName(o)}: an EMA copy that gets no gradients, moved toward it after each training step (momentum ${n.params.momentum ?? '0.996'} → ${n.params.momentum_end ?? '1.0'}). Click to change; drag to move the line.` : `${tieName(n)} shares its weights with ${tieName(o)}. Click to change; drag to move the line, double-click to put it back.`;
-    eh += `<g class="tie-link${fo ? ' follow' : ''}${on ? ' on' : ''}" data-tielink="${n.id}" data-lane="${lane}"><path class="hit" d="${d}"/><path d="${d}"/><title>${esc(tip)}</title><text x="${right ? lane + 4 : lane - 4}" y="${(ya + yb) / 2}" text-anchor="${right ? 'start' : 'end'}">${fo ? 'follows · EMA' : 'tied'}</text></g>`;
+    eh += `<g class="tie-link${fo ? ' follow' : ''}${on ? ' on' : ''}${n.pv ? ' pv' : ''}"${n.pv ? '' : ` data-tielink="${n.id}" data-lane="${lane}"`}><path class="hit" d="${d}"/><path d="${d}"/><title>${esc(tip)}</title><text x="${right ? lane + 4 : lane - 4}" y="${(ya + yb) / 2}" text-anchor="${right ? 'start' : 'end'}">${fo ? 'follows · EMA' : 'tied'}</text></g>`;
   }
   for (const n of S.g.nodes) {
     const sp = splitOf(n); if (!sp) continue;
     const A = box(splitTab(n)), B = box(n), below = sp.lane !== 'above', ax = A.x + A.w, bx = B.x;
     const ly = below ? Math.max(A.y + A.h, B.y + B.h) + 22 : Math.min(A.y, B.y) - 22, x1 = ax + 14, x0 = bx - 14;
     const pts = [[ax, sp.y], [x1, sp.y], [x1, ly], [x0, ly], [x0, n.y], [bx, n.y]];
-    eh += `<g class="delay-link${S.sel.nodes.has(n.id) ? ' on' : ''}"><path d="${finish(pts).d}" marker-end="url(#ar)"/><title>${esc(p_name(n))}${SUB_T.cur} becomes ${esc(p_name(n))}${SUB_T.prev} at the next step</title></g>`;
+    eh += `<g class="delay-link${S.sel.nodes.has(n.id) ? ' on' : ''}${n.pv ? ' pv' : ''}"><path d="${finish(pts).d}" marker-end="url(#ar)"/><title>${esc(p_name(n))}${SUB_T.cur} becomes ${esc(p_name(n))}${SUB_T.prev} at the next step</title></g>`;
   }
   $('#gEdges').innerHTML = eh;
   // nodes
   let nh = '';
   for (const n of S.g.nodes) {
+    if (n.anchor) {
+      // where connections meet an open block: on its frame; a top-level block's outputs can be dragged from, as from its box
+      const out = n.anchor.kind === 'out' && !String(n.anchor.use).includes('>');
+      nh += `<g class="pvanc${out ? ' out' : ''}" data-frame="${esc(n.pv)}"><circle class="pv-port" cx="${n.x}" cy="${n.y}" r="4.5"${out ? ` data-out="${esc(n.pv)}" data-outport="${n.anchor.k}"` : ''}><title>${n.anchor.kind === 'in' ? 'Input' : 'Output'}${n.anchor.k ? ' ' + (n.anchor.k + 1) : ''} of the block${out ? '. Drag to connect.' : ''}</title></circle></g>`;
+      continue;
+    }
     const b = box(n), p = n.params, sel = S.sel.nodes.has(n.id), cf = S.info.conflicts.get(n.id), bad = !cf && errors.has(n.id);
     let cls = 'node', inner = '';
     const cap = (txt) => `<text class="caption" x="${b.x - 8}" y="${n.y + 4}" text-anchor="end">${esc(txt)}</text>`;
@@ -6888,7 +7103,7 @@ function render() {
           const sp = splitOf(n), subTxt = sub => `${esc(p_name(n))}<tspan dy="3.5" font-size="9.5">${sub}</tspan>`;
           inner = `<rect class="n-box" x="${b.x}" y="${b.y}" width="${b.w}" height="${b.h}" rx="6"/>${clock(b, n.y)}<text class="mono" x="${n.x + 8}" y="${n.y + 4}" text-anchor="middle" font-size="${sp ? 13 : 11.5}">${sp ? subTxt('t−1') : esc(OP_LABEL.delay(p))}</text>`;
           if (sp) { const T = splitTab(n), tb = box(T);
-            nh += `<g class="node t-delay split-in${sel ? ' sel' : ''}" data-node="${n.id}" data-splitin="${n.id}"><rect class="n-box" x="${tb.x}" y="${tb.y}" width="${tb.w}" height="${tb.h}" rx="6"/>${clock(tb, T.y)}<text class="mono" x="${T.x + 8}" y="${T.y + 4}" text-anchor="middle" font-size="13">${subTxt('t')}</text><title>The new ${esc(p_name(n))}, passed on to the next step (drag to move this tab)</title></g>`; } }
+            nh += `<g class="node t-delay split-in${sel ? ' sel' : ''}"${n.pv ? ` data-frame="${n.pv}"` : ` data-node="${n.id}" data-splitin="${n.id}"`}><rect class="n-box" x="${tb.x}" y="${tb.y}" width="${tb.w}" height="${tb.h}" rx="6"/>${clock(tb, T.y)}<text class="mono" x="${T.x + 8}" y="${T.y + 4}" text-anchor="middle" font-size="13">${subTxt('t')}</text><title>The new ${esc(p_name(n))}, passed on to the next step (drag to move this tab)</title></g>`; } }
         break;
       case 'conv1d':
         cls += ' t-conv';
@@ -6974,6 +7189,7 @@ function render() {
           + `<text class="bt" x="${cx}" y="${cy + oy}" text-anchor="middle" font-size="12.5">${esc(t.title)}</text>`
           + `<text class="mono dimtxt" data-lindim="${n.id}" x="${cx}" y="${cy + oy + 14}" text-anchor="middle" font-size="10.5"><title>Click to set this block's sizes</title>${esc(t.io)}</text>`
           + (t.args ? `<text class="n-init" x="${cx}" y="${cy + oy + 26}" text-anchor="middle">${esc(t.args)}</text>` : '')
+          + `<g class="openbtn" data-peek="${esc(peekKey(n))}"><title>Show what is inside this block, in place</title><rect x="${L.x + cw - 24}" y="${L.y + ch - 9}" width="28" height="18" rx="9"/>${PEEK_ICON.open(L.x + cw - 10, L.y + ch)}</g>`
           + `<g class="openbtn" data-openblock="${esc(n.params.block)}"><title>Open this block to view or edit its inside (or double-click)</title><rect x="${L.x + cw - 40}" y="${L.y - 9}" width="44" height="18" rx="9"/><text x="${L.x + cw - 18}" y="${L.y + 4}" text-anchor="middle">Open</text></g>`;
         break;
       }
@@ -7007,15 +7223,20 @@ function render() {
       const cap = cf.kind === 'repeat' ? `can't repeat: ${dimText(cf.a)} in, ${dimText(cf.b)} out` : cf.kind === 'groups' ? `${dimText(cf.a)} isn't divisible by ${cf.b} groups` : cf.cap ? cf.cap : `${dimText(cf.a)} ≠ ${dimText(cf.b)}`;
       badge += `<text class="conflict-cap" x="${(NN.isCircle(n) ? n.x + b.r : b.x + b.w) + 12}" y="${n.y + 4}">${esc(cap)}</text>`;
     }
-    let port = n.type === 'output' || n.type === 'loss' ? '' : `<circle class="port" data-out="${n.id}" cx="${n.x}" cy="${b.y - 1}" r="4.5"/>`;
-    if (nOutOf(n) > 1) {
+    let port = n.type === 'output' || n.type === 'loss' || n.pv ? '' : `<circle class="port" data-out="${n.id}" cx="${n.x}" cy="${b.y - 1}" r="4.5"/>`;
+    if (nOutOf(n) > 1 && !n.pv) {
       const blk = R().blocks && R().blocks[p.block], onames = blk ? NN.blockOutputs(blk).map(z => z.params.name) : [];
       port = [...Array(nOutOf(n)).keys()].map(k => { const sh = S.info.shapes.get(k ? n.id + '@' + k : n.id);
         return `<circle class="port" data-out="${n.id}" data-outport="${k}" cx="${outX(n, k)}" cy="${b.y - 1}" r="4.5"><title>Output ${k + 1}${onames[k] ? ': ' + esc(onames[k]) : ''}${sh ? ' (' + esc(shapeText(sh)) + ')' : ''}. Drag to connect.</title></circle>`; }).join('');
     }
-    nh += `<g class="${cls}" data-node="${n.id}">${inner}${badge}${port}${cf ? `<title>Size conflict: ${esc(cf.kind === 'groups' ? dimText(cf.a) + ' is not divisible by ' + cf.b + ' groups' : cf.cap || dimText(cf.a) + ' ≠ ' + dimText(cf.b))}</title>` : bad ? `<title>${esc(errors.get(n.id))}</title>` : ''}</g>`;
+    if (n.pv) {
+      // a layer that stands for part of an open block: a click goes to the block, and its own sizes and names are edited inside it
+      cls += ' pv'; inner = inner.replace(/ data-(?:lindim|dimedge|edge|tielink|splitin|out|outport)="[^"]*"/g, '');
+    }
+    nh += `<g class="${cls}" ${n.pv ? `data-frame="${n.pv}"` : `data-node="${n.id}"`}>${inner}${badge}${port}${cf ? `<title>Size conflict: ${esc(cf.kind === 'groups' ? dimText(cf.a) + ' is not divisible by ' + cf.b + ' groups' : cf.cap || dimText(cf.a) + ' ≠ ' + dimText(cf.b))}</title>` : bad ? `<title>${esc(errors.get(n.id))}</title>` : ''}</g>`;
   }
   $('#gNodes').innerHTML = nh;
+  } finally { S.g = real[0]; S.info = real[1]; routeCache = null; }
   // header chips
   let total = 0, frozen = 0, unknown = false;
   try {
@@ -7555,6 +7776,7 @@ function blockInspector(el, n) {
   const reps = Math.max(1, Math.floor(+n.params.repeat || 1)), canRep = canRepeat(n);
   h += field('Repeat', `<span style="display:flex;align-items:center;gap:8px"><input type="number" min="1" max="64" id="f-repeat" data-brepeat="1" value="${reps}" style="width:80px"${canRep || reps > 1 ? '' : ' disabled'}><small style="color:var(--faint)">${canRep ? 'copies chained in a row' : reps > 1 ? 'output no longer matches input' : 'needs the same size in and out'}</small></span>`);
   if (reps > 1) h += `<p class="hint" style="margin-top:-4px">Written as <span class="mono">nn.ModuleList([…] for _ in range(${reps}))</span> with a loop; every copy uses the sizes above.</p>`;
+  h += field('Show inside', `<input type="checkbox" id="f-peek" data-peek="1"${S.open.has(peekKey(n)) ? ' checked' : ''}>`) + `<p class="hint" style="margin-top:-6px">Draws the block's layers here in a frame, joined to what comes in and goes out, so the model reads as one picture. Only the drawing changes.</p>`;
   h += followField(n);
   if (!n.params.follows && !S.edit) h += field('Freeze ❄', `<input type="checkbox" id="f-frozen" data-f="frozen"${n.params.frozen ? ' checked' : ''}>`) + `<p class="hint" style="margin-top:-6px">Every weight in this block use gets no updates in training: <span class="mono">requires_grad_(False)</span>, left out of the optimizer.</p>`;
   h += field('Code name', txt('name', n.params.name, true, 'placeholder="auto"')) + field('Nickname', txt('title', n.params.title, false, 'placeholder="optional, shown beside it"'));
@@ -7568,6 +7790,7 @@ function blockInspector(el, n) {
     if (t.dataset.barg) { const v = parseInt(t.value, 10); if (!(v > 0)) return toast('Sizes must be positive whole numbers.'); commit(() => setBlockArg(n, t.dataset.barg, v)); return; }
     if (t.dataset.brepeat) { const v = Math.max(1, Math.min(64, parseInt(t.value, 10) || 1)); if (v > 1 && !canRepeat(n)) return toast('A block can repeat only when its output has the same size as its input.'); commit(() => setRepeat(n, v)); return; }
     if (t.dataset.blabel) { commit(() => { blk.labels = blk.labels || {}; if (t.value.trim()) blk.labels[t.dataset.blabel] = t.value.trim(); else delete blk.labels[t.dataset.blabel]; }); return; }
+    if (t.dataset.peek) { togglePeek(peekKey(n)); return; }
     const f = t.dataset.f; if (!f) return;
     if (f === 'frozen') { commit(() => { if (t.checked) n.params.frozen = true; else delete n.params.frozen; }); return; }
     if (f === 'follows') { const v = t.value; commit(() => { if (v) { n.params.follows = v; if (n.params.momentum == null) n.params.momentum = '0.996'; if (n.params.momentum_end == null) n.params.momentum_end = '1.0'; delete n.params.frozen; } else { delete n.params.follows; delete n.params.momentum; delete n.params.momentum_end; } }); return; }
@@ -7650,6 +7873,18 @@ function tidyRoute(e) {
   P = P.filter((p, i) => i === 0 || i === P.length - 1 || !((p[0] === P[i - 1][0] && p[0] === P[i + 1][0]) || (p[1] === P[i - 1][1] && p[1] === P[i + 1][1])));
   if (P.length < 3) { delete e.route; return; }
   e.route = { pts: P.slice(1, -1), o0: orient(P[0], P[1]), o1: orient(P[P.length - 2], P[P.length - 1]) };
+}
+// Run something against the graph as it is drawn (blocks open), then put things back. viewEdge: a connection of the model as drawn.
+function inView(fn) {
+  const pv = S.pv; if (!pv) return fn();
+  const keep = [S.g, S.info]; S.g = pv.g; S.info = pv.info; routeCache = null;
+  try { return fn(); } finally { S.g = keep[0]; S.info = keep[1]; routeCache = null; }
+}
+const viewEdge = e => (S.pv && S.pv.g.edges.find(x => x.id === e.id)) || e;
+function tidyInView(e, off) {
+  const ve = viewEdge(e); if (ve === e) return tidyRoute(e);
+  inView(() => tidyRoute(ve));
+  if (ve.route) e.route = { pts: ve.route.pts.map(p => [p[0] - off[0], p[1] - off[1]]), o0: ve.route.o0, o1: ve.route.o1 }; else delete e.route;
 }
 // is there a path from → to that doesn't pass through a Delay (a loop through a Delay is a recurrence, which is fine)
 function reaches(from, to) { const ix = NN.index(S.g), seen = new Set(), st = [from]; while (st.length) { const id = st.pop(); if (id === to) return true; if (seen.has(id)) continue; seen.add(id); const n = byId(id); if (n && n.type === 'delay') continue; for (const o of ix.outs.get(id) || []) st.push(o.to); } return false; }
@@ -7745,7 +7980,10 @@ function toWorld(cx, cy) { const r = svg.getBoundingClientRect(); return [(cx - 
 function fit() {
   if (!S.g.nodes.length) { S.view = { x: 40, y: 40, k: 1 }; render(); return; }
   let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
-  for (const n of [...S.g.nodes, ...S.g.nodes.filter(splitOf).map(splitTab)]) { const b = box(n); x0 = Math.min(x0, b.x - 70); y0 = Math.min(y0, b.y - 20); x1 = Math.max(x1, b.x + b.w + 20); y1 = Math.max(y1, b.y + b.h + 30); }
+  // with blocks drawn open, fit what is drawn
+  const pv = previewGraph(), shown = pv ? pv.g.nodes : S.g.nodes;
+  for (const f of pv ? pv.frames : []) { x0 = Math.min(x0, f.x - 20); y0 = Math.min(y0, f.y - 20); x1 = Math.max(x1, f.x + f.w + 20); y1 = Math.max(y1, f.y + f.h + 20); }
+  for (const n of [...shown, ...shown.filter(splitOf).map(splitTab)]) { const b = box(n); x0 = Math.min(x0, b.x - 70); y0 = Math.min(y0, b.y - 20); x1 = Math.max(x1, b.x + b.w + 20); y1 = Math.max(y1, b.y + b.h + 30); }
   for (const g of S.g.groups) { const b = groupBox(g); if (b) { x0 = Math.min(x0, b.x - 20); y1 = Math.max(y1, b.y + b.h + 10); } }
   for (const e of S.g.edges) if (e.route && Array.isArray(e.route.pts)) for (const [x, y] of e.route.pts) { x0 = Math.min(x0, x - 20); x1 = Math.max(x1, x + 20); y0 = Math.min(y0, y - 20); y1 = Math.max(y1, y + 20); }
   const r = svg.getBoundingClientRect(); const pad = 30;
@@ -7779,10 +8017,14 @@ svg.addEventListener('pointerdown', e => {
   if (e.button !== 0) return;
   const ob = e.target.closest('[data-openblock]');
   if (ob) { e.stopPropagation(); enterBlock(ob.dataset.openblock); return; }
+  const pk = e.target.closest('[data-peek]');
+  if (pk) { e.stopPropagation(); togglePeek(pk.dataset.peek); return; }
   closePop();
   const t = e.target;
   const pt = toWorld(e.clientX, e.clientY);
-  const dimT = t.closest('[data-dimedge]'), out = t.closest('[data-out]'), nodeT = t.closest('[data-node]'), edgeT = t.closest('[data-edge]'), gT = t.closest('[data-glabel]');
+  // the frame of an open block (and the layers drawn in it) stands for the block's use
+  const frT = t.closest('[data-frame]'), useT = frT && byId(frT.dataset.frame) ? { dataset: { node: frT.dataset.frame } } : null;
+  const dimT = t.closest('[data-dimedge]'), out = t.closest('[data-out]'), nodeT = t.closest('[data-node]') || useT, edgeT = t.closest('[data-edge]'), gT = t.closest('[data-glabel]');
   const linT = t.closest('[data-lindim]'), tieT = t.closest('[data-tielink]');
   // double-click, detected here because the first press redraws the canvas (so the browser's dblclick doesn't arrive)
   const tap = !linT && !tieT && !dimT && !out ? (nodeT ? 'n' + nodeT.dataset.node : edgeT ? 'e' + edgeT.dataset.edge : null) : null, now = Date.now();
@@ -7824,7 +8066,7 @@ svg.addEventListener('pointerdown', e => {
     S.drag = { kind: 'move', start: pt, before: snap(), orig: new Map(gr.nodes.map(i => { const n = byId(i); return [i, [n.x, n.y]]; })), moved: false };
     selectionChanged(); setTab('insp'); return;
   }
-  if (edgeT) { const ed = S.g.edges.find(x => x.id === edgeT.dataset.edge); if (ed) S.drag = { kind: 'edge', edge: ed, start: pt, moved: false, before: snap(), shift: e.shiftKey || e.metaKey }; return; }
+  if (edgeT) { const ed = S.g.edges.find(x => x.id === edgeT.dataset.edge); if (ed) S.drag = { kind: 'edge', edge: ed, start: pt, moved: false, before: snap(), shift: e.shiftKey || e.metaKey, pe: S.pv && S.pv.edges.get(ed.id) }; return; }
   if (e.shiftKey) { S.drag = { kind: 'marquee', start: pt, cur: pt }; return; }
   S.drag = { kind: 'pan', sx: e.clientX, sy: e.clientY, vx: S.view.x, vy: S.view.y, moved: false };
 });
@@ -7851,18 +8093,21 @@ svg.addEventListener('pointermove', e => {
   } else if (d.kind === 'edge') {
     const dx = pt[0] - d.start[0], dy = pt[1] - d.start[1];
     if (!d.moved && Math.abs(dx) + Math.abs(dy) <= 3) return;
-    if (!d.moved) { d.moved = true; Object.assign(d, grabSegment(d.edge, d.start)); }
+    // with blocks drawn open, what is on screen is the preview: bends are worked out there and stored where the model keeps them
+    if (d.pe && d.pe.fixed) { if (!d.told) { d.told = true; toast('This connection is moved aside by an open block, so it keeps its shape. Fold the block to reshape it.'); } return; }
+    const off = d.pe ? d.pe.shift : [0, 0];
+    if (!d.moved) { d.moved = true; Object.assign(d, inView(() => grabSegment(viewEdge(d.edge), d.start))); }
     const F = d.F.map(p => p.slice()), [a, b] = [F[d.k], F[d.k + 1]];
     if (d.horiz) { a[1] += dy; b[1] += dy; } else { a[0] += dx; b[0] += dx; }
-    d.edge.route = { pts: F.slice(1, -1).map(p => p.map(Math.round)), o0: orient(F[0], F[1]), o1: orient(F[F.length - 2], F[F.length - 1]) };
+    d.edge.route = { pts: F.slice(1, -1).map(p => [Math.round(p[0] - off[0]), Math.round(p[1] - off[1])]), o0: orient(F[0], F[1]), o1: orient(F[F.length - 2], F[F.length - 1]) };
     render();
   } else if (d.kind === 'label') {
     const dx = pt[0] - d.start[0], dy = pt[1] - d.start[1];
     if (Math.abs(dx) + Math.abs(dy) > 3) d.moved = true;
     if (d.moved) { d.edge.lbl = { dx: Math.round(d.orig[0] + dx), dy: Math.round(d.orig[1] + dy) }; render(); }
   } else if (d.kind === 'connect') {
-    const s = byId(d.from), b = box(s), sx = outX(s, d.out);
-    $('#gOver').innerHTML = `<path class="tmp-edge" d="M${sx},${b.y} C${sx},${b.y - 50} ${pt[0]},${pt[1] + 50} ${pt[0]},${pt[1]}"/>`;
+    const s = byId(d.from), b = box(s), at = S.pv && S.pv.outAt.get(d.from + ':' + d.out), sx = at ? at[0] : outX(s, d.out), sy = at ? at[1] : b.y;
+    $('#gOver').innerHTML = `<path class="tmp-edge" d="M${sx},${sy} C${sx},${sy - 50} ${pt[0]},${pt[1] + 50} ${pt[0]},${pt[1]}"/>`;
   } else if (d.kind === 'marquee') {
     d.cur = pt; const [x0, y0] = d.start;
     $('#gOver').innerHTML = `<rect class="marquee" x="${Math.min(x0, pt[0])}" y="${Math.min(y0, pt[1])}" width="${Math.abs(pt[0] - x0)}" height="${Math.abs(pt[1] - y0)}"/>`;
@@ -7878,7 +8123,7 @@ svg.addEventListener('pointerup', e => {
     if (last && last.id === d.n.id && now - last.t < 450 && d.n.params.tie_x != null) { S.lastTieClick = null; commit(() => { delete d.n.params.tie_x; }); }
   }
   if (d.kind === 'edge') {
-    if (d.moved) { tidyRoute(d.edge); S.undo.push(d.before); S.redo = []; changed(); }
+    if (d.moved) { d.pe && S.pv ? tidyInView(d.edge, d.pe.shift) : tidyRoute(d.edge); S.undo.push(d.before); S.redo = []; changed(); }
     else {
       // two quick clicks on the same connection: back to the automatic route (the first click redraws it, so the
       // browser's own double-click doesn't fire)
@@ -7892,7 +8137,8 @@ svg.addEventListener('pointerup', e => {
     else { const setter = setterOf(d.edge.from); if (setter) openWidthPop(setter.id, d.ev); else openDimPop(d.edge.id, d.ev); }
   }
   if (d.kind === 'connect') {
-    const el = document.elementFromPoint(e.clientX, e.clientY); const tn = el && el.closest && el.closest('[data-node]');
+    const el = document.elementFromPoint(e.clientX, e.clientY), fr = el && el.closest && el.closest('[data-frame]');
+    const tn = (el && el.closest && el.closest('[data-node]')) || (fr && byId(fr.dataset.frame) ? { dataset: { node: fr.dataset.frame } } : null);
     if (tn) connect(d.from, tn.dataset.node, toWorld(e.clientX, e.clientY), d.out);
   }
   if (d.kind === 'marquee') {
@@ -8130,7 +8376,8 @@ function nodeMenu(x, y, clickedId) {
   const one = ids.length === 1 ? byId(ids[0]) : null;
   if (one && one.type === 'block') {
     const reps = Math.max(1, Math.floor(+one.params.repeat || 1)), can = canRepeat(one);
-    h = item('openblock', 'Open block', 'Edit its inside; applies to every use')
+    h = item('peek', S.open.has(peekKey(one)) ? 'Fold back into a box' : 'Show inside', 'Draw its layers here, in place')
+      + item('openblock', 'Open block', 'Edit its inside; applies to every use')
       + (can || reps > 1 ? `<label class="argrow" style="padding-left:10px">Repeat × <input type="text" id="ctx-repeat" data-repeat="1" value="${reps}" style="width:60px"></label>` : `<p class="hint" style="padding:2px 10px 4px;margin:0">Repeat needs the same size in and out.</p>`)
       + (reps > 1 ? item('split', 'Split into separate uses', `${reps} blocks, each with its own sizes`) : '')
       + item('expand', 'Expand into layers', 'Replace this use with its layers') + '<hr>' + h;
@@ -8160,6 +8407,7 @@ function nodeMenu(x, y, clickedId) {
         if (k === 'GroupNorm') { nodeMenu(x, y, clickedId); const a = ctxEl && ctxEl.querySelector('#ctx-groups'); if (a) { a.focus(); a.select(); } return; }
       }
       else if (act === 'group') groupSel();
+      else if (act === 'peek') togglePeek(peekKey(one));
       else if (act === 'openblock') enterBlock(one.params.block);
       else if (act === 'expand') expandUse(one.id);
       else if (act === 'split') splitRepeat(one.id);
@@ -8232,7 +8480,7 @@ svg.addEventListener('dblclick', e => {
 }, true);
 svg.addEventListener('contextmenu', e => {
   e.preventDefault(); S.drag = null;
-  const nt = e.target.closest('[data-node]'), gt = e.target.closest('[data-glabel]'), et = e.target.closest('[data-edge]');
+  const ft = e.target.closest('[data-frame]'), nt = e.target.closest('[data-node]') || (ft && byId(ft.dataset.frame) ? { dataset: { node: ft.dataset.frame } } : null), gt = e.target.closest('[data-glabel]'), et = e.target.closest('[data-edge]');
   if (et) return edgeMenu(e.clientX, e.clientY, et.dataset.edge);
   if (nt) nodeMenu(e.clientX, e.clientY, nt.dataset.node);
   else if (gt) groupMenu(e.clientX, e.clientY, gt.dataset.glabel);
