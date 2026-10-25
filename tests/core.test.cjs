@@ -148,3 +148,126 @@ test('a size set through a symbol reaches a literal file', () => {
   assert.notEqual(out, base);
   assert.match(out, /nn\.Linear\(784, 64, bias=False\)/);
 });
+
+// Constructor compatibility and shape-changing edits must survive source sync.
+const poolingSource = `import torch.nn as nn
+
+class PoolNet(nn.Module):
+    def __init__(self, in_features, num_classes, width=16, depth=6):
+        super().__init__()
+        self.fc = nn.Linear(in_features, width)
+        self.head = nn.Linear(width, num_classes)
+
+    def forward(self, x):
+        return self.head(self.fc(x.flatten(start_dim=1)))
+`;
+
+function insertPool(NN, graph, beforeFlatten = false) {
+  const flatten = graph.nodes.find(n => n.params.fn === '.flatten');
+  const edge = graph.edges.find(e => beforeFlatten ? e.to === flatten.id : e.from === flatten.id);
+  const pool = NN.makeNode('func', { init: 'nn.MaxPool1d(kernel_size=2, stride=None, padding=0, dilation=1, ceil_mode=False)', fn: '', n: 1, name: 'pool' });
+  graph.nodes.push(pool);
+  graph.edges.push({ id: NN.uid('e'), from: edge.from, to: pool.id, port: 0 });
+  edge.from = pool.id;
+  return pool;
+}
+
+test('flatten shape inference accepts positional, keyword, and default dimensions', () => {
+  for (const [args, expected] of [
+    ['start_dim=1', ['e', '3*32*32']], ['1', ['e', '3*32*32']],
+    ['start_dim=1, end_dim=2', ['e', '3*32', '32']],
+    ['end_dim=-2, start_dim=-3', ['e', '3*32', '32']],
+    ['', ['e*3*32*32']],
+  ]) {
+    const graph = NN.importPython(poolingSource).graph;
+    graph.nodes.find(n => n.type === 'input').params.shape = 'e, 3, 32, 32';
+    const flatten = graph.nodes.find(n => n.params.fn === '.flatten');
+    flatten.params.extra = args;
+    assert.deepEqual(Array.from(NN.inferShapes(graph).shapes.get(flatten.id)), expected, args);
+  }
+});
+
+test('pooling after flatten updates widths while preserving the source constructor API', () => {
+  const graph = NN.importPython(poolingSource).graph;
+  insertPool(NN, graph);
+  NN.syncWidths(graph);
+  const output = NN.syncSource(poolingSource, graph);
+  assert.match(output, /def __init__\(self, in_features, num_classes, width=16, depth=6\):/);
+  assert.match(output, /self\.pool = nn\.MaxPool1d/);
+  const python = spawnSync(process.env.TORCH_CANVAS_TEST_PYTHON || 'python3', ['-c', `
+import ast, sys
+source = sys.stdin.read()
+ast.parse(source)
+try:
+    import torch
+except ImportError:
+    sys.exit(77)
+namespace = {}
+exec(source, namespace)
+for channels, size, classes in [(1, 28, 10), (3, 32, 10), (3, 32, 1000)]:
+    model = namespace['PoolNet'](in_features=channels * size * size, num_classes=classes)
+    logits = model(torch.randn(2, channels, size, size))
+    assert logits.shape == (2, classes), logits.shape
+    logits.square().mean().backward()
+`], { input: output, encoding: 'utf8' });
+  assert.ok(python.status === 0 || python.status === 77, python.stderr + '\n' + output);
+  const reparsed = NN.importPython(output).graph;
+  assert.equal(reparsed.nodes.find(n => n.type === 'input').params.shape, 'e, in_features');
+  assert.equal(reparsed.nodes.find(n => n.params.name === 'fc').params.in, 'in_features//2');
+  reparsed.nodes.find(n => n.params.name === 'pool').params.init = 'nn.MaxPool1d(4)';
+  NN.syncWidths(reparsed);
+  assert.match(NN.syncSource(output, reparsed), /nn\.Linear\(in_features\/\/4, width\)/);
+  reparsed.nodes.find(n => n.params.name === 'pool').params.init = graph.nodes.find(n => n.params.name === 'pool').params.init;
+  NN.syncWidths(reparsed);
+  assert.equal(NN.syncSource(output, reparsed), output);
+});
+
+test('invalid pooling rank reports an error without rewriting downstream dimensions or dropping arguments', () => {
+  const graph = NN.importPython(poolingSource).graph;
+  graph.nodes.find(n => n.type === 'input').params.shape = 'e, 3, 32, 32';
+  const pool = insertPool(NN, graph, true);
+  const result = NN.inferShapes(graph);
+  assert.match(result.errors.get(pool.id), /MaxPool1d.*2D or 3D/);
+  assert.equal(result.shapes.get(pool.id), null);
+  NN.syncWidths(graph);
+  assert.equal(graph.nodes.find(n => n.params.name === 'fc').params.in, 'in_features');
+  assert.match(NN.syncSource(poolingSource, graph), /def __init__\(self, in_features, num_classes, width=16, depth=6\):/);
+});
+
+test('custom module names and keyword names never become size arguments', () => {
+  const graph = NN.importPython(poolingSource).graph;
+  insertPool(NN, graph);
+  const code = NN.generate(graph, { literalDims: false }).code;
+  assert.match(code, /def __init__\(self, in_features=64, num_classes=64, width=16\):/);
+  assert.doesNotMatch(code, /def __init__\([^\n]*(?:\bnn\b|MaxPool1d|kernel_size|None|False)/);
+  assert.equal(spawnSync('python3', ['-c', 'import ast,sys; ast.parse(sys.stdin.read())'], { input: code }).status, 0);
+});
+
+test('removing a symbolic consumer preserves existing constructor callers', () => {
+  const graph = NN.importPython(poolingSource).graph;
+  graph.nodes.find(n => n.params.name === 'fc').params.in = '32';
+  graph.nodes.find(n => n.type === 'input').params.shape = 'e, 32';
+  const output = NN.syncSource(poolingSource, graph);
+  assert.match(output, /def __init__\(self, in_features, num_classes, width=16, depth=6\):/);
+});
+
+test('MaxPool1d dimensions match PyTorch for stride, padding, dilation, tuples, and ceil mode', () => {
+  const cases = [
+    ['e, 11', 'nn.MaxPool1d(2)', 5],
+    ['e, 3, 11', 'nn.MaxPool1d(3, 2, 1)', 6],
+    ['e, 3, 13', 'torch.nn.MaxPool1d(kernel_size=(3,), stride=(2,), padding=(1,), dilation=(2,))', 6],
+    ['e, 11', 'nn.MaxPool1d(2, ceil_mode=True)', 6],
+    ['e, 3, 10', 'nn.MaxPool1d(3, 3, 1, ceil_mode=True)', 4],
+    ['e, 3, 1', 'nn.MaxPool1d(2, 2, 1, ceil_mode=True)', 1],
+  ];
+  for (const [shape, init, expected] of cases) {
+    const input = NN.makeNode('input', { shape });
+    const pool = NN.makeNode('func', { init, fn: '', n: 1 });
+    const graph = { symbols: { e: 2 }, nodes: [input, pool], edges: [{ id: 'edge', from: input.id, to: pool.id, port: 0 }] };
+    const result = NN.inferShapes(graph);
+    assert.equal(result.errors.size, 0, init);
+    const output = Array.from(result.shapes.get(pool.id));
+    assert.equal(NN.evalDim(output.at(-1), graph.symbols), expected, init);
+    assert.deepEqual(output.slice(0, -1), shape.split(', ').slice(0, -1));
+  }
+});

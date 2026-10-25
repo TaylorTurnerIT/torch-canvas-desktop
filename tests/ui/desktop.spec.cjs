@@ -457,3 +457,43 @@ test('auto-save is on by default and remembers being turned off', async ({ page 
   await page.reload();
   expect(await page.evaluate(() => document.querySelector('#oAuto').checked)).toBe(false);
 });
+
+test('adding pooling saves a callable constructor and the pooled projection size', async ({ page }) => {
+  const source = `import marimo
+app = marimo.App()
+with app.setup:
+    import torch.nn as nn
+
+@app.class_definition
+class PoolNet(nn.Module):
+    def __init__(self, in_features, num_classes, width=16, depth=6):
+        super().__init__()
+        self.fc = nn.Linear(in_features, width)
+        self.head = nn.Linear(width, num_classes)
+
+    def forward(self, x):
+        return self.head(self.fc(x.flatten(start_dim=1)))
+`;
+  await page.goto('http://127.0.0.1:4173');
+  await page.evaluate(text => {
+    window.savedFiles['pool.py'] = Array.from(new TextEncoder().encode(text));
+    window.nextPickedFile = { id: 'pool.py', identity: '/test/pool.py', name: 'pool.py', kind: 'file' };
+  }, source);
+  await page.keyboard.press('Control+o');
+  await expect(page.locator('#modelName')).toHaveValue('PoolNet');
+  await page.evaluate(() => torchCanvas.commit(() => {
+    const graph = torchCanvas.state.g;
+    const flatten = graph.nodes.find(n => n.params.fn === '.flatten');
+    const edge = graph.edges.find(e => e.from === flatten.id);
+    graph.nodes.push({ id: 'pool-test-node', type: 'func', x: 100, y: 100,
+      params: { init: 'nn.MaxPool1d(2)', fn: '', extra: '', n: 1, name: 'pool' } });
+    graph.edges.push({ id: 'pool-test-edge', from: edge.from, to: 'pool-test-node', port: 0 });
+    edge.from = 'pool-test-node';
+  }));
+  await expect.poll(() => page.evaluate(() => new TextDecoder().decode(new Uint8Array(window.savedFiles['pool.py'])))).toContain('self.pool = nn.MaxPool1d(2)');
+  const saved = await page.evaluate(() => new TextDecoder().decode(new Uint8Array(window.savedFiles['pool.py'])));
+  expect(saved).toContain('def __init__(self, in_features, num_classes, width=16, depth=6):');
+  expect(saved).toContain('nn.Linear(in_features//2, width)');
+  expect(saved).toContain('@app.class_definition');
+  await expect(page.locator('#codeEdit')).toHaveValue(saved);
+});

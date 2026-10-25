@@ -766,6 +766,14 @@ const NN = (() => {
   }
   const parseShape = s => String(s || '').split(',').map(t => t.trim()).filter(Boolean);
   const identsIn = expr => (String(expr).match(IDENT) || []);
+  // Module paths, keyword labels, and string contents are not size arguments.
+  const initSizeNames = (expr, symbols) => {
+    const tokens = tokenize(String(expr));
+    return tokens.filter((t, i) => t.t === 'name' && Object.hasOwn(symbols, t.v)
+      && tokens[i - 1]?.v !== '.' && !['.', '=', '('].includes(tokens[i + 1]?.v)).map(t => t.v);
+  };
+  const callExpr = expr => { try { return parse('value = ' + expr + '\n')[0]?.value; } catch { return null; } };
+  const sameDimExpr = (a, b) => JSON.stringify(callExpr(a)) === JSON.stringify(callExpr(b));
 
   // ── shape inference ──
   function inferShapes(g, depth = 0) {
@@ -907,6 +915,41 @@ const NN = (() => {
           const fn = String(p.fn || '');
           const ex = String(p.extra || '').trim(), x0 = inS[0], ax = k => (k < 0 ? x0.length + k : k), par = d => (/^[A-Za-z_]\w*$|^\d+$/.test(d) ? d : `(${d})`);
           if (HELPER_OPS[fn]) { out = HELPER_OPS[fn].shape(inS, sym); break; }
+          // A custom module can change shape. MaxPool1d is not an identity.
+          if (/^(?:torch\.)?nn\.MaxPool1d\s*\(/.test(String(p.init || ''))) {
+            if (inS.length !== 1 || ![2, 3].includes(x0.length)) { err(id, 'MaxPool1d needs a 2D or 3D input'); break; }
+            const call = callExpr(p.init);
+            if (!call || call.k !== 'call') { err(id, 'Cannot infer MaxPool1d arguments'); break; }
+            const arg = (i, key, fallback) => call.kw[key] ?? call.args[i] ?? { k: 'const', v: fallback };
+            const scalar = value => value.k === 'tuple' && value.items.length === 1 ? value.items[0] : value;
+            const size = value => { const e = scalar(value); return evalDim(unparse(e), sym); };
+            const kernel = arg(0, 'kernel_size', null), stride = arg(1, 'stride', null);
+            const k = size(kernel), s = stride.k === 'const' && stride.v === null ? k : size(stride);
+            const pad = size(arg(2, 'padding', 0)), dilation = size(arg(3, 'dilation', 1));
+            const indices = arg(4, 'return_indices', false), ceil = arg(5, 'ceil_mode', false);
+            if (![k, s, pad, dilation].every(Number.isInteger) || k <= 0 || s <= 0 || pad < 0 || pad > Math.floor(k / 2) || dilation <= 0
+                || indices.k !== 'const' || indices.v !== false || ceil.k !== 'const' || typeof ceil.v !== 'boolean') {
+              err(id, 'Cannot infer MaxPool1d arguments (return_indices must be False)'); break;
+            }
+            // Keep expressions that depend on named kernel/stride sizes symbolic as well.
+            if ([kernel, stride, arg(2, 'padding', 0), arg(3, 'dilation', 1)].some(e => initSizeNames(unparse(e), sym).length)) {
+              err(id, 'MaxPool1d shape inference needs literal kernel, stride, padding, and dilation'); break;
+            }
+            const L = x0[x0.length - 1], offset = dilation * (k - 1) + 1 - 2 * pad;
+            let length = pad === 0 && dilation === 1 && k === s && !ceil.v ? `${par(L)}//${s}`
+              : `(${L}${offset < 0 ? '+' + -offset : '-' + offset})//${s}+1`;
+            if (ceil.v) {
+              // Ceil mode excludes windows starting in the right padding.
+              if (identsIn(L).length) { err(id, 'MaxPool1d ceil_mode needs a known literal input length'); break; }
+              const input = evalDim(L, sym);
+              let result = Math.floor((input - offset + s - 1) / s) + 1;
+              if ((result - 1) * s >= input + pad) result--;
+              length = String(result);
+            }
+            const value = evalDim(length, sym);
+            if (value != null && value <= 0) { err(id, 'MaxPool1d output length must be positive'); break; }
+            out = x0.slice(0, -1).concat(length); break;
+          }
           // x.unsqueeze(k) / x.squeeze(k): a size-1 dimension in or out
           if (/(^|\.)unsqueeze$/.test(fn) && /^-?\d+$/.test(ex)) { const k = +ex < 0 ? x0.length + 1 + +ex : +ex; out = x0.slice(0, k).concat('1', x0.slice(k)); break; }
           if (/(^|\.)squeeze$/.test(fn) && /^-?\d+$/.test(ex)) { const k = ax(+ex); out = String(x0[k]) === '1' ? x0.slice(0, k).concat(x0.slice(k + 1)) : x0; break; }
@@ -922,8 +965,16 @@ const NN = (() => {
           }
           // x.flatten(a[, b]): sizes a … b (default: to the end) multiply into one
           if (/(^|\.)flatten$/.test(fn) && inS.length === 1) {
-            const mm = /^(-?\d+)(?:\s*,\s*(-?\d+))?$/.exec(ex);
-            if (mm) { const s0 = ax(+mm[1]), s1 = mm[2] != null ? ax(+mm[2]) : x0.length - 1; out = x0.slice(0, s0).concat(x0.slice(s0, s1 + 1).map(par).join('*'), x0.slice(s1 + 1)); break; }
+            const call = callExpr('flatten(' + ex + ')');
+            const start = call && (call.kw.start_dim ?? call.args[0] ?? { k: 'const', v: 0 });
+            const end = call && (call.kw.end_dim ?? call.args[1] ?? { k: 'const', v: -1 });
+            const startDim = start && evalDim(unparse(start), sym), endDim = end && evalDim(unparse(end), sym);
+            if (Number.isInteger(startDim) && Number.isInteger(endDim)) {
+              const s0 = ax(startDim), s1 = ax(endDim);
+              if (s0 < 0 || s1 >= x0.length || s0 > s1) { err(id, 'Invalid flatten dimensions'); break; }
+              out = x0.slice(0, s0).concat(x0.slice(s0, s1 + 1).map(par).join('*'), x0.slice(s1 + 1)); break;
+            }
+            err(id, 'Cannot infer flatten dimensions'); break;
           }
           if (/(^|\.)(matmul|mm|bmm)$/.test(fn) && inS.length === 2) { out = matmul(id, inS[0], inS[1]); break; }
           if (/(^|\.)(cat|concat|concatenate)$/.test(fn) && inS.length > 1) {
@@ -1273,7 +1324,7 @@ const NN = (() => {
     const ps = [];
     const exprs = n => (n.type === 'linear' ? [n.params.out] : n.type === 'func' && n.params.init ? [n.params.init] : n.type === 'heads' ? [n.params.heads] : n.type === 'embed' ? [n.params.num, n.params.dim] : n.type === 'block' ? Object.values(n.params.args || {}).map(String) : []);
     for (const n of blk.graph.nodes) for (const e of exprs(n))
-      identsIn(e).forEach(t => { if (!fromInputs.has(t) && t !== BATCH && !ps.includes(t)) ps.push(t); });
+      (n.type === 'func' ? initSizeNames(e, blk.graph.symbols || {}) : identsIn(e)).forEach(t => { if (!fromInputs.has(t) && t !== BATCH && !ps.includes(t)) ps.push(t); });
     return ps;
   }
   // inner symbol → outer expression for one use
@@ -2032,7 +2083,7 @@ const NN = (() => {
     for (const n of ordered) {
       if (validOf.has(n.id) && n.type === 'block') { for (const [, v] of dimList(n)) note(v); continue; }
       for (const [, v] of dimList(n)) note(v);
-      if (n.type === 'func' && n.params.init) note(n.params.init);
+      if (n.type === 'func' && n.params.init) initSizeNames(n.params.init, sym).forEach(note);
     }
     // arguments in the order the model lists its sizes (stable across a round trip), unknown names last
     // a block's class lists the sizes that come with its inputs first: __init__(self, d=64, h=128)
@@ -2756,11 +2807,20 @@ const NN = (() => {
     // infer input shapes from first consumer
     const ix = index(g);
     for (const n of g.nodes.filter(n => n.type === 'input')) {
-      const seen = new Set(); let dim = null;
-      const walk = id => { if (dim || seen.has(id)) return; seen.add(id); for (const o of ix.outs.get(id)) { const c = ix.byId.get(o.to); if (c.type === 'linear') { dim = c.params.in; return; } if (c.type === 'norm') { dim = c.params.dim; return; } walk(c.id); } };
+      const seen = new Set(); let dim = null, consumer = null;
+      const walk = id => { if (dim || seen.has(id)) return; seen.add(id); for (const o of ix.outs.get(id)) { const c = ix.byId.get(o.to); if (c.type === 'linear') { dim = c.params.in; consumer = c; return; } if (c.type === 'norm') { dim = c.params.dim; consumer = c; return; } walk(c.id); } };
       const feedsEmbed = ix.outs.get(n.id).some(o => ix.byId.get(o.to).type === 'embed');
       if (feedsEmbed) { n.params.shape = 'e, t'; if (g.symbols.t == null) g.symbols.t = 64; continue; }
       walk(n.id); n.params.shape = (seqInput ? 'e, t, ' : 'e, ') + (dim || 'd_in');
+      // A pooled projection's width is not the original input width. Recover a
+      // single input symbol only when forwarding it reproduces the exact expression.
+      const candidates = [...new Set(identsIn(dim || ''))].filter(t => Object.hasOwn(g.symbols, t));
+      if (!seqInput && consumer && candidates.length === 1 && dim !== candidates[0]) {
+        const guessed = n.params.shape;
+        n.params.shape = 'e, ' + candidates[0];
+        const projected = inferShapes(g).shapes.get(ix.ins.get(consumer.id)[0]);
+        if (!projected || !sameDimExpr(projected[projected.length - 1], dim)) n.params.shape = guessed;
+      }
       if (seqInput && g.symbols.t == null) g.symbols.t = 16;
     }
     // the __main__ test call, when there is one, gives each input's real shape: model(torch.randn(2, 1024, 1176), …)
@@ -3192,7 +3252,7 @@ const NN = (() => {
     });
     return { before: header.slice(0, open + 1), after: header.slice(close), params };
   }
-  function patchParams(orig, base, cur) {
+  function patchParams(orig, base, cur, keepRemoved = false) {
     const o = paramsOf(orig), b = paramsOf(base), c = paramsOf(cur);
     if (!o || !b || !c) return orig;
     const bm = new Map(b.params.filter(p => p.name).map(p => [p.name, p])), cm = new Map(c.params.filter(p => p.name).map(p => [p.name, p]));
@@ -3207,7 +3267,7 @@ const NN = (() => {
         segs[i] = Object.assign({}, s, { raw: s.raw.slice(0, s.eq + 1) + lead + p.def + trail, def: p.def });
       }
     }
-    for (const p of b.params) if (p.name && !cm.has(p.name)) { const i = find(p.name); if (i >= 0) segs.splice(i, 1); }
+    for (const p of b.params) if (!keepRemoved && p.name && !cm.has(p.name)) { const i = find(p.name); if (i >= 0) segs.splice(i, 1); }
     return o.before + segs.map(s => s.raw).join(',') + o.after;
   }
   const reindent = (lines, from, to) => from === to ? lines : lines.map(l => (isBlank(l) ? l : ' '.repeat(to) + l.slice(Math.min(from, indentOf(l)))));
@@ -3217,7 +3277,10 @@ const NN = (() => {
   // Rewrite one method of the original class so it follows the generated base -> cur change.
   function patchMethod(oL, oIt, bL, bIt, cL, cIt, ci) {
     const O = methodParts(oL, oIt, ci.o), B = methodParts(bL, bIt, ci.b), C = methodParts(cL, cIt, ci.c);
-    const head = patchParams(jn(oL, O.head[0], O.head[1]), jn(bL, B.head[0], B.head[1]), jn(cL, C.head[0], C.head[1])).split('\n');
+    // Existing constructor callers may still pass sizes no longer used by the
+    // diagram. Preserve that public API when topology changes remove a symbol.
+    const keepRemoved = /^def __init__\b/.test(oIt.text);
+    const head = patchParams(jn(oL, O.head[0], O.head[1]), jn(bL, B.head[0], B.head[1]), jn(cL, C.head[0], C.head[1]), keepRemoved).split('\n');
     const lead = oL.slice(oIt.a, oIt.p);
     const bodyOf = (L, M) => reindent(L.slice(M.bodyFrom, M.body.length ? M.body[M.body.length - 1].b : M.bodyFrom), M.indent, O.indent);
     const name = (/^(?:async\s+)?def\s+(\w+)/.exec(oIt.text) || [])[1];
