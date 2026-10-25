@@ -13,7 +13,7 @@
   function showError() {
     const w = $('#warns');
     w.querySelectorAll('li.err').forEach(li => li.remove());
-    if (codeError) { w.hidden = false; w.insertAdjacentHTML('afterbegin', `<li class="err">Code: ${esc(codeError)} The diagram keeps its last good version.</li>`); }
+    if (codeError) { w.hidden = false; w.insertAdjacentHTML('afterbegin', `<li class="err">Code: ${esc(codeError)} The file keeps its last valid code.</li>`); }
   }
   // Fold a diagram edit into the file text.
   function syncFile() {

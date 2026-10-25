@@ -457,3 +457,70 @@ test('auto-save is on by default and remembers being turned off', async ({ page 
   await page.reload();
   expect(await page.evaluate(() => document.querySelector('#oAuto').checked)).toBe(false);
 });
+
+async function openBranchedGate(page) {
+  await page.clock.install();
+  await page.goto('http://127.0.0.1:4173');
+  await page.clock.pauseAt(Date.now() + 1000);
+  const source = fs.readFileSync('tests/fixtures/branched-gate.py', 'utf8');
+  await page.evaluate(text => {
+    window.savedFiles['gate.py'] = Array.from(new TextEncoder().encode(text));
+    window.nextPickedFile = { id: 'gate.py', identity: '/test/gate.py', name: 'gate.py', kind: 'file' };
+  }, source);
+  await page.keyboard.press('Control+o');
+  await expect(page.locator('#fileBar')).toContainText('gate.py');
+  return source;
+}
+
+test('an incomplete gate never auto-saves or manually saves over working Python', async ({ page }) => {
+  const original = await openBranchedGate(page);
+  await page.evaluate(() => torchCanvas.commit(() => {
+    const gate = Object.values(torchCanvas.state.root.blocks)[0].graph;
+    const multiply = gate.nodes.find(n => n.type === 'binop' && n.params.op === '*');
+    window.disconnectedGateEdge = gate.edges.find(e => e.to === multiply.id && e.port === 1);
+    gate.edges = gate.edges.filter(e => e !== window.disconnectedGateEdge);
+  }));
+  await expect(page.locator('#warns')).toContainText('connect input 2');
+  await page.clock.runFor(1500);
+  await page.keyboard.press('Control+s');
+  expect(await nativeCallsNamed(page, 'native_write')).toEqual([]);
+  expect(await page.evaluate(() => new TextDecoder().decode(new Uint8Array(window.savedFiles['gate.py'])))).toBe(original);
+  await page.evaluate(() => torchCanvas.commit(() => {
+    const gate = Object.values(torchCanvas.state.root.blocks)[0].graph;
+    gate.edges.push(window.disconnectedGateEdge);
+    gate.nodes.find(n => n.params.name === 'left').params.bias = false;
+  }));
+  await expect(page.locator('#warns li.err')).toHaveCount(0);
+  await page.clock.runFor(1500);
+  await expect.poll(() => nativeCallsNamed(page, 'native_write')).toEqual(['gate.py']);
+  const saved = await page.evaluate(() => new TextDecoder().decode(new Uint8Array(window.savedFiles['gate.py'])));
+  expect(saved).not.toContain('return None');
+  expect(saved).toContain('bias=False');
+  expect(saved).toContain('TRAINING_SETTING = 123');
+});
+
+test('a completed gate can recover an older return-None file and auto-save it', async ({ page }) => {
+  const original = await openBranchedGate(page);
+  const broken = original
+    .replace('        self.norm = nn.LayerNorm(width)\n', '')
+    .replace('        self.left = nn.Linear(width, width)\n', '')
+    .replace('        n = self.norm(x)\n        return self.left(n) * self.right(n)', '        return None');
+  await page.evaluate(text => {
+    window.savedFiles['gate.py'] = Array.from(new TextEncoder().encode(text));
+    torchCanvas.state.file.text = text;
+    torchCanvas.state.file.diskText = text;
+    torchCanvas.commit(() => {
+      const gate = Object.values(torchCanvas.state.root.blocks)[0].graph;
+      gate.nodes.find(n => n.params.name === 'left').params.bias = false;
+    });
+  }, broken);
+  await expect(page.locator('#warns li.err')).toHaveCount(0);
+  await expect(page.locator('#codeEdit')).not.toHaveValue(/return None/);
+  await page.clock.runFor(1500);
+  await expect.poll(() => nativeCallsNamed(page, 'native_write')).toEqual(['gate.py']);
+  const saved = await page.evaluate(() => new TextDecoder().decode(new Uint8Array(window.savedFiles['gate.py'])));
+  expect(saved).not.toContain('return None');
+  expect(saved).toContain("return 'keep this method'");
+  expect(saved).toContain('def predict(self, x):');
+  expect(saved).toContain('TRAINING_SETTING = 123');
+});
