@@ -230,7 +230,7 @@
     return out;
   }
   // Patch one class: keep every method the diagram change did not touch.
-  function patchClass(oL, bL, cL) {
+  function patchClass(oL, bL, cL, keepExtraMethods = false) {
     const O = classParts(oL), B = classParts(bL), C = classParts(cL);
     const ci = { o: O.indent, b: B.indent, c: C.indent };
     const norm = (L, it) => jn(L, it.p, it.b).replace(/[ \t]+$/gm, '');
@@ -246,7 +246,7 @@
         edits.push({ a: last, b: last, lines: [''].concat(reindent(cL.slice(c.a, c.b), C.indent, O.indent)) });
       }
     }
-    for (const [name, b] of bm) if (!cm.has(name) && om.has(name)) { const o = om.get(name); edits.push({ a: o.a, b: o.b, lines: [], blank: true }); }
+    for (const [name, b] of bm) if (!keepExtraMethods && !cm.has(name) && om.has(name)) { const o = om.get(name); edits.push({ a: o.a, b: o.b, lines: [], blank: true }); }
     edits.sort((x, y) => y.a - x.a);
     const out = oL.slice();
     for (const e of edits) out.splice(e.a, e.b - e.a, ...e.lines);
@@ -280,8 +280,32 @@
     return lines.join('\n');
   }
   function syncSource(text, graph, o = {}) {
-    const src = text.replace(/\r\n/g, '\n');
-    const res = importPython(src, { root: o.root });
+    let src = text.replace(/\r\n/g, '\n'), res;
+    // Older versions saved `return None` while a block was being rewired. Repair
+    // only matching classes with those empty forwards from the valid diagram in memory.
+    // Never recover an unrelated import failure by replacing the whole notebook.
+    const candidate = generate(graph, Object.assign({}, o.gen, { className: graph.name })).code;
+    try { res = importPython(src, { root: o.root }); }
+    catch (error) {
+      const lines = src.split('\n'), generated = candidate.split('\n');
+      const current = classBlocks(generated), repairs = [];
+      for (const original of classBlocks(lines)) {
+        const replacement = current.find(c => c.name === original.name);
+        if (!replacement) continue;
+        const old = lines.slice(original.h, original.b), parts = classParts(old);
+        const forward = parts.methods.find(m => m.name === 'forward');
+        if (!forward) continue;
+        const method = methodParts(old, forward, parts.indent);
+        const body = method.body.filter(item => item !== method.docstring);
+        if (body.length !== 1 || !/^return\s+None\s*(?:#.*)?$/.test(body[0].text)) continue;
+        repairs.push({ a: original.h, b: original.b,
+          lines: patchClass(old, old, generated.slice(replacement.h, replacement.b), true) });
+      }
+      if (!repairs.length) throw error;
+      for (const repair of repairs.sort((a, b) => b.a - a.a)) lines.splice(repair.a, repair.b - repair.a, ...repair.lines);
+      src = lines.join('\n');
+      res = importPython(src, { root: o.root });
+    }
     // Compare in the file's own style: a literal file has no size symbols to patch, so comparing symbolic
     // code would drop a size edit made through a symbol.
     const opts = Object.assign({}, o.gen, { shapeComments: false, literalDims: res.literalDims != null ? res.literalDims : false });

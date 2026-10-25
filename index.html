@@ -1309,7 +1309,43 @@ const NN = (() => {
     cache.set(blk.id, res);
     return res;
   }
+  // Incomplete diagrams remain editable, but must not overwrite a tensor-returning model.
+  function validateOutputs(g, blocks = g.blocks || {}, active = new Set(), checked = new Set()) {
+    const ix = index(g), outputs = g.nodes.filter(n => n.type === 'output');
+    const scope = g.name || 'Model';
+    if (!outputs.length) throw new Error(`${scope}: add and connect an Output before saving Python.`);
+    const visiting = new Set(), done = new Set();
+    const visit = id => {
+      const n = ix.byId.get(id);
+      if (!n) throw new Error(`${scope}: an output refers to a missing layer.`);
+      if (done.has(id)) return;
+      if (visiting.has(id)) throw new Error(`${scope}: a connection cycle reaches an Output.`);
+      visiting.add(id);
+      for (let port = 0; port < inCount(n); port++) {
+        const edges = g.edges.filter(e => e.to === id && (e.port || 0) === port);
+        if (edges.length !== 1) throw new Error(`${scope}: connect input ${port + 1} of ${nodeLabel(n)} before saving Python.`);
+        const edge = edges[0], source = ix.byId.get(edge.from);
+        if (source && (edge.out || 0) >= (source.type === 'block' && blocks[source.params.block] ? blockOutputs(blocks[source.params.block]).length : 1))
+          throw new Error(`${scope}: a connection uses a missing output port.`);
+        visit(edge.from);
+      }
+      if (n.type === 'block') {
+        const id = n.params.block, blk = blocks[id];
+        if (!blk) throw new Error(`${scope}: block ${nodeLabel(n)} is missing its definition.`);
+        if (active.has(id)) throw new Error(`${scope}: block ${blk.name} contains itself.`);
+        if (!checked.has(id)) {
+          active.add(id);
+          validateOutputs(blk.graph, blocks, active, checked);
+          active.delete(id); checked.add(id);
+        }
+      }
+      visiting.delete(id); done.add(id);
+    };
+    outputs.forEach(n => visit(n.id));
+  }
   function generateModel(g, opts = {}) {
+    validateOutputs(g);
+    if (opts.allBlocks !== false) for (const blk of Object.values(g.blocks || {})) validateOutputs(blk.graph, g.blocks);
     // a block opened on its own is still a block: its sizes stay constructor arguments with defaults
     if (g.libBlock) opts = Object.assign({}, opts, { literalDims: false });
     const { flat, origin } = expandBlocks(g, { shallow: true });
@@ -1851,9 +1887,10 @@ const NN = (() => {
         mark(e.ids, lines.length);
         lines.push(`${v} = ${code}` + (opts.shapeComments ? `  # ${shapeStr(sid, map)}` : ''));
       }
-      const rets = outputRefs.map(ref).filter(Boolean);
+      const rets = outputRefs.map(ref);
+      if (!rets.length || rets.some(r => !r)) throw new Error(`${name}: an Output cannot be computed; finish its connections before saving Python.`);
       mark(rets.flatMap(r => r.ids || []), lines.length);
-      lines.push('return ' + (rets.length ? rets.map(r => r.code).join(', ') : 'None'));
+      lines.push('return ' + rets.map(r => r.code).join(', '));
       const ind = s => '        ' + s;
       const map2 = new Map();
       const add = (id, ln) => { if (!map2.has(id)) map2.set(id, []); map2.get(id).push(ln); };
@@ -2286,6 +2323,7 @@ const NN = (() => {
     };
     let curGroup = null, seqInput = false;
     const addNode = (type, params, inputs) => {
+      if (inputs.some(t => !t || t.t == null)) throw new Error(`Cannot import ${params.name || type}: expected a tensor input; a preceding forward() may return None.`);
       const n = makeNode(type, params);
       g.nodes.push(n);
       inputs.forEach((t, port) => g.edges.push({ id: uid('e'), from: t.t, to: n.id, port }));

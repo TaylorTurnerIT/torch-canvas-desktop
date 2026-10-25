@@ -63,6 +63,21 @@ test('all bundled graph examples generate syntactically valid Python', () => {
   assert.ok(library.length > 10);
   for (const entry of library.filter(x => x.type === 'json')) {
     const graph = JSON.parse(entry.source).graph;
+    // Standalone library graphs store nested blocks by library path, not inline.
+    // Resolve them as the editor does instead of silently exporting missing blocks.
+    const blocks = graph.blocks || (graph.blocks = {});
+    const link = scope => {
+      for (const node of scope.nodes.filter(n => n.type === 'block')) {
+        if (!blocks[node.params.block]) {
+          const entry = library.find(e => e.file === node.params.lib);
+          assert.ok(entry, `Missing library block ${node.params.lib}`);
+          const inner = entry.type === 'json' ? JSON.parse(entry.source).graph : NN.importPython(entry.source).graph;
+          blocks[node.params.block] = { id: node.params.block, name: inner.name, graph: inner };
+          link(inner);
+        }
+      }
+    };
+    link(graph);
     const generated = NN.generate(graph, {}).code;
     const parsed = spawnSync('python3', ['-c', 'import ast,sys; ast.parse(sys.stdin.read())'], { input: generated, encoding: 'utf8' });
     assert.equal(parsed.status, 0, `${entry.file}: ${parsed.stderr}`);
@@ -147,4 +162,59 @@ test('a size set through a symbol reaches a literal file', () => {
   const out = NN.syncSource(base, g, { gen: { literalDims: true, shapeComments: true } });
   assert.notEqual(out, base);
   assert.match(out, /nn\.Linear\(784, 64, bias=False\)/);
+});
+
+const branchedGate = fs.readFileSync('tests/fixtures/branched-gate.py', 'utf8');
+
+test('a connected LayerNorm fork into two linear branches generates a tensor gate', () => {
+  const graph = NN.importPython(branchedGate).graph;
+  const generated = NN.generate(graph, { shapeComments: false }).code;
+  assert.doesNotMatch(generated, /return None/);
+  assert.match(generated, /nn\.LayerNorm/);
+  assert.match(generated, /\*/);
+  assert.equal(NN.syncSource(branchedGate, graph), branchedGate);
+  assert.doesNotThrow(() => NN.importPython(generated));
+});
+
+test('disconnected model or nested block outputs cannot overwrite working source', () => {
+  for (const nested of [false, true]) {
+    const graph = NN.importPython(branchedGate).graph;
+    const scope = nested ? Object.values(graph.blocks)[0].graph : graph;
+    const output = scope.nodes.find(n => n.type === 'output');
+    scope.edges = scope.edges.filter(e => e.to !== output.id);
+    assert.throws(() => NN.generate(graph), /connect input 1 of .*before saving Python/);
+    assert.throws(() => NN.syncSource(branchedGate, graph), /connect input 1 of .*before saving Python/);
+  }
+});
+
+test('a connected output still rejects a missing multiplication input', () => {
+  const graph = NN.importPython(branchedGate).graph;
+  const block = Object.values(graph.blocks)[0].graph;
+  const multiply = block.nodes.find(n => n.type === 'binop' && n.params.op === '*');
+  block.edges = block.edges.filter(e => !(e.to === multiply.id && e.port === 1));
+  assert.throws(() => NN.generate(graph), /connect input 2 of .*before saving Python/);
+  assert.throws(() => NN.syncSource(branchedGate, graph), /connect input 2 of .*before saving Python/);
+});
+
+test('completed gate repairs an older return-None block without losing other methods', () => {
+  const graph = NN.importPython(branchedGate).graph;
+  const broken = branchedGate
+    .replace('        self.norm = nn.LayerNorm(width)\n', '')
+    .replace('        self.left = nn.Linear(width, width)\n', '')
+    .replace('        n = self.norm(x)\n        return self.left(n) * self.right(n)', '        return None');
+  assert.throws(() => NN.importPython(broken), /expected a tensor input/);
+  const repaired = NN.syncSource(broken, graph, { gen: { literalDims: false, shapeComments: false } });
+  assert.doesNotMatch(repaired, /return None/);
+  assert.match(repaired, /self\.norm = nn\.LayerNorm\(width\)/);
+  assert.match(repaired, /self\.left = nn\.Linear\(width, width\)/);
+  for (const kept of ["return 'keep this method'", 'def predict(self, x):', 'TRAINING_SETTING = 123'])
+    assert.ok(repaired.includes(kept), kept);
+  assert.doesNotThrow(() => NN.importPython(repaired));
+  assert.equal(NN.syncSource(repaired, graph, { gen: { literalDims: false, shapeComments: false } }), repaired);
+});
+
+test('source recovery does not replace unrelated import failures', () => {
+  const graph = NN.importPython(branchedGate).graph;
+  const invalid = branchedGate.replace('return self.head_norm(self.gate(x))', 'return self.head_norm(None)');
+  assert.throws(() => NN.syncSource(invalid, graph), /expected a tensor input/);
 });

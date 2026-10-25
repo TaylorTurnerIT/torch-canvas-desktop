@@ -1387,7 +1387,43 @@ const NN = (() => {
     cache.set(blk.id, res);
     return res;
   }
+  // Incomplete diagrams remain editable, but must not overwrite a tensor-returning model.
+  function validateOutputs(g, blocks = g.blocks || {}, active = new Set(), checked = new Set()) {
+    const ix = index(g), outputs = g.nodes.filter(n => n.type === 'output');
+    const scope = g.name || 'Model';
+    if (!outputs.length) throw new Error(`${scope}: add and connect an Output before saving Python.`);
+    const visiting = new Set(), done = new Set();
+    const visit = id => {
+      const n = ix.byId.get(id);
+      if (!n) throw new Error(`${scope}: an output refers to a missing layer.`);
+      if (done.has(id)) return;
+      if (visiting.has(id)) throw new Error(`${scope}: a connection cycle reaches an Output.`);
+      visiting.add(id);
+      for (let port = 0; port < inCount(n); port++) {
+        const edges = g.edges.filter(e => e.to === id && (e.port || 0) === port);
+        if (edges.length !== 1) throw new Error(`${scope}: connect input ${port + 1} of ${nodeLabel(n)} before saving Python.`);
+        const edge = edges[0], source = ix.byId.get(edge.from);
+        if (source && (edge.out || 0) >= (source.type === 'block' && blocks[source.params.block] ? blockOutputs(blocks[source.params.block]).length : 1))
+          throw new Error(`${scope}: a connection uses a missing output port.`);
+        visit(edge.from);
+      }
+      if (n.type === 'block') {
+        const id = n.params.block, blk = blocks[id];
+        if (!blk) throw new Error(`${scope}: block ${nodeLabel(n)} is missing its definition.`);
+        if (active.has(id)) throw new Error(`${scope}: block ${blk.name} contains itself.`);
+        if (!checked.has(id)) {
+          active.add(id);
+          validateOutputs(blk.graph, blocks, active, checked);
+          active.delete(id); checked.add(id);
+        }
+      }
+      visiting.delete(id); done.add(id);
+    };
+    outputs.forEach(n => visit(n.id));
+  }
   function generateModel(g, opts = {}) {
+    validateOutputs(g);
+    if (opts.allBlocks !== false) for (const blk of Object.values(g.blocks || {})) validateOutputs(blk.graph, g.blocks);
     // a block opened on its own is still a block: its sizes stay constructor arguments with defaults
     if (g.libBlock) opts = Object.assign({}, opts, { literalDims: false });
     const { flat, origin } = expandBlocks(g, { shallow: true });
@@ -1929,9 +1965,10 @@ const NN = (() => {
         mark(e.ids, lines.length);
         lines.push(`${v} = ${code}` + (opts.shapeComments ? `  # ${shapeStr(sid, map)}` : ''));
       }
-      const rets = outputRefs.map(ref).filter(Boolean);
+      const rets = outputRefs.map(ref);
+      if (!rets.length || rets.some(r => !r)) throw new Error(`${name}: an Output cannot be computed; finish its connections before saving Python.`);
       mark(rets.flatMap(r => r.ids || []), lines.length);
-      lines.push('return ' + (rets.length ? rets.map(r => r.code).join(', ') : 'None'));
+      lines.push('return ' + rets.map(r => r.code).join(', '));
       const ind = s => '        ' + s;
       const map2 = new Map();
       const add = (id, ln) => { if (!map2.has(id)) map2.set(id, []); map2.get(id).push(ln); };
@@ -2364,6 +2401,7 @@ const NN = (() => {
     };
     let curGroup = null, seqInput = false;
     const addNode = (type, params, inputs) => {
+      if (inputs.some(t => !t || t.t == null)) throw new Error(`Cannot import ${params.name || type}: expected a tensor input; a preceding forward() may return None.`);
       const n = makeNode(type, params);
       g.nodes.push(n);
       inputs.forEach((t, port) => g.edges.push({ id: uid('e'), from: t.t, to: n.id, port }));
@@ -3265,7 +3303,7 @@ const NN = (() => {
     return out;
   }
   // Patch one class: keep every method the diagram change did not touch.
-  function patchClass(oL, bL, cL) {
+  function patchClass(oL, bL, cL, keepExtraMethods = false) {
     const O = classParts(oL), B = classParts(bL), C = classParts(cL);
     const ci = { o: O.indent, b: B.indent, c: C.indent };
     const norm = (L, it) => jn(L, it.p, it.b).replace(/[ \t]+$/gm, '');
@@ -3281,7 +3319,7 @@ const NN = (() => {
         edits.push({ a: last, b: last, lines: [''].concat(reindent(cL.slice(c.a, c.b), C.indent, O.indent)) });
       }
     }
-    for (const [name, b] of bm) if (!cm.has(name) && om.has(name)) { const o = om.get(name); edits.push({ a: o.a, b: o.b, lines: [], blank: true }); }
+    for (const [name, b] of bm) if (!keepExtraMethods && !cm.has(name) && om.has(name)) { const o = om.get(name); edits.push({ a: o.a, b: o.b, lines: [], blank: true }); }
     edits.sort((x, y) => y.a - x.a);
     const out = oL.slice();
     for (const e of edits) out.splice(e.a, e.b - e.a, ...e.lines);
@@ -3315,8 +3353,32 @@ const NN = (() => {
     return lines.join('\n');
   }
   function syncSource(text, graph, o = {}) {
-    const src = text.replace(/\r\n/g, '\n');
-    const res = importPython(src, { root: o.root });
+    let src = text.replace(/\r\n/g, '\n'), res;
+    // Older versions saved `return None` while a block was being rewired. Repair
+    // only matching classes with those empty forwards from the valid diagram in memory.
+    // Never recover an unrelated import failure by replacing the whole notebook.
+    const candidate = generate(graph, Object.assign({}, o.gen, { className: graph.name })).code;
+    try { res = importPython(src, { root: o.root }); }
+    catch (error) {
+      const lines = src.split('\n'), generated = candidate.split('\n');
+      const current = classBlocks(generated), repairs = [];
+      for (const original of classBlocks(lines)) {
+        const replacement = current.find(c => c.name === original.name);
+        if (!replacement) continue;
+        const old = lines.slice(original.h, original.b), parts = classParts(old);
+        const forward = parts.methods.find(m => m.name === 'forward');
+        if (!forward) continue;
+        const method = methodParts(old, forward, parts.indent);
+        const body = method.body.filter(item => item !== method.docstring);
+        if (body.length !== 1 || !/^return\s+None\s*(?:#.*)?$/.test(body[0].text)) continue;
+        repairs.push({ a: original.h, b: original.b,
+          lines: patchClass(old, old, generated.slice(replacement.h, replacement.b), true) });
+      }
+      if (!repairs.length) throw error;
+      for (const repair of repairs.sort((a, b) => b.a - a.a)) lines.splice(repair.a, repair.b - repair.a, ...repair.lines);
+      src = lines.join('\n');
+      res = importPython(src, { root: o.root });
+    }
     // Compare in the file's own style: a literal file has no size symbols to patch, so comparing symbolic
     // code would drop a size edit made through a symbol.
     const opts = Object.assign({}, o.gen, { shapeComments: false, literalDims: res.literalDims != null ? res.literalDims : false });
@@ -7648,7 +7710,7 @@ window.__tc = { S, route, drawFrom, box, keyOf, byId, switchTo, openLibrary, fin
   function showError() {
     const w = $('#warns');
     w.querySelectorAll('li.err').forEach(li => li.remove());
-    if (codeError) { w.hidden = false; w.insertAdjacentHTML('afterbegin', `<li class="err">Code: ${esc(codeError)} The diagram keeps its last good version.</li>`); }
+    if (codeError) { w.hidden = false; w.insertAdjacentHTML('afterbegin', `<li class="err">Code: ${esc(codeError)} The file keeps its last valid code.</li>`); }
   }
   // Fold a diagram edit into the file text.
   function syncFile() {

@@ -31,6 +31,7 @@ The current configuration targets a macOS `.app` with an ad hoc signature for lo
 - Open `.py` or graph `.json` files through the native file picker. Open a project folder to browse its PyTorch models.
 - Reopening the same native file selects its existing tab and preserves unsaved edits. File identity is retained across restarts; files with the same name in different folders remain separate.
 - Press **Command+S** to save. Existing Python files retain code outside the imported model classes through the original source-merging logic.
+- Incomplete output paths block Python saves until reconnected. A completed diagram can also repair an older block saved with `return None`.
 - Use **Export SVG** for a diagram. Use **Export…** for model code, a training script, or a ZIP. Training export requires a connected loss and target; a model without a loss can still be saved with Command+S.
 - The editor autosaves graph tabs and library edits in local WebView storage. Save important models to disk for a portable copy.
 
