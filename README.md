@@ -4,9 +4,9 @@ An offline Tauri 2 desktop port of **Torch Canvas by Jesse Roberts**.
 
 Original site: <https://www.jessetnroberts.com/torch-canvas/>
 
-The graph editor, symbolic shape inference, PyTorch code generator/importer, variance predictor, training exporter, and 21 bundled library entries come from Jesse Roberts's published page. This repository adds the desktop shell, native file access, offline packaging, and tests.
+The graph editor, symbolic shape inference, PyTorch code generator/importer, variance predictor, training exporter, and bundled example library come from Jesse Roberts's upstream project. This repository adds the desktop shell, native file access, offline packaging, and tests.
 
-## Run
+Conceived and created by **Jesse Roberts**.
 
 On macOS, open `src-tauri/target/release/bundle/macos/Torch Canvas.app` after building. The app bundles its own interface and logic; it does not load the original website or need a local server.
 
@@ -43,6 +43,23 @@ The current configuration targets a macOS `.app` with an ad hoc signature for lo
 - **Open / import** lists up to five recently opened examples and files at the top, newest first, and hides the list when there are none. Choosing a recent file reopens it, or switches to its tab if one is open. The native side keeps a list of paths you picked in the file dialog or opened from Finder (`recent-files.json` in the app data folder) and reopens only those. A file you have not picked since this feature existed, or one that moved, asks you to choose it again once.
 
 File access is granted by native file/folder selection and lasts for the current app process, apart from the remembered recent-file paths described above. Reopen files or folders after restarting. Saved tabs retain canonical file identity and the previous source baseline, but never filesystem permission. Reopening a file restores access to its existing tab. The adapter supports the File System Access API operations used by Torch Canvas; it is not a general implementation of that browser API. Python is exported as text; the desktop app does not execute models or install PyTorch.
+
+## What it does
+
+- **Diagram ⇄ code.** Every edit to the diagram updates clean, runnable PyTorch beside it, and pasting a PyTorch module draws its diagram.
+- **Shapes you can see.** Tensor sizes are worked out on every connection, linked sizes change together, and mismatches show in red.
+- **Every operation explained.** Selecting a node shows what it computes, as a formula or a plain description. Reshapes are drawn as what they are, rearranging the same values (`e t (h d) → e h t d`), with an optional nickname and note.
+- **Reusable blocks.** Group layers into blocks such as a transformer layer or a ResNet bottleneck, repeat them, and keep them in a library.
+- **Variance before training.** A plot predicts how the signal and the gradients grow or shrink through the network at initialization.
+- **Ready to train.** Export a `train.py` with losses, frozen layers and EMA targets.
+- **A library of real models.** It ranges from an MLP to GPT-2, BERT, Llama 2, Qwen2.5-VL, ViT, ResNet-50, YOLOv3, Mamba, U-Net, a VAE, the original Transformer and I-JEPA, each checked against a reference implementation.
+
+## Documentation
+
+- [Guide](docs/guide.md): the panels, components, editing, sizes, blocks, ties and files.
+- [Example models](docs/models.md): what each model is, how it is built and how it was checked.
+- [Training and the variance plot](docs/training.md): losses, the `train.py` export, and how the variance plot works.
+- [Development and publishing](docs/development.md): building, testing, GitHub Pages and links to examples.
 
 ## Source and attribution
 

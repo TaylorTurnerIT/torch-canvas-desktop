@@ -15,6 +15,7 @@ Both the web app and the desktop app must keep working. A change that only passe
 `scripts/prepare-web.py` runs `node build.js`, reads the resulting `index.html` and writes `web/index.html`. It makes these changes:
 
 1. Replaces the dimension evaluator with `scripts/patches/eval-dim.js`. The evaluator uses an arithmetic parser, so the desktop Content Security Policy can run symbolic sizes without dynamic code compilation.
+   It also evaluates real-valued constants for variance and layout matching, and replaces the web Apply/Cancel editor with the desktop live editor.
 2. Inserts `scripts/patches/source-sync.js` inside the `NN` IIFE, before its `return`. It keeps marimo decorators and setup-cell imports on save, and it patches only changed code when the diagram changes.
 3. Adds the variance size check, the native file-open reuse logic, the desktop save path, the Tauri credit, and the CSS and markup for the editor, marimo pane, and dividers.
 4. Appends `scripts/patches/live-code.js`, `recents.js`, `marimo-pane.js`, `resizers.js`, `open-files.js`, and `file-watch.js` at the end of the main app IIFE. The order matters.

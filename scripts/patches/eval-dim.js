@@ -1,6 +1,6 @@
   // Evaluate dimension arithmetic without dynamic JavaScript compilation. This
   // also runs inside the variance worker, under the desktop content policy.
-  function evalDim(expr, symbols) {
+  function evalDim(expr, symbols, integer = true) {
     if (expr === '' || expr == null) return null;
     const source = String(expr).trim();
     if (/^-?\d+(\.\d+)?$/.test(source)) return +source;
@@ -54,6 +54,6 @@
     try {
       const value = expression().value;
       skip();
-      return position === text.length && Number.isFinite(value) ? Math.floor(value) : null;
+      return position === text.length && Number.isFinite(value) ? (integer ? Math.floor(value) : value) : null;
     } catch { return null; }
   }

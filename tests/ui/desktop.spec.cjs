@@ -51,6 +51,9 @@ test('editor loads offline, edits, persists, and exports through native bridge',
   await expect(page.locator('.desktop-credit')).toContainText('Jesse Roberts');
   await expect(page.locator('#modelName')).toHaveValue('ResidualMLP');
   await expect(page.locator('.node').first()).toBeVisible();
+  await expect(page.locator('#codeEdit')).toHaveCount(1);
+  await expect(page.locator('#codeEdit')).toHaveJSProperty('tagName', 'TEXTAREA');
+  await expect(page.locator('#bEditCode, #codeTa')).toHaveCount(0);
   await page.locator('#bNew').click();
   await page.evaluate(() => new Promise(requestAnimationFrame));
   await page.locator('#modelName').fill('DesktopTest');
@@ -321,7 +324,9 @@ test('Open / import lists up to five recent models, newest first, and hides the 
   for (let i = 0; i < 6; i++) {
     await page.keyboard.press('Escape');
     await page.locator('#bMore').click();
-    const item = page.locator('.ctx [data-act^="lib:"]').nth(i + (i > 0 ? 0 : 0));
+    const item = page.locator('.ctx [data-act^="lib:"]').nth(i);
+    const category = item.locator('..').locator('..');
+    if (!(await category.getAttribute('class')).split(' ').includes('open')) await category.locator('.cat-hd').click();
     titles.push((await item.locator('span').nth(1).evaluate(e => e.firstChild.textContent)).trim());
     await item.click();
   }

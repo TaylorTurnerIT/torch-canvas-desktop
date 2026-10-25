@@ -1,3 +1,4 @@
+<meta name="author" content="Jesse Roberts">
 <title>Torch Canvas</title>
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMjggMTI4IiByb2xlPSJpbWciIGFyaWEtbGFiZWw9IlRvcmNoIENhbnZhcyI+CiAgPHJlY3QgeD0iNCIgeT0iNCIgd2lkdGg9IjEyMCIgaGVpZ2h0PSIxMjAiIHJ4PSIyOCIgZmlsbD0iIzI0MjMyZSIvPgogIDwhLS0gdGhlIHBhaW50IHN0cm9rZTogYSB0YXBlcmVkIHN3ZWVwIGZyb20gbGVmdCB0byB0aGUgYnJ1c2ggdGlwIC0tPgogIDxwYXRoIGQ9Ik0xNCA4OCBDIDI2IDcwLCA0NCA3MCwgNTggODIgQyA3MCA5MiwgNzggNzQsIDgyIDU4IEwgODcgNjEgQyA4NCA4MiwgNzAgMTAyLCA1NCA5MiBDIDQyIDg0LCAyOCA4NCwgMTYgOTQgWiIgZmlsbD0iIzc0NjdkNCIgb3BhY2l0eT0iLjQ1Ii8+CiAgPCEtLSBhIHNtYWxsIG5ldHdvcmsgcGFpbnRlZCBpbiB0aGUgc3Ryb2tlIC0tPgogIDxnIHN0cm9rZT0iI2ExOTdmMCIgc3Ryb2tlLXdpZHRoPSIzLjQiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCI+CiAgICA8bGluZSB4MT0iMjQiIHkxPSI4NiIgeDI9IjQyIiB5Mj0iNzQiLz48bGluZSB4MT0iMjQiIHkxPSI4NiIgeDI9IjQ0IiB5Mj0iOTYiLz4KICAgIDxsaW5lIHgxPSI0MiIgeTE9Ijc0IiB4Mj0iNjIiIHkyPSI4NiIvPjxsaW5lIHgxPSI0NCIgeTE9Ijk2IiB4Mj0iNjIiIHkyPSI4NiIvPgogIDwvZz4KICA8ZyBmaWxsPSIjZWZlZGZiIj48Y2lyY2xlIGN4PSIyNCIgY3k9Ijg2IiByPSI2LjUiLz48Y2lyY2xlIGN4PSI0MiIgY3k9Ijc0IiByPSI2Ii8+PGNpcmNsZSBjeD0iNDQiIGN5PSI5NiIgcj0iNiIvPjxjaXJjbGUgY3g9IjYyIiBjeT0iODYiIHI9IjYuNSIvPjwvZz4KICA8IS0tIHdoZXJlIHRoZSBicnVzaCBpcyBzdGlsbCBwYWludGluZywgdGhlIHN0cm9rZSBoYXMgYmVjb21lIGNvZGUgLS0+CiAgPGcgc3Ryb2tlPSIjZjBhMzVlIiBzdHJva2Utd2lkdGg9IjQuNSIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIj4KICAgIDxsaW5lIHgxPSI3NCIgeTE9Ijg4IiB4Mj0iOTAiIHkyPSI4OCIvPjxsaW5lIHgxPSI4MCIgeTE9Ijk5IiB4Mj0iMTA2IiB5Mj0iOTkiLz48bGluZSB4MT0iODAiIHkxPSIxMTAiIHgyPSI5NiIgeTI9IjExMCIvPgogIDwvZz4KICA8IS0tIHRoZSBicnVzaCAtLT4KICA8ZyB0cmFuc2Zvcm09InJvdGF0ZSgzNSAxMDEgNDApIj4KICAgIDxyZWN0IHg9Ijk1IiB5PSIyIiB3aWR0aD0iMTIiIGhlaWdodD0iMzYiIHJ4PSI2IiBmaWxsPSIjYzg2NDFhIi8+CiAgICA8cmVjdCB4PSI5NCIgeT0iMzYiIHdpZHRoPSIxNCIgaGVpZ2h0PSI5IiByeD0iMiIgZmlsbD0iI2RmZGVlOCIvPgogICAgPHBhdGggZD0iTTk0IDQ1IGgxNCBjMCA5IC00IDE1IC03IDIwIGMtMyAtNSAtNyAtMTEgLTcgLTIweiIgZmlsbD0iI2ExOTdmMCIvPgogIDwvZz4KPC9zdmc+">
 <meta name="claude:viewport-fit-sides" content="cover">
@@ -9,6 +10,7 @@
   --bg: #f4f4f8; --panel: #ffffff; --panel2: #fafafd; --ink: #24232e; --muted: #6c6b7d; --faint: #a3a2b3; --line: #dfdee8; --grid: #d9d8e4;
   --stream: #7467d4; --stream-bg: #efedfb; --bwd: #c8641a; --scaled: #3550c8; --edge: #8e8d9e; --err: #cf3535; --err-bg: #fdecec; --ok: #2f8a55;
   --lin-bg: #e9f5ed; --lin-bd: #86c29a; --lin-ink: #2d6a43;
+  --conv-bg: #e6f4f6; --conv-bd: #7bbcc6; --conv-ink: #1f5f69;
   --norm-bg: #e8eefc; --norm-bd: #93a9e6; --norm-ink: #33509c;
   --act-bg: #fce8d9; --act-bd: #e2a57c; --act-ink: #994d1d;
   --proj-bg: #fbe9ef; --proj-bd: #d998ad; --proj-ink: #8c3452;
@@ -21,6 +23,7 @@
 @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
   --bg: #14141b; --panel: #1b1b24; --panel2: #1f1f29; --ink: #e8e7f3; --muted: #a09fb2; --faint: #6d6c80; --line: #2d2d3a; --grid: #2a2a37;
   --stream: #a197f0; --stream-bg: #26233f; --bwd: #f0a35e; --scaled: #7f95ff; --edge: #7d7c90; --err: #ff6b6b; --err-bg: #3a1d20; --ok: #62c48a;
+  --conv-bg: #15272b; --conv-bd: #3c7a84; --conv-ink: #9dd6df;
   --lin-bg: #17281e; --lin-bd: #3f7e55; --lin-ink: #a3dcb6; --norm-bg: #1a2238; --norm-bd: #4d64aa; --norm-ink: #b2c2ff;
   --act-bg: #33231a; --act-bd: #9b6541; --act-ink: #f3ba91; --proj-bg: #331c26; --proj-bd: #95516b; --proj-ink: #f2abc3;
   --func-bg: #24242f; --func-bd: #4b4a5c; --func-ink: #c9c8d8;
@@ -29,6 +32,7 @@
 :root[data-theme="dark"] {
   --bg: #14141b; --panel: #1b1b24; --panel2: #1f1f29; --ink: #e8e7f3; --muted: #a09fb2; --faint: #6d6c80; --line: #2d2d3a; --grid: #2a2a37;
   --stream: #a197f0; --stream-bg: #26233f; --bwd: #f0a35e; --scaled: #7f95ff; --edge: #7d7c90; --err: #ff6b6b; --err-bg: #3a1d20; --ok: #62c48a;
+  --conv-bg: #15272b; --conv-bd: #3c7a84; --conv-ink: #9dd6df;
   --lin-bg: #17281e; --lin-bd: #3f7e55; --lin-ink: #a3dcb6; --norm-bg: #1a2238; --norm-bd: #4d64aa; --norm-ink: #b2c2ff;
   --act-bg: #33231a; --act-bd: #9b6541; --act-ink: #f3ba91; --proj-bg: #331c26; --proj-bd: #95516b; --proj-ink: #f2abc3;
   --func-bg: #24242f; --func-bd: #4b4a5c; --func-ink: #c9c8d8;
@@ -85,7 +89,8 @@ header { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; padding
 .main { min-height: 0; display: grid; grid-template-columns: 228px minmax(0, 1fr) minmax(340px, 34%); }
 aside, .right { min-height: 0; overflow: auto; background: var(--panel); }
 aside { border-right: 1px solid var(--line); padding: 12px; display: flex; flex-direction: column; gap: 18px; }
-.right { border-left: 1px solid var(--line); display: grid; grid-template-rows: auto auto minmax(0, 1fr); }
+.right { border-left: 1px solid var(--line); display: grid; grid-template-rows: auto auto auto minmax(0, 1fr); }
+.right > #codePane { grid-row: 4; }
 h3 { margin: 0 0 8px; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: .07em; color: var(--muted); display: flex; align-items: center; justify-content: space-between; }
 .palette { display: grid; grid-template-columns: 1fr 1fr; gap: 5px; }
 .ctabs { display: flex; flex-wrap: wrap; gap: 0 2px; border-bottom: 1px solid var(--line); margin-bottom: 8px; }
@@ -118,6 +123,7 @@ h3 { margin: 0 0 8px; font-size: 11px; font-weight: 600; text-transform: upperca
 .pal i { width: 16px; height: 16px; border-radius: 4px; border: 1.5px solid; flex: none; display: grid; place-items: center; font-style: normal; font-family: var(--mono); font-size: 10px; line-height: 1; }
 .pal.wide { grid-column: span 2; }
 .sw-lin { background: var(--lin-bg); border-color: var(--lin-bd) !important; color: var(--lin-ink); }
+.sw-conv { background: var(--conv-bg); border-color: var(--conv-bd) !important; color: var(--conv-ink); }
 .sw-norm { background: var(--norm-bg); border-color: var(--norm-bd) !important; color: var(--norm-ink); }
 .sw-act { background: var(--act-bg); border-color: var(--act-bd) !important; color: var(--act-ink); }
 .sw-op { border-radius: 50% !important; background: var(--panel); border-color: var(--ink) !important; color: var(--ink); }
@@ -194,6 +200,12 @@ kbd { font-family: var(--mono); font-size: 10.5px; border: 1px solid var(--line)
 .node .mono, .mono { font-family: var(--mono); }
 .n-box { stroke-width: 1.2; }
 .t-lin .n-box { fill: var(--lin-bg); stroke: var(--lin-bd); } .t-lin text { fill: var(--lin-ink); }
+.t-conv .n-box { fill: var(--conv-bg); stroke: var(--conv-bd); } .t-conv text { fill: var(--conv-ink); }
+.delay-link path { fill: none; stroke: var(--stream); stroke-width: 1.2; stroke-dasharray: 3 4; opacity: .38; } .delay-link.on path { opacity: .85; }
+.t-op.t-const .n-box { rx: 15px; }
+.t-reshape .n-box { fill: var(--panel2); stroke: var(--faint); stroke-dasharray: 5 2.5; } .t-reshape text { fill: var(--ink); }
+.opmath .note { color: var(--ink); border-left: 2px solid var(--faint); padding-left: 8px; }
+.t-delay .n-box { fill: var(--stream-bg); stroke: var(--stream); stroke-dasharray: 4 2; } .t-delay text { fill: var(--stream); } .t-delay .clk { fill: none; stroke: var(--stream); stroke-width: 1.3; }
 .t-norm .n-box { fill: var(--norm-bg); stroke: var(--norm-bd); } .t-norm text { fill: var(--norm-ink); }
 .t-act .n-box { fill: var(--act-bg); stroke: var(--act-bd); } .t-act text { fill: var(--act-ink); }
 .t-proj .n-box { fill: var(--proj-bg); stroke: var(--proj-bd); } .t-proj text { fill: var(--proj-ink); }
@@ -212,6 +224,13 @@ kbd { font-family: var(--mono); font-size: 10.5px; border: 1px solid var(--line)
 .node.conflict.sel .n-box { stroke-width: 3; }
 .node .badge circle { fill: var(--err); stroke: var(--bg); stroke-width: 1.5; }
 .node .badge text { fill: var(--on-err) !important; font-family: var(--sans); font-weight: 700; font-size: 11px; }
+.opmath { background: var(--panel2, rgba(116,103,212,.06)); border: 1px solid var(--line, rgba(0,0,0,.08)); border-radius: 8px; padding: 9px 11px; margin: 4px 0 12px; }
+.opmath .eq { font-family: "Cambria Math", "STIX Two Math", "Latin Modern Math", Georgia, serif; font-size: 15px; line-height: 1.5; color: var(--ink, inherit); overflow-x: auto; white-space: nowrap; }
+.opmath .eq sub, .opmath .eq sup { font-size: 70%; }
+.opmath .eq .rad { font-family: var(--sans); font-size: 105%; margin-right: -1px; } .opmath .eq .radx { border-top: 1.2px solid currentColor; padding: 1px 2px 0; }
+.opmath p { margin: 6px 0 0; font-size: 12.5px; line-height: 1.5; color: var(--muted); }
+.opmath .eq + p { margin-top: 6px; } .opmath p:first-child { margin-top: 0; }
+.node .frz { font-size: 16px; fill: #2f7fd8; pointer-events: none; paint-order: stroke; stroke: var(--bg); stroke-width: 3px; }
 .conflict-cap { font-family: var(--mono); font-size: 10.5px; fill: var(--err); paint-order: stroke; stroke: var(--bg); stroke-width: 4px; stroke-linejoin: round; pointer-events: none; }
 .fixes { display: flex; flex-direction: column; gap: 6px; }
 .fixes .btn { text-align: left; white-space: normal; }
@@ -227,6 +246,7 @@ kbd { font-family: var(--mono); font-size: 10.5px; border: 1px solid var(--line)
 .wpop .nm { display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--muted); }
 .wpop .nm input { width: 90px; text-align: left; }
 .wpop .acts { display: flex; gap: 6px; justify-content: flex-end; }
+.nick { fill: var(--blk-ink); font-size: 10.5px; font-family: var(--sans); font-weight: 600; letter-spacing: .01em; pointer-events: none; }
 .caption { fill: var(--muted); font-size: 11.5px; font-family: var(--sans); pointer-events: none; }
 .port { fill: var(--panel); stroke: var(--sel); stroke-width: 1.5; opacity: 0; cursor: crosshair; transition: opacity .12s; }
 .node:hover .port, .node.sel .port { opacity: 1; }
@@ -268,6 +288,14 @@ pre.code { margin: 0; padding: 10px 0 24px; font-family: var(--mono); font-size:
 pre.code .ln { display: block; padding: 0 14px 0 0; white-space: pre; }
 pre.code .ln::before { content: attr(data-n); display: inline-block; width: 3.4em; padding-right: 1em; text-align: right; color: var(--faint); user-select: none; }
 pre.code .ln.hl { background: var(--hl); }
+.code-edit { position: relative; display: inline-block; min-width: 100%; min-height: 100%; vertical-align: top; background: var(--code-bg); }
+.code-edit pre.code { pointer-events: none; }
+.code-edit textarea { position: absolute; inset: 0; width: 100%; height: 100%; margin: 0; border: 0; outline: 0; resize: none; overflow: hidden; box-sizing: border-box;
+  padding: 10px 14px 24px 4.4em; font-family: var(--mono); font-size: 12px; line-height: 1.6; tab-size: 4; white-space: pre; background: transparent; color: transparent; caret-color: var(--ink); }
+.code-edit textarea::selection { background: color-mix(in srgb, var(--stream) 28%, transparent); color: transparent; }
+#codePane.editing { box-shadow: inset 0 0 0 2px color-mix(in srgb, var(--stream) 45%, transparent); }
+.code-err { display: block; white-space: pre-wrap; }
+.codebar kbd { font-family: var(--mono); font-size: 10.5px; border: 1px solid var(--line); border-bottom-width: 2px; border-radius: 4px; padding: 0 4px; background: var(--panel); }
 .k { color: var(--kw); } .s { color: var(--str); } .nu { color: var(--num); } .c { color: var(--com); font-style: italic; } .cl { color: var(--cls); } .sf { color: var(--muted); }
 .var-float { position: absolute; left: 14px; bottom: 58px; width: min(500px, calc(100% - 28px)); max-height: calc(100% - 110px); display: flex; flex-direction: column; background: var(--panel); border: 1px solid var(--line); border-radius: 12px; box-shadow: 0 10px 34px rgba(20, 20, 40, .16); z-index: 6; }
 .var-float[hidden] { display: none !important; }
@@ -373,6 +401,13 @@ pre.code .ln.hl { background: var(--hl); }
 details summary { cursor: pointer; color: var(--muted); font-size: 12.5px; }
 .ctx { position: fixed; z-index: 25; background: var(--panel); border: 1px solid var(--line); border-radius: 10px; box-shadow: 0 10px 34px rgba(20, 18, 40, .2); padding: 5px; min-width: 248px; max-width: calc(100vw - 16px); max-height: calc(100vh - 16px); overflow: auto; font-size: 12.5px; }
 .ctx .hd { padding: 7px 10px 4px; font-size: 10.5px; font-weight: 600; text-transform: uppercase; letter-spacing: .07em; color: var(--muted); display: flex; justify-content: space-between; gap: 10px; }
+.ctx .cat-hd { display: flex; align-items: center; gap: 7px; width: 100%; border: 0; background: none; padding: 6px 10px; font: 600 12.5px var(--sans); color: var(--ink); cursor: pointer; text-align: left; border-radius: 6px; }
+.ctx .cat-hd:hover { background: var(--panel2); }
+.ctx .cat-arrow { display: inline-block; width: 10px; color: var(--muted); transition: transform .12s; } .ctx .cat.open .cat-arrow { transform: rotate(90deg); }
+.ctx .cat-n { margin-left: auto; font: 400 11px var(--mono); color: var(--faint); }
+.ctx .cat-items { display: none; padding-left: 12px; } .ctx .cat.open .cat-items { display: block; }
+.model-cat { font: 12px var(--sans); color: var(--muted); background: transparent; border: 1px solid transparent; border-radius: 6px; padding: 2px 4px; max-width: 190px; cursor: pointer; }
+.model-cat:hover { border-color: var(--line); color: var(--ink); }
 .ctx .hd span { text-transform: none; letter-spacing: 0; font-weight: 400; font-family: var(--mono); }
 .ctx .it { display: grid; grid-template-columns: 16px minmax(0, 1fr); align-items: baseline; gap: 4px; width: 100%; text-align: left; border: 0; background: none; padding: 5px 10px 5px 6px; border-radius: 6px; }
 .ctx .it:hover, .ctx .it:focus-visible { background: var(--panel2); outline: none; box-shadow: inset 0 0 0 1px var(--line); }
@@ -391,6 +426,8 @@ details summary { cursor: pointer; color: var(--muted); font-size: 12.5px; }
 .tie-link path { fill: none; stroke: var(--blk-bd); stroke-width: 1.3; stroke-dasharray: 5 4; opacity: .55; }
 .tie-link text { fill: var(--blk-ink); font-size: 10px; opacity: .7; }
 .tie-link.on path { opacity: 1; stroke-width: 1.8; } .tie-link.on text { opacity: 1; }
+.tie-link { cursor: pointer; pointer-events: visiblePainted; } .tie-link path.hit { stroke: transparent; stroke-width: 12; stroke-dasharray: none; opacity: 1; }
+.tie-link.follow path:not(.hit) { stroke: #2f7fd8; stroke-dasharray: 2 4; } .tie-link.follow text { fill: #2f7fd8; }
 .toast { position: fixed; left: 50%; bottom: calc(18px + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%); background: var(--ink); color: var(--bg); padding: 8px 14px; border-radius: 8px; font-size: 12.5px; z-index: 30; max-width: min(560px, calc(100% - 32px)); }
 
 @media (max-width: 980px) {
@@ -408,6 +445,7 @@ details summary { cursor: pointer; color: var(--muted); font-size: 12.5px; }
   <header>
     <div class="brand"><img class="logo" src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMjggMTI4IiByb2xlPSJpbWciIGFyaWEtbGFiZWw9IlRvcmNoIENhbnZhcyI+CiAgPHJlY3QgeD0iNCIgeT0iNCIgd2lkdGg9IjEyMCIgaGVpZ2h0PSIxMjAiIHJ4PSIyOCIgZmlsbD0iIzI0MjMyZSIvPgogIDwhLS0gdGhlIHBhaW50IHN0cm9rZTogYSB0YXBlcmVkIHN3ZWVwIGZyb20gbGVmdCB0byB0aGUgYnJ1c2ggdGlwIC0tPgogIDxwYXRoIGQ9Ik0xNCA4OCBDIDI2IDcwLCA0NCA3MCwgNTggODIgQyA3MCA5MiwgNzggNzQsIDgyIDU4IEwgODcgNjEgQyA4NCA4MiwgNzAgMTAyLCA1NCA5MiBDIDQyIDg0LCAyOCA4NCwgMTYgOTQgWiIgZmlsbD0iIzc0NjdkNCIgb3BhY2l0eT0iLjQ1Ii8+CiAgPCEtLSBhIHNtYWxsIG5ldHdvcmsgcGFpbnRlZCBpbiB0aGUgc3Ryb2tlIC0tPgogIDxnIHN0cm9rZT0iI2ExOTdmMCIgc3Ryb2tlLXdpZHRoPSIzLjQiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCI+CiAgICA8bGluZSB4MT0iMjQiIHkxPSI4NiIgeDI9IjQyIiB5Mj0iNzQiLz48bGluZSB4MT0iMjQiIHkxPSI4NiIgeDI9IjQ0IiB5Mj0iOTYiLz4KICAgIDxsaW5lIHgxPSI0MiIgeTE9Ijc0IiB4Mj0iNjIiIHkyPSI4NiIvPjxsaW5lIHgxPSI0NCIgeTE9Ijk2IiB4Mj0iNjIiIHkyPSI4NiIvPgogIDwvZz4KICA8ZyBmaWxsPSIjZWZlZGZiIj48Y2lyY2xlIGN4PSIyNCIgY3k9Ijg2IiByPSI2LjUiLz48Y2lyY2xlIGN4PSI0MiIgY3k9Ijc0IiByPSI2Ii8+PGNpcmNsZSBjeD0iNDQiIGN5PSI5NiIgcj0iNiIvPjxjaXJjbGUgY3g9IjYyIiBjeT0iODYiIHI9IjYuNSIvPjwvZz4KICA8IS0tIHdoZXJlIHRoZSBicnVzaCBpcyBzdGlsbCBwYWludGluZywgdGhlIHN0cm9rZSBoYXMgYmVjb21lIGNvZGUgLS0+CiAgPGcgc3Ryb2tlPSIjZjBhMzVlIiBzdHJva2Utd2lkdGg9IjQuNSIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIj4KICAgIDxsaW5lIHgxPSI3NCIgeTE9Ijg4IiB4Mj0iOTAiIHkyPSI4OCIvPjxsaW5lIHgxPSI4MCIgeTE9Ijk5IiB4Mj0iMTA2IiB5Mj0iOTkiLz48bGluZSB4MT0iODAiIHkxPSIxMTAiIHgyPSI5NiIgeTI9IjExMCIvPgogIDwvZz4KICA8IS0tIHRoZSBicnVzaCAtLT4KICA8ZyB0cmFuc2Zvcm09InJvdGF0ZSgzNSAxMDEgNDApIj4KICAgIDxyZWN0IHg9Ijk1IiB5PSIyIiB3aWR0aD0iMTIiIGhlaWdodD0iMzYiIHJ4PSI2IiBmaWxsPSIjYzg2NDFhIi8+CiAgICA8cmVjdCB4PSI5NCIgeT0iMzYiIHdpZHRoPSIxNCIgaGVpZ2h0PSI5IiByeD0iMiIgZmlsbD0iI2RmZGVlOCIvPgogICAgPHBhdGggZD0iTTk0IDQ1IGgxNCBjMCA5IC00IDE1IC03IDIwIGMtMyAtNSAtNyAtMTEgLTcgLTIweiIgZmlsbD0iI2ExOTdmMCIvPgogIDwvZz4KPC9zdmc+" alt="" width="24" height="24"><b>Torch Canvas</b><span>diagram ⇄ PyTorch</span></div>
     <input class="model-name" id="modelName" aria-label="Model class name" spellcheck="false">
+    <select class="model-cat" id="modelCat" aria-label="Category" title="The category this model is listed under in Open / import (written into its code as # category:)"></select>
     <div class="tb">
       <button class="btn primary" id="bNew" title="Start a new model from a small editable MLP">New model</button>
       <button class="btn" id="bMore" aria-haspopup="menu" title="Open a file or folder, paste code, copy graph JSON">Open / import ▾</button>
@@ -440,7 +478,7 @@ details summary { cursor: pointer; color: var(--muted); font-size: 12.5px; }
           <div class="row" style="margin-top:8px"><button class="btn" id="bNewBlock">New block</button><button class="btn" id="bSaveBlock" title="Turn the selected layers into a reusable block">Save selection as block</button></div>
         </div>
         <p class="hint" id="compEmpty" hidden>No components match.</p>
-        <p class="hint" style="margin-top:10px">Click or drag a component onto the canvas, and drag from a component's top dot to another to connect. Hover for what it does; right-click for more.</p>
+        <p class="hint" style="margin-top:10px">Click or drag a component onto the canvas, and drag from a component's top dot to another to connect. Hover for what it does; double-click a layer for its details, right-click for more.</p>
       </section>
       <section id="projSec" hidden></section>
       <section>
@@ -466,19 +504,24 @@ details summary { cursor: pointer; color: var(--muted); font-size: 12.5px; }
       <div class="drawer" id="drawer" hidden><div class="drawer-hd"><span style="flex:1">Details</span><button class="btn" id="drawerClose" aria-label="Close details">×</button></div><div class="insp" id="insp"></div></div>
       <div class="empty-msg" id="emptyMsg" hidden>Empty canvas. Click <b>New model</b> for a starter network,<br>or click any layer in the list on the left to add it.</div>
       <div class="var-float" id="varFloat" hidden role="dialog" aria-label="Init variance"><div class="var-fhead"><b>Init variance</b><span class="var-stale" id="varStale" hidden>The model changed since this plot.</span><span class="spacer"></span><button class="btn" id="varRe">Replot</button><button class="x" id="varClose" aria-label="Close">×</button></div><div class="var-pane" id="varPane"></div></div>
-      <div class="canvas-ctl"><button class="btn" id="zVar" title="Plot the expected forward and backward variance at each Linear right after init">Plot variance</button><button class="btn" id="zSizes" aria-pressed="false" title="Show the tensor size on every branch">Show sizes</button><button class="btn" id="zSvg" title="Save the diagram exactly as shown (with the size labels where you placed them) as an SVG">Export SVG</button><button class="btn" id="zOut" aria-label="Zoom out">−</button><button class="btn" id="zFit">Fit</button><button class="btn" id="zIn" aria-label="Zoom in">+</button></div>
+      <div class="canvas-ctl"><button class="btn" id="zVar" title="Plot the expected forward and backward variance at each Linear and Conv2d right after init">Plot variance</button><button class="btn" id="zSizes" aria-pressed="false" title="Show the tensor size on every branch">Show sizes</button><button class="btn" id="zSvg" title="Save the diagram exactly as shown (with the size labels where you placed them) as an SVG">Export SVG</button><button class="btn" id="zOut" aria-label="Zoom out">−</button><button class="btn" id="zFit">Fit</button><button class="btn" id="zIn" aria-label="Zoom in">+</button></div>
     </div>
 
     <div class="right">
       <div class="tabs"><span class="tab" aria-selected="true" style="cursor:default">PyTorch</span></div>
       <div id="codeBar" class="codebar">
-        <label><input type="checkbox" id="oShapes" checked> shape comments</label>
-        <label><input type="checkbox" id="oSilu"> fuse σ(x)·x → F.silu</label>
-        <label title="Write sizes as constructor arguments instead of numbers"><input type="checkbox" id="oNamed"> named sizes</label>
+        <label class="cb-view"><input type="checkbox" id="oShapes" checked> shape comments</label>
+        <label class="cb-view"><input type="checkbox" id="oSilu"> fuse σ(x)·x → F.silu</label>
+        <label class="cb-view" title="Write sizes as constructor arguments instead of numbers"><input type="checkbox" id="oNamed"> named sizes</label>
+        <span class="cb-edit" hidden>Editing the code · <kbd>Ctrl</kbd><kbd>Enter</kbd> applies it to the diagram</span>
         <span class="spacer"></span>
-        <button class="btn" id="bCopy">Copy code</button>
+        <button class="btn cb-view" id="bEditCode" title="Edit the code here and apply it to the diagram (or double-click the code)">Edit</button>
+        <button class="btn cb-view" id="bCopy">Copy code</button>
+        <button class="btn cb-edit" id="bCodeCancel" hidden title="Discard these edits (Esc)">Cancel</button>
+        <button class="btn primary cb-edit" id="bCodeApply" hidden title="Read this code into the diagram (Ctrl+Enter)">Apply</button>
       </div>
-      <div class="pane" id="codePane"><ul class="warns" id="warns" hidden></ul><pre class="code" id="code"></pre></div>
+      <div class="warns code-err" id="codeErr" role="status" hidden></div>
+      <div class="pane" id="codePane"><ul class="warns" id="warns" hidden></ul><pre class="code" id="code"></pre><div class="code-edit" id="codeEdit" hidden><pre class="code" id="codeHl" aria-hidden="true"></pre><textarea id="codeTa" spellcheck="false" autocapitalize="off" autocomplete="off" wrap="off" aria-label="PyTorch code"></textarea></div></div>
     </div>
   </div>
 </div>
@@ -542,6 +585,11 @@ const fmt = n => n == null ? '?' : n.toLocaleString('en-US');
 const fmtShort = n => n >= 1e9 ? (n / 1e9).toFixed(2) + 'B' : n >= 1e6 ? (n / 1e6).toFixed(2) + 'M' : n >= 1e3 ? (n / 1e3).toFixed(1) + 'K' : String(n);
 
 const STORE = 'torchcanvas.graph.v1';
+// categories in Open / import (examples say theirs; anything else is Other)
+const NET_CATS = ['MLPs', 'Convolutional networks', 'Transformers', 'Vision & multimodal transformers', 'Recurrent & state space', 'Generative & self-supervised'];
+const BLOCK_CATS = ['MLP blocks', 'Transformer blocks', 'Convolutional blocks', 'Recurrent & state space blocks'];
+const catOf = x => (x.category && String(x.category).trim()) || 'Other';
+
 const S = {
   g: null, sel: { nodes: new Set(), edges: new Set(), group: null }, view: { x: 0, y: 0, k: 1 },
   opts: { fuseSilu: false, shapeComments: true, literalDims: true }, undo: [], redo: [], drag: null, focusDim: null,
@@ -625,15 +673,27 @@ function restore(json) {
   if (S.edit && !(S.tabs || []).includes(S.edit)) S.tabs.push(S.edit);
   clearSel(); changed();
 }
+// which version of an example a tab was opened from, and whether it has been edited since: an untouched tab of an
+// example that has changed is brought up to date when the app starts
+const libSigOf = src => { let h = 5381; const t = String(src || ''); for (let i = 0; i < t.length; i++) h = ((h * 33) ^ t.charCodeAt(i)) >>> 0; return h.toString(36); };
+const docEdited = d => !!(d.edited || ((d.id === S.cur ? S.undo : d.undo) || []).length > (d.baseUndo || 0));
 function save() {
-  try { localStorage.setItem(STORE, JSON.stringify({ v: 2, docs: S.docs.map(d => (d.id === S.cur ? S.root : d.root)), from: S.docs.map(d => d.fromLib || null), cur: Math.max(0, S.docs.findIndex(d => d.id === S.cur)) })); } catch {}
+  try { localStorage.setItem(STORE, JSON.stringify({ v: 2, docs: S.docs.map(d => (d.id === S.cur ? S.root : d.root)), from: S.docs.map(d => d.fromLib || null), sig: S.docs.map(d => d.libSig || null), ed: S.docs.map(docEdited), cur: Math.max(0, S.docs.findIndex(d => d.id === S.cur)) })); } catch {}
 }
 function load() { try { const s = localStorage.getItem(STORE); if (s) { const g = JSON.parse(s); if (g && Array.isArray(g.nodes)) return g; } } catch {} return null; }
 function clearSel() { S.sel.nodes.clear(); S.sel.edges.clear(); S.sel.group = null; }
 
 // ── geometry ──
 const byId = id => S.g.nodes.find(n => n.id === id);
+// A nickname is a small top line inside the box (like a block's name); circles keep theirs beside them
+const NICK_H = 13;
+const nickInside = n => !!(n.params.title && !NN.isCircle(n) && n.type !== 'block');
 function sizeOf(n) {
+  const s = sizeOf0(n);
+  if (!nickInside(n)) return s;
+  return { w: Math.max(s.w, n.params.title.length * 6.3 + 22), h: s.h + NICK_H };
+}
+function sizeOf0(n) {
   const p = n.params;
   switch (n.type) {
     case 'linear': {
@@ -643,13 +703,24 @@ function sizeOf(n) {
       return { w: Math.max(92, Math.max(t.length * 7.4, sub.length * 7, il.length * 6) + 26), h: il ? 52 : 40 };
     }
     case 'norm': return { w: Math.max(96, normLabel(p).length * 7.6 + 22), h: 30 };
-    case 'act': return p.fn === 'sigmoid' ? { w: 32, h: 34 } : p.fn === 'softmax' ? { w: 108, h: 30 } : p.fn === 'gelu_tanh' ? { w: 84, h: 30 } : { w: 56, h: 30 };
-    case 'binop': return { w: 26, h: 26 };
+    case 'conv': { const t = convTitle(p), sub = dimText(p.out) + ' × ' + dimText(p.in); return { w: Math.max(92, t.length * 7.4, sub.length * 7) + 26, h: 40 }; }
+    case 'conv1d': { const t = `Causal conv ${p.k}`, sub = dimText(p.ch) + ' channels'; return { w: Math.max(92, t.length * 7.4, sub.length * 7) + 26, h: 40 }; }
+    case 'pool': case 'upsample': case 'token': case 'select': case 'param': case 'noise': return { w: Math.max(70, OP_LABEL[n.type](p).length * 7 + 24), h: 30 };
+    case 'delay': return { w: Math.max(74, OP_LABEL.delay(p).length * 7 + 30), h: 30 };
+    case 'act': return p.fn === 'sigmoid' ? { w: 32, h: 34 } : p.fn === 'leaky_relu' ? { w: 84, h: 30 } : p.fn === 'softmax' ? { w: 108, h: 30 } : p.fn === 'softplus' ? { w: 84, h: 30 } : p.fn === 'gelu_tanh' ? { w: 84, h: 30 } : { w: 56, h: 30 };
+    case 'binop': return NN.isCircle(n) ? { w: 26, h: 26 } : { w: Math.max(54, constLabel(p).length * 7.6 + 24), h: 30 };
     case 'dropout': return { w: 86, h: 30 };
     case 'embed': { const t = p.positions ? 'Position embedding' : 'Embedding', sub = dimText(p.num) + ' × ' + dimText(p.dim), il = subLabel(p, n); return { w: Math.max(t.length * 7.4, sub.length * 7, il.length * 6) + 30, h: il ? 52 : 40 }; }
     case 'loss': { const t = (NN.LOSSES[p.fn] || NN.LOSSES.cross_entropy).label, sub = lossSub(p); return { w: Math.max(150, t.length * 7.6 + 30, sub.length * 6.2 + 26), h: 42 }; }
     case 'heads': case 'merge': case 'transpose': case 'scale': case 'mask': case 'rope': return { w: Math.max(70, OP_LABEL[n.type](p).length * 7 + 24), h: 30 };
-    case 'func': { const t = p.init ? p.init.replace(/\(.*$/, '') : p.fn; return { w: Math.max(80, t.length * 7.2 + 24), h: 32 }; }
+    case 'reshape': { const a = reshapeFace(p), b = shapeChange(n); return { w: Math.max(90, a.length * 7.2, b.length * 6.6) + 26, h: b ? 40 : 30 }; }
+    case 'func': {
+      const f = funcFace(n);
+      if (f && f.glyph) return { w: 48, h: 30 };
+      if (f && f.title) return { w: Math.max(80, f.title.length * 7.4, f.sub.length * 6.6) + 26, h: 40 };
+      if (f && f.line) return { w: Math.max(80, f.line.length * 6.9 + 24), h: 30 };
+      const t = funcLabel(p); return { w: Math.max(80, t.length * 7.2 + 24), h: 32 };
+    }
     case 'block': {
       const t = blockTexts(n), w = Math.max(124, t.title.length * 7.8, t.io.length * 7, t.args.length * 6.2) + 30, h = t.args ? 54 : 42;
       // repeated copies are tiled along the flow, so the box grows in that direction
@@ -661,6 +732,24 @@ function sizeOf(n) {
   return { w: 90, h: 32 };
 }
 const REP_STEP = 12;
+// layers with weights of their own, and block uses, can be frozen (no updates in training)
+// what a layer or block use can follow (an EMA tie): another of the same kind and sizes, in the model (not a follower)
+function followCandidates(n) {
+  if (S.edit || !canFreeze(n)) return [];
+  const sym = R().symbols || {}, ev = v => String(NN.evalDim(v, sym) ?? v);
+  const dims = m => m.type === 'block' ? m.params.block + '|' + JSON.stringify(Object.entries(m.params.args || {}).sort().map(([k, v]) => [k, ev(v)])) : m.type + '|' + ['in', 'out', 'k', 'stride', 'pad', 'ch', 'dim', 'num', 'n', 'shape', 'kind', 'transposed', 'bias'].map(f => (m.params[f] == null ? '' : String(m.params[f]).split(',').map(ev).join(','))).join('|');
+  const me = dims(n);
+  return S.g.nodes.filter(m => m !== n && m.type === n.type && !m.params.follows && m.params.follows !== n.id && dims(m) === me);
+}
+function followField(n) {
+  const c = followCandidates(n), cur = n.params.follows ? byId(n.params.follows) : null;
+  if (!c.length && !cur) return '';
+  let h = field('Follows (EMA)', sel('follows', n.params.follows || '', [['', 'nothing: trained normally']].concat(c.map(m => [m.id, tieName(m)]))));
+  if (cur) h += field('Momentum', txt('momentum', n.params.momentum ?? '0.996', true, 'placeholder="0.996"')) + field('→ at the end', txt('momentum_end', n.params.momentum_end ?? '1.0', true, 'placeholder="1.0"'))
+    + `<p class="hint" style="margin-top:-6px">Starts as a copy of ${esc(tieName(cur))} and gets no gradients (it runs under <span class="mono">torch.no_grad()</span>). After each optimizer step, <span class="mono">ema_update</span> moves each weight toward ${esc(tieName(cur))}'s: w ← m·w + (1 − m)·w′, with m going from the first momentum to the second over training. Equal values: a constant momentum.</p>`;
+  return h;
+}
+const canFreeze = n => n && (n.type === 'block' || (['linear', 'conv', 'conv1d', 'embed', 'token', 'param'].includes(n.type)) || (n.type === 'norm' && NN.paramCount(n, R().symbols || {}) !== 0));
 // Which way data flows through a node: from what feeds it toward what it feeds.
 function flowDir(n) {
   const ix = S.info && S.info.ix; if (!ix || !ix.ins.get(n.id)) return 'right';
@@ -671,7 +760,85 @@ function flowDir(n) {
   if (!dx && !dy) return 'right';
   return Math.abs(dx) >= Math.abs(dy) ? (dx >= 0 ? 'right' : 'left') : (dy < 0 ? 'up' : 'down');
 }
-const OP_LABEL = { heads: p => `split heads · ${dimText(p.heads)}`, merge: () => 'merge heads', transpose: () => 'transpose', scale: () => '× 1/√d', mask: p => (p.mode === 'given' ? 'attention mask' : 'causal mask'),
+// Conv 3×3, with the stride when it isn't 1 (Conv 3×3 /2)
+const convTitle = p => (p.transposed ? `ConvT ${p.k}×${p.k}${/^\d+$/.test(String(p.stride)) ? ' ×' + p.stride : ' · ' + p.stride}` : `Conv ${p.k}×${p.k}${String(p.stride) === '1' ? '' : /^\d+$/.test(String(p.stride)) ? ' /' + p.stride : ' · ' + p.stride}`);
+// a custom op's label: its module, its function, or the tensor method without the dot (flatten)
+const funcLabel = p => (p.init ? p.init.replace(/\(.*$/, '') : String(p.fn || '').replace(/^\./, ''));
+function reshapeCodeOf(n) {
+  const x = S.info && S.info.shapes.get((S.info.ix.inKeys.get(n.id) || [])[0]);
+  try { return 'x' + NN.reshapeSteps(n.params, (x || []).length).map(s2 => NN.reshapeStepCode(s2, v => v)).join(''); } catch { return ''; }
+}
+// an operation with a constant as it reads: × √d, × 1/√(d/n_head), × 0.5, 1 − x
+function prettyConst(c0) {
+  let c = String(c0).trim().replace(/\s+/g, ' ');
+  const root = (b, inv) => { const inner = b.replace(/\s+/g, '').replace(/^\((.*)\)$/, '$1'); const r = /^[\w.]+$/.test(inner) ? '√' + inner : `√(${inner})`; return inv ? '1/' + r : r; };
+  let m = /^(.+?)\s*\*\*\s*(-?)0?\.5$/.exec(c); if (m) return root(m[1], m[2] === '-');
+  return c.replace(/\s*\*\*\s*/g, '^').replace(/^-/, '−');
+}
+// the box of an operation with a constant is the same everywhere; its nickname says which constant (×√d)
+function constLabel(p) {
+  const op = { '*': '×', '-': '−', '/': '÷', '+': '+' }[p.op] || p.op;
+  return p.rev ? `constant ${op} x` : `${op} constant`;
+}
+// A node's shape change as text: sizes without the batch (two equal trailing sizes of an image as n²); when that gets
+// long, sizes both sides share at the front become …
+function shapeChange(n) {
+  const info = typeof S !== 'undefined' && S.info, ix = info && info.ix; if (!ix || !info.shapes) return '';
+  const a = info.shapes.get((ix.inKeys.get(n.id) || [])[0]), b = info.shapes.get(n.id);
+  const dims = s => { if (!s) return null; let d = s.slice(); if (d.length && String(d[0]) === NN.BATCH) d = d.slice(1); return d.map(x => dimText(x)); };
+  const txt = d => { let t = d.slice(); if (t.length >= 3 && t[t.length - 1] === t[t.length - 2]) t = [...t.slice(0, -2), t[t.length - 1] + '²']; return t.join(' × ') || '1'; };
+  const A = dims(a), B = dims(b); if (!A || !B) return '';
+  const full = txt(A) + ' → ' + txt(B); if (full.length <= 22) return full;
+  let L = 0; while (L < Math.min(A.length, B.length) - 1 && A[L] === B[L]) L++;
+  return L ? '… × ' + txt(A.slice(L)) + ' → … × ' + txt(B.slice(L)) : full;
+}
+const reshapeFace = p => String(p.pattern || '').replace(/\s*->\s*|\s*→\s*/, ' → ').replace(/\.\.\./g, '…');
+// What a function node shows: the math glyph, or the op's name above the shape change (sizes without the batch, two
+// equal trailing sizes of an image as n²), or a plain name for the helpers. null: the function's own name.
+const REDUCE_RE = /(?:^|\.)(sum|mean)$/, RESHAPE_RE = /(?:^|\.)(flatten|unflatten|squeeze|unsqueeze)$/;
+const PLAIN_HELPERS = { vision_positions: 'patch (row, col)', vision_window_index: 'window order', window_order: 'sort into windows', window_restore: 'undo window sort',
+  vision_window_mask: 'attend within window', vision_frame_mask: 'attend within frame', mrope_positions: 'M-RoPE positions (t, h, w)', place_tokens: 'image tokens → text' };
+function funcFace(n) {
+  const p = n.params, fn = String(p.fn || ''), ex = String(p.extra || '').trim();
+  if (p.init) return null;
+  const info = typeof S !== 'undefined' && S.info, ix = info && info.ix;
+  const inS = k => { const key = ix && (ix.inKeys.get(n.id) || [])[k]; return key && info.shapes ? info.shapes.get(key) : null; };
+  const outS = info && info.shapes ? info.shapes.get(n.id) : null;
+  const sh = (s, tight) => {
+    if (!s) return '?';
+    let d = s.slice(); if (d.length && String(d[0]) === NN.BATCH) d = d.slice(1);
+    let t = d.map(x => dimText(x)); if (t.length >= 3 && t[t.length - 1] === t[t.length - 2]) t = [...t.slice(0, -2), t[t.length - 1] + '²'];
+    return t.join(tight ? '×' : ' × ') || '1';
+  };
+  // before → after; when that gets long, sizes both share at the front (like the sequence length) become …
+  const dims = s => { if (!s) return null; let d = s.slice(); if (d.length && String(d[0]) === NN.BATCH) d = d.slice(1); return d.map(x => dimText(x)); };
+  const change = (a, b) => {
+    const A = dims(a), B = dims(b); if (!A || !B) return sh(a) + ' → ' + sh(b);
+    const txt = d => { let t = d.slice(); if (t.length >= 3 && t[t.length - 1] === t[t.length - 2]) t = [...t.slice(0, -2), t[t.length - 1] + '²']; return t.join(' × ') || '1'; };
+    let full = txt(A) + ' → ' + txt(B); if (full.length <= 22) return full;
+    let L = 0; while (L < Math.min(A.length, B.length) - 1 && A[L] === B[L]) L++;
+    return L ? '… × ' + txt(A.slice(L)) + ' → … × ' + txt(B.slice(L)) : full;
+  };
+  if (/(?:^|\.)exp$/.test(fn)) return { glyph: 'exp' };
+  let m = fn.match(RESHAPE_RE); if (m) return { title: m[1], sub: change(inS(0), outS) };
+  m = fn.match(REDUCE_RE);
+  if (m) { const ax = (ex.match(/-?\d+/) || ['?'])[0].replace('-', '−'); return { title: (m[1] === 'sum' ? 'Σ' : 'mean') + ' over axis ' + ax, sub: change(inS(0), outS) }; }
+  if (/(?:^|\.)(cat|concat|concatenate)$/.test(fn)) return { line: [...Array(Math.max(1, +p.n || 1)).keys()].map(i => sh(inS(i), true)).join(' ‖ ') + ' → ' + sh(outS, true) };
+  if (fn === 'take_positions' || fn === 'last_positions') return { title: fn.replace('_', ' '), sub: change(inS(0), outS) };
+  if (fn === 'sinusoidal_pe') return { title: 'sin/cos positions', sub: sh(outS) };
+  if (fn === 'sinusoidal_positions') return { line: '+ sin/cos positions' };
+  if (PLAIN_HELPERS[fn]) return { line: PLAIN_HELPERS[fn] };
+  return null;
+}
+const OP_LABEL = {
+  delay: p => `delay · ${p.name || 'h'}`,
+  token: p => `+ ${p.name || 'token'}${String(p.n) === '1' ? '' : ' × ' + dimText(p.n)}`,
+  select: p => `position ${p.index}`,
+  noise: () => 'noise ε ~ N(0, 1)',
+  param: p => `${p.name || 'param'} · ${String(p.shape).split(',').map(x => dimText(x.trim())).join(' × ')}`,
+  pool: p => (p.kind === 'adaptive' ? (String(p.size) === '1' ? 'global avg pool' : `adaptive avg pool → ${p.size}`) : `${p.kind === 'avg' ? 'avg' : 'max'} pool ${p.k}${p.stride !== '' && p.stride != null && String(p.stride) !== String(p.k) ? ' /' + p.stride : ''}`),
+  upsample: p => `upsample ×${p.scale}${p.mode && p.mode !== 'nearest' ? ' · ' + p.mode : ''}`,
+  heads: p => `split heads · ${dimText(p.heads)}`, merge: () => 'merge heads', transpose: () => 'transpose', scale: () => '× 1/√d', mask: p => (p.mode === 'given' ? 'attention mask' : 'causal mask'),
   rope: p => (p.mode === 'axial' ? `rotary · axes${+p.base === 10000 ? '' : ' · base ' + p.base}` : p.mode === 'mrope' ? `M-RoPE · ${p.sections} · base ${p.base}` : +p.base === 10000 ? 'rotary (RoPE)' : `rotary · base ${p.base}`) };
 function blockTexts(n) {
   const root = R(), blk = root.blocks && root.blocks[n.params.block];
@@ -680,7 +847,8 @@ function blockTexts(n) {
   let io = '';
   try {
     const ix = S.info && S.info.ix, keys = (ix && ix.inKeys.get(n.id)) || [];
-    const last = sh => (sh ? dimText(sh[sh.length - 1]) : '?');
+    // images (e × C × H × W) show their channels and size, C @ H×W; anything else its last size
+    const last = sh => (!sh ? '?' : sh.length === 4 ? `${dimText(sh[1])} @ ${dimText(sh[2])}${String(sh[2]) === String(sh[3]) ? '²' : '×' + dimText(sh[3])}` : dimText(sh[sh.length - 1]));
     const ins = keys.map(k => last(k && S.info.shapes.get(k))), outs = [...Array(nOutOf(n)).keys()].map(k => last(S.info.shapes.get(k ? n.id + '@' + k : n.id)));
     io = `${ins.join(', ') || '?'} → ${outs.join(', ')}`;
   } catch { io = ''; }
@@ -753,6 +921,7 @@ function fitLossTarget(L) {
   const useTokens = L.params.fn === 'cross_entropy' && (L.params.mode === 'next' || L.params.mode === 'masked');
   const setTarget = t => { S.g.edges = S.g.edges.filter(e => !(e.to === L.id && e.port === 1)); S.g.edges.push({ id: NN.uid('e'), from: t.id, to: L.id, port: 1 }); };
   const dropIfOrphan = n => { if (n && onlyLoss(n) && ix.outs.get(n.id).length <= 1) { S.g.nodes = S.g.nodes.filter(z => z.id !== n.id); S.g.edges = S.g.edges.filter(e => e.from !== n.id); } };
+  if (L.params.fn === 'kl') { dropIfOrphan(cur); return; } // its second input is the log-variance, not a target
   if (useTokens) { if (tok && cur !== tok) { setTarget(tok); dropIfOrphan(cur); } return; }
   if (!sh) return;
   const want = (L.params.fn === 'cross_entropy' ? sh.slice(0, -1) : sh).join(', ');
@@ -777,11 +946,13 @@ function addLoss(fn, x, y) {
       const tok = S.g.nodes.find(n => n.type === 'input' && (ix.outs.get(n.id) || []).some(o => { const c = ix.byId.get(o.to); return c && c.type === 'embed' && !c.params.positions; }));
       if (tok) { tgt = tok; L.params.mode = 'next'; }
     }
+    if (fn === 'kl') { clearSel(); S.sel.nodes.add(L.id); return; }
     if (!tgt && sh) { const ts = fn === 'cross_entropy' ? sh.slice(0, -1) : sh; tgt = NN.makeNode('input', { name: uniqueInputName('y'), shape: ts.join(', ') }, px + 60, py + 120); S.g.nodes.push(tgt); }
     if (tgt) S.g.edges.push({ id: NN.uid('e'), from: tgt.id, to: L.id, port: 1 });
     clearSel(); S.sel.nodes.add(L.id);
   });
   const lb = NN.LOSSES[fn].label;
+  if (fn === 'kl') return toast(`${lb} added on the mean. Connect the log-variance (also an output) into its second input.`);
   toast(!out ? `${lb} added. Connect a model output into it, and a target.` : L.params.mode === 'next' ? `${lb} on the next token: the model learns to predict its own input shifted by one.` : `${lb} added, with a target input. predict() ${NN.LOSSES[fn].act ? 'applies ' + NN.LOSSES[fn].act : 'returns the output as is'}.`);
 }
 function ioText(n) {
@@ -791,6 +962,13 @@ function ioText(n) {
   return `${nm}  ${sh ? shapeText(sh) : ''}`;
 }
 const box = n => { const s = sizeOf(n); return { x: n.x - s.w / 2, y: n.y - s.h / 2, w: s.w, h: s.h, r: s.w / 2 }; };
+// A Delay can be drawn split, like one step of a textbook RNN cell: the node itself is the state coming in from the
+// last step (h_{t-1}), and a second tab elsewhere (params.split = {x, y, lane}) is where the new state leaves
+// (h_t). A faint wire joins them. Only the drawing changes; the graph and the code are the same.
+const splitOf = n => (n && n.type === 'delay' && n.params.split && typeof n.params.split === 'object' ? n.params.split : null);
+const splitTab = n => { const sp = splitOf(n); return sp ? Object.assign({}, n, { x: sp.x, y: sp.y }) : n; };
+const SUB_T = { prev: 'ₜ₋₁', cur: 'ₜ' };
+const p_name = n => n.params.name || 'h';
 // A block can have several outputs; output k leaves from its own dot along the top edge.
 const nOutOf = n => (n && n.type === 'block' ? Math.max(1, +n.params.nOut || 1) : 1);
 function outX(n, k) { const m = nOutOf(n); if (m < 2) return n.x; const sp = Math.min(44, (box(n).w - 28) / (m - 1)); return n.x + ((k || 0) - (m - 1) / 2) * sp; }
@@ -836,13 +1014,13 @@ function drawFrom(e) {
   return (o && byId(o.to)) || s;
 }
 function baseRoute(e) {
-  let s = drawFrom(e); const t = byId(e.to); if (!s || !t) return null;
+  let s = drawFrom(e); const t = splitTab(byId(e.to)); if (!s || !t) return null;
   if (nOutOf(s) > 1) s = Object.assign({}, s, { x: outX(s, e.out) }); // leave from this output's dot
   const A = box(s), B = box(t);
   const pts = [];
   // Lane route: the target sits well below the source and its own outputs flow upward (like the entry Norm of a
   // residual branch). A direct line would cut through that branch, so go around its left side and come in from below.
-  const upward = t.type !== 'binop' && t.y > s.y + 40 && (S.info.ix.outs.get(t.id) || []).some(o => { const c = byId(o.to); return c && c.y < t.y - 10; });
+  const upward = t.type !== 'binop' && !splitOf(t) && t.y > s.y + 40 && (S.info.ix.outs.get(t.id) || []).some(o => { const c = byId(o.to); return c && c.y < t.y - 10; });
   if (upward) {
     let left = B.x;
     for (const m of S.g.nodes) {
@@ -859,10 +1037,14 @@ function baseRoute(e) {
       }
     }
     let p;
+    // a box beside the lane leaves from its side facing the lane (a post-norm LayerNorm on the residual stream);
+    // otherwise from its top
+    const side = !NN.isCircle(s) && (laneX > A.x + A.w + 6 ? 1 : laneX < A.x - 6 ? -1 : 0);
     if (NN.isCircle(s)) p = [s.x + (laneX > s.x ? A.r : -A.r), s.y];
+    else if (side) p = [side > 0 ? A.x + A.w : A.x, s.y];
     else p = [s.x, A.y];
     pts.push(p);
-    if (!NN.isCircle(s)) pts.push([p[0], p[1] - 14]);
+    if (!NN.isCircle(s) && !side) pts.push([p[0], p[1] - 14]);
     const yb = B.y + B.h + 18;
     pts.push([laneX, pts[pts.length - 1][1]], [laneX, yb], [t.x, yb], [t.x, B.y + B.h]);
     return finish(pts, e);
@@ -934,6 +1116,7 @@ function autoRoute(e) {
 }
 function routeAll() {
   const boxes = S.g.nodes.map(n => ({ id: n.id, b: box(n) }));
+  for (const n of S.g.nodes) if (splitOf(n)) boxes.push({ id: n.id, b: box(splitTab(n)) });
   const hits = (P, e) => { const d = drawFrom(e).id; let c = 0; for (let i = 1; i < P.length; i++) for (const { id, b } of boxes) if (id !== e.from && id !== d && id !== e.to && segHitsBox(P[i - 1], P[i], b)) c++; return c; };
   const map = new Map();
   for (const e of S.g.edges) {
@@ -1016,10 +1199,18 @@ function entrySide(s, t) {
   if (NN.isCircle(t) ? Math.abs(dx) > Math.abs(dy) * 0.6 && Math.abs(dx) > 6 : near) return dx > 0 ? 'L' : 'R';
   return dy < 0 ? 'B' : 'T';
 }
-function finish(pts, e) {
+const HOP = 4.5; // radius of the jump where one connection crosses another without joining it
+function finish(pts, e, hops) {
   // drop zero-length segments
   const P = pts.filter((p, i) => i === 0 || Math.hypot(p[0] - pts[i - 1][0], p[1] - pts[i - 1][1]) > 0.5);
   let d = `M${P[0][0]},${P[0][1]}`;
+  // jumps on a horizontal segment, from (px, y) towards x: a half circle over each crossing, as in wiring diagrams
+  const jumps = (px, x, y) => {
+    if (!hops || !hops.length || Math.abs(x - px) < 1) return;
+    const dir = Math.sign(x - px), on = hops.filter(h => Math.abs(h[1] - y) < 0.5 && (h[0] - px) * dir > 0 && (x - h[0]) * dir > 0).sort((a, b) => (a[0] - b[0]) * dir);
+    for (const [hx] of on) d += ` L${hx - dir * HOP},${y} A${HOP},${HOP} 0 0 ${dir > 0 ? 1 : 0} ${hx + dir * HOP},${y}`;
+  };
+  let cur = P[0];
   for (let i = 1; i < P.length; i++) {
     const [x, y] = P[i];
     if (i < P.length - 1) {
@@ -1027,8 +1218,9 @@ function finish(pts, e) {
       const r = Math.min(7, Math.hypot(x - px, y - py) / 2, Math.hypot(nx - x, ny - y) / 2);
       const ax = x - Math.sign(x - px) * r, ay = y - Math.sign(y - py) * r;
       const bx = x + Math.sign(nx - x) * r, by = y + Math.sign(ny - y) * r;
-      d += ` L${ax},${ay} Q${x},${y} ${bx},${by}`;
-    } else d += ` L${x},${y}`;
+      if (Math.abs(y - py) < 0.5) jumps(cur[0], ax, y);
+      d += ` L${ax},${ay} Q${x},${y} ${bx},${by}`; cur = [bx, by];
+    } else { if (Math.abs(y - P[i - 1][1]) < 0.5) jumps(cur[0], x, y); d += ` L${x},${y}`; }
   }
   // label at the longest vertical segment (or longest overall)
   let best = null, bl = 0;
@@ -1072,6 +1264,31 @@ function edgeClass(e) {
   return '';
 }
 
+// Where a horizontal stretch of one connection crosses a vertical stretch of another, the horizontal one jumps
+// over it (the convention of wiring diagrams for "crossing, not joined"). Connections carrying the same tensor
+// are one wire branching, so they never jump each other; nor do crossings within a corner's curve.
+function crossings(routes) {
+  const H = [], V = [], m = 7 + HOP + 1;
+  for (const e of S.g.edges) {
+    const r = routes.get(e.id); if (!r) continue; const P = r.pts, k = keyOf(e);
+    for (let i = 1; i < P.length; i++) {
+      const a = P[i - 1], b = P[i], end0 = i === 1, end1 = i === P.length - 1;
+      if (Math.abs(a[1] - b[1]) < 0.5 && Math.abs(a[0] - b[0]) > 0.5) H.push({ id: e.id, k, y: a[1], lo: Math.min(a[0], b[0]), hi: Math.max(a[0], b[0]) });
+      else if (Math.abs(a[0] - b[0]) < 0.5 && Math.abs(a[1] - b[1]) > 0.5) {
+        // a stretch that ends on a dot can be crossed close to that end; one that ends in a corner can't
+        const top = a[1] < b[1] ? end0 : end1, bot = a[1] < b[1] ? end1 : end0;
+        V.push({ k, x: a[0], lo: Math.min(a[1], b[1]) + (top ? 2 : m - HOP), hi: Math.max(a[1], b[1]) - (bot ? 2 : m - HOP) });
+      }
+    }
+  }
+  const out = new Map();
+  for (const h of H) for (const v of V) {
+    if (v.k === h.k || v.x <= h.lo + m || v.x >= h.hi - m || h.y <= v.lo || h.y >= v.hi) continue;
+    const L = out.get(h.id) || []; if (!L.some(p => Math.abs(p[1] - h.y) < 0.5 && Math.abs(p[0] - v.x) < 2 * HOP + 1)) L.push([v.x, h.y]); out.set(h.id, L);
+  }
+  return out;
+}
+
 // ── render ──
 function render() {
   analyze(); routeCache = null;
@@ -1090,8 +1307,11 @@ function render() {
   $('#gGroups').innerHTML = ''; // reusable blocks are not shown for now
   // edges
   let eh = '';
+  const routes = new Map(); for (const e of S.g.edges) { const r = route(e); if (r) routes.set(e.id, r); }
+  const hops = crossings(routes);
   for (const e of S.g.edges) {
-    const r = route(e); if (!r) continue;
+    let r = routes.get(e.id); if (!r) continue;
+    if (hops.has(e.id)) r = finish(r.pts, e, hops.get(e.id));
     const cls = S.sel.edges.has(e.id) ? 'sel' : edgeClass(e);
     let mk = cls ? `url(#ar-${cls})` : 'url(#ar)', look = '';
     if (e.style) {
@@ -1118,16 +1338,26 @@ function render() {
     eh += '</g>';
   }
   for (const n of S.g.nodes) {
-    const o = tieOf(n); if (!o) continue;
+    const fo = n.params.follows ? byId(n.params.follows) : null;
+    const o = tieOf(n) || fo; if (!o) continue;
     // a lane left of everything between the two layers (nickname captions included), entering each box near its top
     const A = box(o), B = box(n), y0 = Math.min(A.y, B.y), y1 = Math.max(A.y + A.h, B.y + B.h);
+    // dragged lanes are kept in params.tie_x; a lane right of both layers attaches to their right sides
     let lane = Infinity;
-    for (const m of S.g.nodes) { const q = box(m); if (q.y + q.h < y0 || q.y > y1) continue; const cw = m.params.title ? 8 + m.params.title.length * 6.6 : 0; lane = Math.min(lane, q.x - cw); }
-    lane -= 16;
-    const ya = A.y + 7, yb = B.y + 7;
-    const d = finish([[A.x, ya], [lane, ya], [lane, yb], [B.x, yb]]).d;
+    if (Number.isFinite(+n.params.tie_x) && n.params.tie_x !== '' && n.params.tie_x != null) lane = +n.params.tie_x;
+    else { for (const m of S.g.nodes) { const q = box(m); if (q.y + q.h < y0 || q.y > y1) continue; const cw = m.params.title ? 8 + m.params.title.length * 6.6 : 0; lane = Math.min(lane, q.x - cw); } lane -= 16; }
+    const ya = A.y + 7, yb = B.y + 7, right = lane > (o.x + n.x) / 2;
+    const d = finish([[right ? A.x + A.w : A.x, ya], [lane, ya], [lane, yb], [right ? B.x + B.w : B.x, yb]]).d;
     const on = S.sel.nodes.has(n.id) || S.sel.nodes.has(o.id);
-    eh += `<g class="tie-link${on ? ' on' : ''}"><path d="${d}"/><title>${esc(tieName(n))} shares its weights with ${esc(tieName(o))}</title><text x="${lane - 4}" y="${(ya + yb) / 2}" text-anchor="end">tied</text></g>`;
+    const tip = fo ? `${tieName(n)} follows ${tieName(o)}: an EMA copy that gets no gradients, moved toward it after each training step (momentum ${n.params.momentum ?? '0.996'} → ${n.params.momentum_end ?? '1.0'}). Click to change; drag to move the line.` : `${tieName(n)} shares its weights with ${tieName(o)}. Click to change; drag to move the line, double-click to put it back.`;
+    eh += `<g class="tie-link${fo ? ' follow' : ''}${on ? ' on' : ''}" data-tielink="${n.id}" data-lane="${lane}"><path class="hit" d="${d}"/><path d="${d}"/><title>${esc(tip)}</title><text x="${right ? lane + 4 : lane - 4}" y="${(ya + yb) / 2}" text-anchor="${right ? 'start' : 'end'}">${fo ? 'follows · EMA' : 'tied'}</text></g>`;
+  }
+  for (const n of S.g.nodes) {
+    const sp = splitOf(n); if (!sp) continue;
+    const A = box(splitTab(n)), B = box(n), below = sp.lane !== 'above', ax = A.x + A.w, bx = B.x;
+    const ly = below ? Math.max(A.y + A.h, B.y + B.h) + 22 : Math.min(A.y, B.y) - 22, x1 = ax + 14, x0 = bx - 14;
+    const pts = [[ax, sp.y], [x1, sp.y], [x1, ly], [x0, ly], [x0, n.y], [bx, n.y]];
+    eh += `<g class="delay-link${S.sel.nodes.has(n.id) ? ' on' : ''}"><path d="${finish(pts).d}" marker-end="url(#ar)"/><title>${esc(p_name(n))}${SUB_T.cur} becomes ${esc(p_name(n))}${SUB_T.prev} at the next step</title></g>`;
   }
   $('#gEdges').innerHTML = eh;
   // nodes
@@ -1146,13 +1376,38 @@ function render() {
           + (il ? `<text class="n-init${p.tie ? ' n-tied' : ''}" x="${n.x}" y="${n.y + 21}" text-anchor="middle">${esc(il)}</text>` : '');
         break;
       }
+      case 'conv':
+        cls += ' t-conv';
+        inner = `<rect class="n-box" x="${b.x}" y="${b.y}" width="${b.w}" height="${b.h}" rx="6"/>`
+          + `<text x="${n.x}" y="${n.y - 3}" text-anchor="middle" font-size="12">${esc(convTitle(p))}</text>`
+          + `<text class="mono dimtxt" data-lindim="${n.id}" x="${n.x}" y="${n.y + 12}" text-anchor="middle" font-size="10.5"><title>Click to set the output channels</title>${esc(dimText(p.out) + ' × ' + dimText(p.in))}</text>`;
+        break;
+      case 'delay':
+        // a clock face: the value from one step earlier
+        cls += ' t-delay';
+        { const clock = (bb, y) => `<circle class="clk" cx="${bb.x + 13}" cy="${y}" r="6"/><path class="clk" d="M${bb.x + 13},${y - 3.5} V${y} L${bb.x + 15.5},${y + 1.5}"/>`;
+          const sp = splitOf(n), subTxt = sub => `${esc(p_name(n))}<tspan dy="3.5" font-size="9.5">${sub}</tspan>`;
+          inner = `<rect class="n-box" x="${b.x}" y="${b.y}" width="${b.w}" height="${b.h}" rx="6"/>${clock(b, n.y)}<text class="mono" x="${n.x + 8}" y="${n.y + 4}" text-anchor="middle" font-size="${sp ? 13 : 11.5}">${sp ? subTxt('t−1') : esc(OP_LABEL.delay(p))}</text>`;
+          if (sp) { const T = splitTab(n), tb = box(T);
+            nh += `<g class="node t-delay split-in${sel ? ' sel' : ''}" data-node="${n.id}" data-splitin="${n.id}"><rect class="n-box" x="${tb.x}" y="${tb.y}" width="${tb.w}" height="${tb.h}" rx="6"/>${clock(tb, T.y)}<text class="mono" x="${T.x + 8}" y="${T.y + 4}" text-anchor="middle" font-size="13">${subTxt('t')}</text><title>The new ${esc(p_name(n))}, passed on to the next step (drag to move this tab)</title></g>`; } }
+        break;
+      case 'conv1d':
+        cls += ' t-conv';
+        inner = `<rect class="n-box" x="${b.x}" y="${b.y}" width="${b.w}" height="${b.h}" rx="6"/>`
+          + `<text x="${n.x}" y="${n.y - 3}" text-anchor="middle" font-size="12">${esc('Causal conv ' + p.k)}</text>`
+          + `<text class="mono dimtxt" x="${n.x}" y="${n.y + 12}" text-anchor="middle" font-size="10.5">${esc(dimText(p.ch) + ' channels')}</text>`;
+        break;
+      case 'pool': case 'upsample': case 'token': case 'select': case 'param': case 'noise':
+        cls += ' t-func';
+        inner = `<rect class="n-box" x="${b.x}" y="${b.y}" width="${b.w}" height="${b.h}" rx="6"/><text class="mono" x="${n.x}" y="${n.y + 4}" text-anchor="middle" font-size="11.5">${esc(OP_LABEL[n.type](p))}</text>`;
+        break;
       case 'norm':
         cls += ' t-norm';
         inner = `<rect class="n-box" x="${b.x}" y="${b.y}" width="${b.w}" height="${b.h}" rx="6"/><text class="mono" x="${n.x}" y="${n.y + 4.5}" text-anchor="middle" font-size="12.5">${esc(normLabel(p))}</text>`;
         break;
       case 'act': {
         cls += ' t-act';
-        const t = { sigmoid: 'σ', silu: 'SiLU', relu: 'ReLU', gelu: 'GELU', gelu_tanh: 'GELU·tanh', tanh: 'tanh', softmax: 'Softmax' }[p.fn] || p.fn;
+        const t = { sigmoid: 'σ', silu: 'SiLU', relu: 'ReLU', leaky_relu: 'LeakyReLU', gelu: 'GELU', gelu_tanh: 'GELU·tanh', tanh: 'tanh', softmax: 'Softmax', softplus: 'Softplus' }[p.fn] || p.fn;
         inner = `<rect class="n-box" x="${b.x}" y="${b.y}" width="${b.w}" height="${b.h}" rx="7"/><text x="${n.x}" y="${n.y + 4.5}" text-anchor="middle" font-size="${p.fn === 'sigmoid' ? 15 : 12.5}">${t}</text>`;
         break;
       }
@@ -1160,8 +1415,9 @@ function render() {
         const add = p.op === '+';
         cls += ' t-op';
         const sym = { '+': '+', '*': '⊙', '-': '−', '/': '÷', '@': '@' }[p.op] || p.op;
-        inner = `<circle class="n-box" cx="${n.x}" cy="${n.y}" r="${b.r}"/><text x="${n.x}" y="${n.y + (add ? 5 : 4.5)}" text-anchor="middle" font-size="${add ? 15 : 14}">${sym}</text>`;
-        if (p.const !== '' && p.const != null) inner += `<text class="caption mono" x="${n.x + 18}" y="${n.y + 4}">${esc(p.rev ? p.const + ' ' + p.op : p.op + ' ' + p.const)}</text>`;
+        if (NN.isCircle(n)) inner = `<circle class="n-box" cx="${n.x}" cy="${n.y}" r="${b.r}"/><text x="${n.x}" y="${n.y + (add ? 5 : 4.5)}" text-anchor="middle" font-size="${add ? 15 : 14}">${sym}</text>`;
+        // with a constant: a box that says the whole operation
+        else { cls += ' t-const'; inner = `<rect class="n-box" x="${b.x}" y="${b.y}" width="${b.w}" height="${b.h}" rx="15"/><text x="${n.x}" y="${n.y + 4.5}" text-anchor="middle" font-size="13">${esc(constLabel(p))}</text>`; }
         break;
       }
       case 'embed': {
@@ -1179,6 +1435,13 @@ function render() {
           + `<text class="n-init" x="${n.x}" y="${n.y + 12}" text-anchor="middle">${esc(lossSub(p))}</text>`;
         break;
       }
+      case 'reshape': {
+        // a rearrangement: the pattern, and the sizes it turns into which
+        cls += ' t-reshape'; const a = reshapeFace(p), c = shapeChange(n);
+        inner = `<rect class="n-box" x="${b.x}" y="${b.y}" width="${b.w}" height="${b.h}" rx="6"/><text class="mono" x="${n.x}" y="${n.y + (c ? -2 : 4)}" text-anchor="middle" font-size="11.5">${esc(a)}</text>`
+          + (c ? `<text class="mono dimtxt" x="${n.x}" y="${n.y + 13}" text-anchor="middle" font-size="10">${esc(c)}</text>` : '');
+        break;
+      }
       case 'heads': case 'merge': case 'transpose': case 'scale': case 'mask': case 'rope':
         cls += ' t-func';
         inner = `<rect class="n-box" x="${b.x}" y="${b.y}" width="${b.w}" height="${b.h}" rx="6"/><text class="mono${n.type === 'heads' ? ' dimtxt' : ''}"${n.type === 'heads' ? ` data-lindim="${n.id}"` : ''} x="${n.x}" y="${n.y + 4}" text-anchor="middle" font-size="11.5">${esc(OP_LABEL[n.type](p))}</text>`;
@@ -1189,8 +1452,10 @@ function render() {
         break;
       case 'func': {
         cls += ' t-func';
-        const t = p.init ? p.init.replace(/\(.*$/, '') : p.fn;
-        inner = `<rect class="n-box" x="${b.x}" y="${b.y}" width="${b.w}" height="${b.h}" rx="6"/><text class="mono" x="${n.x}" y="${n.y + 4}" text-anchor="middle" font-size="11.5">${esc(t)}</text>`;
+        const f = funcFace(n), rect = `<rect class="n-box" x="${b.x}" y="${b.y}" width="${b.w}" height="${b.h}" rx="6"/>`;
+        if (f && f.glyph) inner = rect + `<text x="${n.x - 2}" y="${n.y + 5}" text-anchor="middle" font-size="15" font-style="italic">e<tspan dy="-7" font-size="10.5">x</tspan></text>`;
+        else if (f && f.title) inner = rect + `<text x="${n.x}" y="${n.y - 3}" text-anchor="middle" font-size="12">${esc(f.title)}</text><text class="mono dimtxt" x="${n.x}" y="${n.y + 12}" text-anchor="middle" font-size="10.5">${esc(f.sub)}</text>`;
+        else inner = rect + `<text class="mono" x="${n.x}" y="${n.y + 4}" text-anchor="middle" font-size="11.5">${esc(f && f.line ? f.line : funcLabel(p))}</text>`;
         break;
       }
       case 'block': {
@@ -1227,7 +1492,14 @@ function render() {
         break;
       }
     }
-    if (p.title) inner += cap(p.title);
+    if (p.title && nickInside(n)) {
+      // the contents move down below the nickname line; the box (first element) already has the full height
+      const m = /^(<rect class="n-box"[^>]*\/>)([\s\S]*)$/.exec(inner);
+      const nick = `<text class="nick" x="${n.x}" y="${b.y + 12}" text-anchor="middle">${esc(p.title)}</text>`;
+      inner = m ? m[1] + nick + `<g transform="translate(0 ${NICK_H / 2})">${m[2]}</g>` : inner + nick;
+    } else if (p.title) inner += cap(p.title);
+    // frozen: a snowflake on the top-left corner (its weights get no updates)
+    if (p.frozen && canFreeze(n)) inner += `<text class="frz" x="${b.x - 3}" y="${b.y + 7}" text-anchor="middle">❄<title>Frozen: its weights get no updates in training</title></text>`;
     if (sel) cls += ' sel'; if (bad) cls += ' bad'; if (cf) cls += ' conflict';
     let badge = '';
     if (cf) {
@@ -1246,10 +1518,14 @@ function render() {
   }
   $('#gNodes').innerHTML = nh;
   // header chips
-  let total = 0, unknown = false;
-  try { const flat = NN.expandBlocks(R()).flat; for (const n of flat.nodes) { const c = NN.paramCount(n, flat.symbols); if (c == null) unknown = true; else total += c; } } catch { unknown = true; }
-  $('#paramChip').textContent = `${fmtShort(total)}${unknown ? '+' : ''} params`;
-  $('#paramChip').title = fmt(total) + ' trainable parameters';
+  let total = 0, frozen = 0, unknown = false;
+  try {
+    // a layer is frozen, or follows, itself or as part of a frozen or following block use (nested blocks included)
+    const { flat, origin } = NN.expandBlocks(R()), still = new Set(R().nodes.filter(m => m.type === 'block' && (m.params.frozen || m.params.follows)).map(m => m.id));
+    for (const n of flat.nodes) { const c = NN.paramCount(n, flat.symbols); if (c == null) unknown = true; else { total += c; const o = origin.get(n.id); if (n.params.frozen || n.params.follows || (o && still.has(o.use))) frozen += c; } }
+  } catch { unknown = true; }
+  $('#paramChip').textContent = `${fmtShort(total)}${unknown ? '+' : ''} params${frozen ? ` · ❄ ${fmtShort(frozen)}` : ''}`;
+  $('#paramChip').title = frozen ? `${fmt(total)} parameters: ${fmt(total - frozen)} trained by gradients, ${fmt(frozen)} frozen or following (EMA)` : fmt(total) + ' trainable parameters';
   const nc = S.info.conflicts.size, nu = errors.size - nc;
   const ec = $('#errChip');
   ec.textContent = nc ? `! ${nc} size conflict${nc > 1 ? 's' : ''}` : nu ? `${nu} unconnected input${nu > 1 ? 's' : ''}` : 'shapes OK';
@@ -1258,7 +1534,7 @@ function render() {
   S.lastConflicts = nc;
   $('#bUndo').disabled = !S.undo.length; $('#bRedo').disabled = !S.redo.length;
   const lh = R().libHost && R().blocks[S.edit];
-  $('#modelName').value = lh ? lh.name : R().name || 'Model'; $('#modelName').disabled = !!lh;
+  $('#modelName').value = lh ? lh.name : R().name || 'Model'; $('#modelName').disabled = !!lh; $('#modelCat').hidden = !!lh; if (!lh && typeof renderModelCat === 'function') renderModelCat();
   $('#bExport').disabled = !!lh; $('#bExport').title = lh ? 'Export a network that uses this block' : '';
   $('#legend').hidden = !!S.edit || !S.g.edges.some(e => edgeClass(e) === 'scaled');
 }
@@ -1288,6 +1564,21 @@ function renderCode() {
     }
   }
   S.gen = r;
+  // another open model: edits in progress stay with the model they were made in
+  if (S.codeEdit && S.codeEdit.doc !== S.cur) {
+    const ta = $('#codeTa'), d = docById(S.codeEdit.doc);
+    if (d && ta.value !== S.codeEdit.base) d.codeDraft = { text: ta.value, base: S.codeEdit.base, stale: S.codeEdit.stale };
+    S.codeEdit = null; $('#codeEdit').hidden = true; $('#code').hidden = false; codeEditError('');
+  }
+  const draft = !S.codeEdit && !R().libHost && docById(S.cur) && docById(S.cur).codeDraft;
+  if (draft) { delete docById(S.cur).codeDraft; startCodeEdit(-1, draft); }
+  renderCodeBar();
+  if (S.codeEdit) { // the diagram changed while the code is being edited: follow it unless something was typed
+    const ta = $('#codeTa');
+    if (ta.value === S.codeEdit.base) { if (r.code !== S.codeEdit.base) { ta.value = S.codeEdit.base = r.code; codeEditPaint(); } }
+    else if (r.code !== S.codeEdit.base && !S.codeEdit.stale) { S.codeEdit.stale = true; codeEditError('The diagram has changed since you started editing. Apply replaces it with this code; Cancel keeps the diagram.'); }
+    return;
+  }
   const hl = new Set();
   const ids = [...S.sel.nodes]; if (S.sel.group) ids.push('g:' + S.sel.group);
   for (const id of ids) (r.lineMap.get(id) || []).forEach(l => hl.add(l));
@@ -1295,6 +1586,93 @@ function renderCode() {
   const w = $('#warns'); w.hidden = !r.warnings.length; w.innerHTML = r.warnings.map(x => `<li>${esc(x)}</li>`).join('');
   if (hl.size) { const first = $('#code .ln.hl'); if (first) { const pane = $('#codePane'); const top = first.offsetTop; if (top < pane.scrollTop || top > pane.scrollTop + pane.clientHeight - 40) pane.scrollTop = top - 60; } }
 }
+// ── editing the code: the text is read back into the diagram (core carryDiagram keeps the layout, nicknames and notes) ──
+S.codeEdit = null;
+function renderCodeBar() {
+  const ed = !!S.codeEdit, host = !!R().libHost;
+  document.querySelectorAll('#codeBar .cb-view').forEach(x => (x.hidden = ed));
+  document.querySelectorAll('#codeBar .cb-edit').forEach(x => (x.hidden = !ed));
+  const b = $('#bEditCode'); b.disabled = host;
+  b.title = host ? "A library block's code is edited in its diagram, or in the code of a network that uses it" : 'Edit the code here and apply it to the diagram (or double-click the code)';
+  $('#codePane').classList.toggle('editing', ed);
+}
+function codeEditPaint() {
+  $('#codeHl').innerHTML = $('#codeTa').value.split('\n').map((ln, i) => `<span class="ln" data-n="${i + 1}">${highlight(ln) || ' '}</span>`).join('');
+}
+function startCodeEdit(line, draft) {
+  if (R().libHost || S.codeEdit) return;
+  const pane = $('#codePane'), top = pane.scrollTop, ta = $('#codeTa');
+  S.codeEdit = { base: draft ? draft.base : S.gen.code, stale: !!(draft && draft.stale), doc: S.cur };
+  ta.value = draft ? draft.text : S.gen.code; codeEditPaint();
+  $('#code').hidden = true; $('#codeEdit').hidden = false; codeEditError(''); renderCodeBar();
+  if (draft) return;
+  ta.focus({ preventScroll: true }); pane.scrollTop = top;
+  let at = 0; if (line > 0) { const ls = ta.value.split('\n'); for (let i = 0; i < Math.min(line, ls.length); i++) at += ls[i].length + 1; at += (ls[line] || '').match(/^\s*/)[0].length; }
+  ta.setSelectionRange(at, at);
+}
+function stopCodeEdit() {
+  S.codeEdit = null; $('#codeEdit').hidden = true; $('#code').hidden = false; $('#codeErr').hidden = true; renderCode();
+}
+function codeEditError(msg) { const e = $('#codeErr'); e.hidden = !msg; e.textContent = msg || ''; }
+function applyCodeEdit() {
+  if (!S.codeEdit) return true;
+  const text = $('#codeTa').value;
+  if (text === S.codeEdit.base) { stopCodeEdit(); return true; }
+  let res;
+  try { res = NN.importPython(text); if (!res.graph || !res.graph.nodes.length) throw new Error('There is no model here to read.'); }
+  catch (ex) {
+    codeEditError("Couldn't read this code, so the diagram is unchanged: " + ex.message);
+    const m = /\bLine (\d+)/i.exec(ex.message), ta = $('#codeTa');
+    if (m) { // put the caret on that line
+      const ls = ta.value.split('\n'), k = Math.min(+m[1] - 1, ls.length - 1); let at = 0; for (let i = 0; i < k; i++) at += ls[i].length + 1;
+      ta.focus({ preventScroll: true }); ta.setSelectionRange(at, at + ls[k].length);
+      const ln = $('#codeHl').children[k], pane = $('#codePane'); if (ln) pane.scrollTop = Math.max(0, ln.offsetTop - pane.clientHeight / 3);
+    }
+    return false;
+  }
+  const old = R(), g = res.graph, inBlock = S.edit && old.blocks && old.blocks[S.edit] ? old.blocks[S.edit].name : null;
+  NN.carryDiagram(old, g, x => NN.autoLayout(x, sizeOf), sizeOf);
+  if (res.literalDims != null) S.opts.literalDims = res.literalDims;
+  // blocks still linked to the library keep this code's version (and pass it on, as an edit in the diagram would)
+  syncLinked(g, { skip: new Set(Object.values(g.blocks || {}).filter(b => b.lib).map(b => b.id)) });
+  S.codeEdit = null; $('#codeEdit').hidden = true; $('#code').hidden = false; codeEditError('');
+  commit(() => { setModel(g); clearSel(); });
+  const nb = inBlock && Object.values(g.blocks || {}).find(b => b.name === inBlock); if (nb) switchTo(nb.id);
+  if (res.warnings.length) { const w = $('#warns'); w.hidden = false; w.innerHTML += res.warnings.map(x => `<li>Import: ${esc(x)}</li>`).join(''); }
+  toast('Code applied to the diagram.' + (res.warnings.length ? ` ${res.warnings.length} note${res.warnings.length > 1 ? 's' : ''} in the code panel.` : '') + ' Ctrl+Z undoes it.');
+  return true;
+}
+$('#bEditCode').onclick = () => startCodeEdit(0);
+$('#bCodeApply').onclick = () => applyCodeEdit();
+$('#bCodeCancel').onclick = () => stopCodeEdit();
+$('#code').addEventListener('dblclick', e => { const ln = e.target.closest('.ln'); startCodeEdit(ln ? +ln.dataset.n - 1 : 0); });
+$('#codeTa').addEventListener('input', () => { codeEditPaint(); if (S.codeEdit) S.codeEdit.escAt = 0; });
+$('#codeTa').addEventListener('keydown', e => {
+  const ta = e.target, mod = e.ctrlKey || e.metaKey;
+  if (mod && e.key === 'Enter') { e.preventDefault(); applyCodeEdit(); return; }
+  if (mod && e.key.toLowerCase() === 's') { e.preventDefault(); e.stopPropagation(); if (applyCodeEdit()) R().libHost ? saveLibNow(R().libHost) : saveFile(); return; }
+  if (e.key === 'Escape') {
+    e.preventDefault(); e.stopPropagation();
+    if (ta.value === S.codeEdit.base || Date.now() - (S.codeEdit.escAt || 0) < 2500) return stopCodeEdit();
+    S.codeEdit.escAt = Date.now(); codeEditError('Press Esc again to discard your edits, or Ctrl+Enter to apply them.'); return;
+  }
+  const a = ta.selectionStart, b = ta.selectionEnd, v = ta.value;
+  const put = (text, s0, s1, caret) => { ta.setRangeText(text, s0, s1, 'end'); if (caret != null) ta.setSelectionRange(caret, caret); codeEditPaint(); };
+  if (e.key === 'Tab') {
+    e.preventDefault();
+    const l0 = v.lastIndexOf('\n', a - 1) + 1;
+    if (a === b && !e.shiftKey) return put('    ', a, b);
+    const l1 = b > a && v[b - 1] === '\n' ? b - 1 : b, block = v.slice(l0, l1);
+    const out = e.shiftKey ? block.replace(/^ {1,4}/gm, '') : block.replace(/^/gm, '    ');
+    ta.setRangeText(out, l0, l1, 'select'); codeEditPaint(); return;
+  }
+  if (e.key === 'Enter' && !e.shiftKey && !mod && !e.altKey) { // keep the indent, one more after a colon
+    e.preventDefault();
+    const l0 = v.lastIndexOf('\n', a - 1) + 1, line = v.slice(l0, a), ind = line.match(/^\s*/)[0] + (/:\s*(#.*)?$/.test(line) ? '    ' : '');
+    return put('\n' + ind, a, b);
+  }
+});
+
 const PY = /(#.*$)|("(?:[^"\\]|\\.)*"|'(?:[^'\\]|\\.)*')|\b(import|from|as|class|def|return|if|for|in|not|and|or|None|True|False|super|lambda|with)\b|\b(self)\b|\b(\d+(?:\.\d+)?)\b|\b([A-Z]\w*)\b/g;
 function highlight(line) {
   let out = '', last = 0;
@@ -1338,10 +1716,138 @@ const EDGE_COLORS = [['', 'Default'], ['#1f1d2b', 'Black'], ['#6b6a7d', 'Grey'],
 const txt = (k, v, mono = true, extra = '') => `<input type="text" id="f-${k}" data-f="${k}" value="${esc(v)}" class="${mono ? 'mono' : ''}" spellcheck="false" ${extra}>`;
 const dimInput = (k, v) => `<input type="text" id="f-${k}" data-f="${k}" data-dimfield="1" value="${esc(v)}" class="mono" list="symList" spellcheck="false">`;
 const sel = (k, v, opts) => `<select id="f-${k}" data-f="${k}">${opts.map(o => `<option value="${esc(o[0])}"${String(o[0]) === String(v) ? ' selected' : ''}>${esc(o[1])}</option>`).join('')}</select>`;
+// ── what an operation computes: a formula for math, a description for ops that only move values around ──
+// shown at the top of its details; sizes are the layer's own where that helps
+function opExplain(n) {
+  const h0 = opExplain0(n), note = n.params.note ? `<p class="note">${esc(n.params.note)}</p>` : '';
+  if (!note) return h0;
+  return h0 ? h0.replace(/<\/div>$/, note + '</div>') : `<div class="opmath">${note}</div>`;
+}
+function opExplain0(n) {
+  const p = n.params, D = x => esc(dimText(x));
+  const ix = S.info && S.info.ix, inSh = k => { const s = ix && (ix.inKeys.get(n.id) || [])[k]; return s ? S.info.shapes.get(s) : null; };
+  const x0 = inSh(0), last = x0 && x0.length ? D(x0[x0.length - 1]) : 'd';
+  const box = (eq, text) => `<div class="opmath">${eq ? `<div class="eq">${eq}</div>` : ''}${text ? `<p>${text}</p>` : ''}</div>`;
+  const ew = 'elementwise: each value on its own, any shape.';
+  switch (n.type) {
+    case 'input': return box('', 'Where data enters the model: a tensor of the shape shown, the first size being the batch (e). It becomes an argument of forward().');
+    case 'output': return box('', 'Where data leaves the model: forward() returns what arrives here (several Outputs: a tuple, in order).');
+    case 'linear': return box(`y = x W<sup>T</sup>${p.bias ? ' + b' : ''}`,
+      `Each of the ${D(p.out)} outputs is a weighted sum of all ${D(p.in)} inputs: y<sub>j</sub> = Σ<sub>i</sub> W<sub>ji</sub> x<sub>i</sub>${p.bias ? ' + b<sub>j</sub>' : ''}. W is ${D(p.out)} × ${D(p.in)}${p.bias ? `, b has ${D(p.out)} values` : ''}. It acts on the last size; the others (batch, positions) are kept.${p.tie ? ' Its W is shared with the layer it is tied to.' : ''}`);
+    case 'embed': return p.positions
+      ? box('y<sub>t</sub> = P[t],  t = 0 … T−1', `A learned table P of ${D(p.num)} rows × ${D(p.dim)}: position t gets row t. Usually added to the token embeddings so the model knows where each token is.`)
+      : box('y = E[id]', `A learned table E of ${D(p.num)} rows (one per token id) × ${D(p.dim)}: each id is replaced by its row. Same as a Linear applied to a one-hot vector, without the multiply.`);
+    case 'norm': {
+      const af = p.affine === false ? '' : ' · γ + β', g2 = p.affine === false ? '' : ' γ and β are learned (start at 1 and 0).';
+      switch (p.kind) {
+        case 'RMSNorm': return box('y = x / √(mean(x²) + ε) · γ', `Over the last size (${last}) of each position: divides by the root mean square, without subtracting the mean. γ is learned (starts at 1).`);
+        case 'BatchNorm1d': return box(`y = (x − μ) / √(σ² + ε)${af}`, `μ and σ² per feature, over the batch (and positions). In training, the batch's own; in eval, running averages kept during training.${g2}`);
+        case 'BatchNorm2d': return box(`y = (x − μ) / √(σ² + ε)${af}`, `μ and σ² per channel, over the batch and all pixels. In training, the batch's own; in eval, running averages kept during training.${g2}`);
+        case 'GroupNorm': return box(`y = (x − μ) / √(σ² + ε)${af}`, `The ${last} features are split into ${esc(p.groups || 8)} groups; μ and σ² per example and group.${g2}`);
+        case 'InstanceNorm1d': return box('y = (x − μ) / √(σ² + ε)', 'μ and σ² per example and feature, over the positions of the sequence.');
+        default: return box(`y = (x − μ) / √(σ² + ε)${af}`, `μ and σ² are the mean and variance over the last size (${last}) of each position, so every position comes out with mean 0 and variance 1.${g2}`);
+      }
+    }
+    case 'act': switch (p.fn) {
+      case 'relu': return box('y = max(0, x)', 'Keeps positives, zeroes negatives; ' + ew);
+      case 'leaky_relu': return box(`y = x if x > 0, else ${esc(p.slope ?? '0.01')}·x`, 'ReLU with a small slope for negatives, so they still pass a gradient; ' + ew);
+      case 'sigmoid': return box('y = σ(x) = 1 / (1 + e<sup>−x</sup>)', 'Squashes any value into (0, 1), 0.5 at x = 0; used for gates and probabilities; ' + ew);
+      case 'tanh': return box('y = tanh(x) = (e<sup>x</sup> − e<sup>−x</sup>) / (e<sup>x</sup> + e<sup>−x</sup>)', 'Squashes any value into (−1, 1), 0 at x = 0; tanh(x) = 2σ(2x) − 1; ' + ew);
+      case 'silu': return box('y = x · σ(x) = x / (1 + e<sup>−x</sup>)', 'Also called swish: about x for large x, about 0 for very negative x, smooth in between (dips slightly below 0); ' + ew);
+      case 'gelu': return box('y = x · Φ(x)', 'Φ is the standard normal CDF: each value is kept with weight "how likely a normal sample is below it". A smooth ReLU; ' + ew);
+      case 'gelu_tanh': return box('y = ½ x (1 + tanh(√(2/π) (x + 0.044715 x³)))', 'The tanh approximation of GELU (as in GPT-2); ' + ew);
+      case 'softplus': return box('y = log(1 + e<sup>x</sup>)', 'A smooth ReLU that is always positive (about x for large x); used where a value must be > 0, like Mamba\'s time step; ' + ew);
+      case 'softmax': return box(`y<sub>i</sub> = e<sup>x<sub>i</sub></sup> / Σ<sub>j</sub> e<sup>x<sub>j</sub></sup>`, `Along dim ${esc(p.dim ?? -1)}: turns scores into positive weights that sum to 1; the largest score gets the most.`);
+    } return box('', 'An activation, applied ' + ew);
+    case 'dropout': return box(`training: y = x · m / (1 − ${esc(p.p)}),  m ~ Bernoulli(${esc(1 - +p.p || 0.9)})`, `In training, each value is zeroed with probability ${esc(p.p)} and the rest are scaled up so the average stays the same. In eval (and the variance plot) it passes x through unchanged.`);
+    case 'binop': {
+      const op = p.op || '+', sym = { '+': '+', '-': '−', '*': '⊙', '/': '÷', '@': '@' }[op] || op, c = p.const !== '' && p.const != null ? esc(p.const) : null;
+      if (op === '@') return box('Y = A @ B', 'Matrix product over the last two sizes: (… × n × k) @ (… × k × m) → (… × n × m), each entry Σ<sub>k</sub> A<sub>ik</sub> B<sub>kj</sub>; the sizes before them are batched. In attention: q @ kᵀ gives the scores, weights @ v the mix.');
+      if (c) {
+        // the constant's value with this model's sizes
+        let v = null; try { const r = String(p.const).replace(/\b[A-Za-z_]\w*\b/g, t => { const x = NN.evalDim(t, R().symbols || {}); if (x == null) throw 0; return '(' + x + ')'; }); if (/^[\d.\s+\-*/()eE]+$/.test(r)) v = Function('"use strict"; return (' + r + ');')(); } catch { v = null; }
+        const pc = esc(prettyConst(p.const)), val = v != null && Number.isFinite(v) && String(v) !== String(p.const).trim() ? ` = ${esc(+v.toPrecision(5))}` : '';
+        const verb = { '*': 'Multiplies every value by', '+': 'Adds to every value', '-': p.rev ? 'Subtracts every value from' : 'Subtracts from every value', '/': 'Divides every value by' }[op] || 'Combines every value with';
+        const rad = t => t.replace(/√\(([^)]*)\)|√([\w.]+)/g, (m0, a, b2) => `<span class="rad">√</span><span class="radx">${a || b2}</span>`);
+        return box(rad(p.rev ? `y = ${pc} ${sym === '⊙' ? '×' : sym} x` : `y = x ${sym === '⊙' ? '×' : sym} ${pc}`), `${verb} the same fixed number, ${pc}${val}. It isn't learned; written in the code as <span class="mono">${esc(p.rev ? p.const + ' ' + op + ' x' : 'x ' + op + ' ' + p.const)}</span>.`);
+      }
+      const name = { '+': 'Adds', '-': 'Subtracts', '*': 'Multiplies', '/': 'Divides' }[op];
+      return box(`y = a ${sym} b`, `${name} the two inputs value by value. Shapes must match or broadcast (a size of 1, or a missing leading size, is repeated to fit).${op === '+' ? ' Adding a layer\'s input back to its output is a residual connection.' : op === '*' ? ' Multiplying by a sigmoid (or other gate) lets one tensor control how much of another passes.' : ''}`);
+    }
+    case 'heads': return box('(…, T, C) → (…, H, T, C/H)', `Reshape only: splits the ${last} features of each position into ${D(p.heads)} heads of ${last}/${D(p.heads)}, and moves the head axis before the positions so each head attends on its own. No values change.`);
+    case 'merge': return box('(…, H, T, D) → (…, T, H·D)', 'Reshape only: puts the heads back side by side in the features of each position (the inverse of split heads). No values change.');
+    case 'reshape': {
+      let d = null; try { d = x0 && NN.reshapeDescribe(p, x0); } catch (e2) { return box(esc(reshapeFace(p)), `<span style="color:var(--bad)">${esc(e2.message)}</span>`); }
+      const nm = k => (k.startsWith('…') ? '' : k), sizeOf2 = v => esc(dimText(v));
+      const parts = [];
+      if (d) for (const it of d.said) {
+        if (it.k === 'split') parts.push(`splits ${nm(String(it.axis)) !== '' ? 'axis ' + (it.axis + 1) : ''} (${sizeOf2(it.D)}) into ${it.names.map((n2, j) => `${esc(n2)} = ${sizeOf2(it.parts[j])}`).join(' × ')}`);
+        if (it.k === 'merge') parts.push(`merges ${it.names.map(esc).join(' and ')} into one axis of ${it.parts.map(sizeOf2).join(' × ')}`);
+        if (it.k === 'new') parts.push(`adds an axis of size 1 (so it broadcasts against a tensor with a size there)`);
+        if (it.k === 'drop') parts.push(`removes an axis of size 1`);
+      }
+      if (d && d.moved) parts.push(`reorders the axes to ${d.after.map(esc).join(' ')}`);
+      return box(esc(reshapeFace(p)), `Rearranges the tensor: ${parts.length ? parts.join('; ') : 'leaves it as it is'}. No values change, only how they are arranged. In code: <span class="mono">${esc(reshapeCodeOf(n))}</span>.`);
+    }
+    case 'transpose': return box('(…, a, b) → (…, b, a)', 'Swaps the last two sizes (kᵀ in attention, or patches × channels after a flatten). No values change, only their order.');
+    case 'scale': return box('y = x / √d', `d is the last size (the head width). Keeps q · k from growing with d, so the softmax that follows doesn't saturate.`);
+    case 'mask': return p.mode === 'given'
+      ? box('s<sub>tu</sub> = −∞ where the mask is false', 'Scores of the pairs the mask (input 2) disallows become −∞, so after the softmax they get weight exactly 0.')
+      : box('s<sub>tu</sub> = −∞ for u > t', 'Position t may only look at itself and earlier positions: scores for later ones become −∞, so after the softmax their weight is exactly 0.');
+    case 'rope': return box('(x<sub>i</sub>, x<sub>i+D/2</sub>) → rotated by θ = t · base<sup>−2i/D</sup>', `Each pair of features at position t is rotated by an angle that grows with t: x<sub>i</sub> cos θ − x<sub>i+D/2</sub> sin θ, x<sub>i</sub> sin θ + x<sub>i+D/2</sub> cos θ (base ${esc(p.base)}). Applied to q and k, so q · k depends on how far apart two positions are.${p.mode === 'axial' || p.mode === 'mrope' ? ' The positions come from input 2, one per axis.' : ''}`);
+    case 'conv': return p.transposed
+      ? box(`y[o, s·i+u, s·j+v] += Σ<sub>c</sub> W[c, o, u, v] · x[c, i, j]`, `The reverse of a strided convolution: each input pixel spreads into a ${esc(p.k)} × ${esc(p.k)} patch of the output, weighted by W (${D(p.in)} × ${D(p.out)} × ${esc(p.k)} × ${esc(p.k)}), stride s = ${esc(p.stride)}. Output size (H − 1)·s − 2·pad + k: kernel 2, stride 2 doubles it.`)
+      : box(`y[o, i, j] = ${p.bias ? 'b[o] + ' : ''}Σ<sub>c,u,v</sub> W[o, c, u, v] · x[c, s·i + u − p, s·j + v − p]`, `A Linear on each ${esc(p.k)} × ${esc(p.k)} window of all ${D(p.in)} input channels, slid over the image with stride s = ${esc(p.stride)} and zero padding p = ${esc(p.pad)}; the same weights at every position. W is ${D(p.out)} × ${D(p.in)} × ${esc(p.k)} × ${esc(p.k)}. Output size ⌊(H + 2p − k) / s⌋ + 1.`);
+    case 'conv1d': return box(`y<sub>t</sub> = ${p.bias ? 'b + ' : ''}Σ<sub>j=0…${esc(+p.k - 1 || 'k−1')}</sub> w<sub>j</sub> · x<sub>t−${esc(+p.k - 1 || 'k+1')}+j</sub>`, `For each of the ${D(p.ch)} channels on its own (its own ${esc(p.k)} weights): a weighted sum of the current and the previous ${esc(+p.k - 1 || 'k − 1')} steps, with zeros before the start. It never looks ahead.`);
+    case 'pool': return p.kind === 'adaptive'
+      ? (String(p.size) === '1' ? box('y[c] = mean<sub>i,j</sub> x[c, i, j]', 'Global average pooling: each channel becomes the average of all its pixels, whatever the image size (adaptive pooling to 1 × 1).')
+        : box(`y = mean of each window, windows sized to give ${esc(p.size)} × ${esc(p.size)}`, 'Adaptive average pooling: you choose the output size, and the windows are worked out to cover the map.'))
+      : box(`y[c, i, j] = ${p.kind === 'avg' ? 'mean' : 'max'} of x[c] over the ${esc(p.k)} × ${esc(p.k)} window at (s·i, s·j)`, `Per channel, no weights: ${p.kind === 'avg' ? 'the average' : 'the largest value'} of each window, stride s = ${esc(p.stride !== '' && p.stride != null ? p.stride : p.k)} (so the map shrinks by about that factor).`);
+    case 'upsample': return box(`(H, W) → (${esc(p.scale)}·H, ${esc(p.scale)}·W)`, p.mode === 'bilinear' ? 'Enlarges the image, filling in new pixels by linear interpolation between neighbours. No weights.' : 'Enlarges the image by repeating each pixel into a block. No weights.');
+    case 'delay': return box('y<sub>t</sub> = x<sub>t−1</sub>,  y<sub>0</sub> = 0', 'The value from one time step earlier. In a loop it is the state carried from step to step (an RNN\'s h); the code becomes a for loop over time.');
+    case 'token': return box('y = [c ; x<sub>1</sub> ; … ; x<sub>T</sub>]', `Puts ${esc(p.n)} learned vector${String(p.n) === '1' ? '' : 's'} (the same for every example) in front of the sequence, which becomes ${esc(p.n)} longer. A classifier then reads the output at that position (ViT's and BERT's class token).`);
+    case 'select': return box(`y = x[:, ${esc(p.index)}]`, 'Keeps one position of the sequence and drops that axis, e.g. the class token for a classifier head.');
+    case 'param': return box(`y = θ   (${esc(String(p.shape).split(',').map(s => dimText(s.trim())).join(' × '))})`, `A learned tensor used as it is, with no input: ${{ zeros: 'starts at zeros', ones: 'starts at ones', normal: `starts N(0, ${esc(p.init_arg || '0.02')}²)`, s4d: 'starts at log 1 … N along its last size (Mamba\'s A_log)', sincos2d: 'fixed 2-D sine/cosine position values (usually frozen)' }[p.init] || 'its own init'}. It broadcasts against what it is combined with.`);
+    case 'noise': return box('ε ~ N(0, 1)', 'Fresh standard normal values, shaped like the input (whose values are not used), new every call. A VAE\'s z = μ + ε · σ samples this way so gradients still reach μ and σ.');
+    case 'loss': {
+      const L = { cross_entropy: ['L = −mean log softmax(z)<sub>y</sub> = −mean (z<sub>y</sub> − log Σ<sub>j</sub> e<sup>z<sub>j</sub></sup>)', `The model output z holds raw scores (logits) per class; y is the right class. Lower when the right class gets most of the probability.${+p.label_smoothing > 0 ? ` With label smoothing ${esc(p.label_smoothing)}, the target puts that much weight spread over all classes.` : ''}${p.mode === 'next' ? ' Next token: position t is scored on token t + 1.' : p.mode === 'masked' ? ' Masked tokens: only the masked positions are scored.' : ''}`],
+        bce: ['L = −mean [y log σ(z) + (1 − y) log(1 − σ(z))]', 'z is a raw score (logit) per output, y is 0 or 1 (or a probability). Each output is its own yes/no question.'],
+        mse: ['L = mean (ŷ − y)²', 'The average squared difference: big errors count a lot more than small ones.'],
+        l1: ['L = mean |ŷ − y|', 'The average absolute difference: every unit of error counts the same, so outliers pull less than with MSE.'],
+        huber: [`L = mean of ½(ŷ − y)² if |ŷ − y| ≤ δ, else δ(|ŷ − y| − ½δ)`, `Squared for small errors, absolute for large ones (δ = ${esc(p.delta || '1.0')}); δ = 1 is smooth L1.`],
+        kl: ['L = mean over examples of ½ Σ (μ² + σ² − log σ² − 1),  σ² = e<sup>log σ²</sup>', 'How far the Gaussian N(μ, σ²) (input 1 the mean, input 2 the log-variance) is from N(0, 1), summed over the latent features. A VAE\'s regularizer.'] }[p.fn] || ['', ''];
+      return box(L[0], L[1] + (+p.weight !== 1 && p.weight !== '' && p.weight != null ? ` Counted ${esc(p.weight)}× in the total loss.` : ''));
+    }
+    case 'func': {
+      const fn = String(p.fn || ''), ex = String(p.extra || '').trim();
+      if (p.init) return box('', `A custom module, built as <span class="mono">${esc(p.init)}</span> and called on its input${+p.n > 1 ? 's' : ''}; Torch Canvas passes it through as written.`);
+      if (/(^|\.)flatten$/.test(fn)) return box(`(…) → flattened from dim ${esc(ex || '0')}`, `Reshape only: merges the sizes from dim ${esc(ex.split(',')[0] || '0')}${ex.includes(',') ? ' to dim ' + esc(ex.split(',')[1].trim()) : ' to the end'} into one (their product). No values change.`);
+      if (/(^|\.)unflatten$/.test(fn)) return box('', `Reshape only: splits one size into several (${esc(ex)}). No values change.`);
+      if (/(^|\.)(reshape|view)$/.test(fn)) return box('', `Reshape only: the same values, arranged as (${esc(ex)}).`);
+      if (/(^|\.)(transpose|permute|swapaxes)$/.test(fn)) return box('', `Reorders the axes (${esc(ex)}): the same values, read in another order.`);
+      if (/(^|\.)unsqueeze$/.test(fn)) return box(`adds a size-1 axis at dim ${esc(ex)}`, 'Reshape only: lets this tensor broadcast against one with a size there (e.g. one value per unit, repeated along the state).');
+      if (/(^|\.)squeeze$/.test(fn)) return box(`removes the size-1 axis at dim ${esc(ex)}`, 'Reshape only. No values change.');
+      if (/(^|\.)(sum|mean)$/.test(fn)) return box(`y = ${/sum$/.test(fn) ? 'Σ' : 'mean'} over dim ${esc(ex)}`, `${/sum$/.test(fn) ? 'Adds up' : 'Averages'} the values along that axis, which goes away.`);
+      if (/(^|\.)exp$/.test(fn)) return box('y = e<sup>x</sup>', 'For each value on its own. Usually undoes a log: a value learned as a log (any real number, easy to learn) comes back positive, e.g. a standard deviation from a log-variance.');
+      if (/(^|\.)(cat|concat|concatenate)$/.test(fn)) return box(`y = [a ; b] along ${esc(ex || 'dim=0')}`, 'Joins the inputs end to end along that axis; every other size must match. No values change.');
+      if (/(^|\.)stack$/.test(fn)) return box(`y = stack along ${esc(ex || 'dim=0')}`, 'Puts same-shaped inputs together along a new axis.');
+      if (/(^|\.)(matmul|mm|bmm)$/.test(fn)) return box('Y = A @ B', 'Matrix product over the last two sizes.');
+      if (/(^|\.)repeat_interleave$/.test(fn)) return box('', `Repeats each entry along an axis (${esc(ex)}), e.g. one key/value head shared by several query heads.`);
+      if (fn === 'sinusoidal_pe') return box('PE(t, 2i) = sin(t / 10000<sup>2i/d</sup>),  PE(t, 2i+1) = cos(t / 10000<sup>2i/d</sup>)', 'The fixed position table of the original Transformer: each pair of features is a sine and cosine of the position at its own frequency, so nearby positions get similar codes. Only the input\'s sizes are used; no weights, no gradient. A + after it adds it to the embeddings.');
+      if (fn === 'sinusoidal_positions') return box('y = x + PE,  PE(t, 2i) = sin(t / 10000<sup>2i/d</sup>),  PE(t, 2i+1) = cos(…)', 'Adds the fixed position encoding of the original Transformer: each feature pair is a sine and cosine of the position at its own frequency. No weights.');
+      if (fn === 'take_positions') return box('y[b, k] = x[b, idx[b, k]]', 'Gathers, for each example, the positions listed in the index input (input 2), in that order: K of the N positions. A (1, N, d) table is shared by every example. I-JEPA picks its context and target patches this way.');
+      if (fn === 'last_positions') return box('y = x[:, N − K :]', 'Keeps the last K positions of the sequence, K being the length of input 2: what came of tokens that were appended at the end.');
+      if (NN.HELPER_OPS[fn]) return box('', esc(NN.helperDoc(fn)));
+      return box('', `Calls <span class="mono">${esc(fn)}(…${ex ? ', ' + esc(ex) : ''})</span> as written. Torch Canvas passes it through without knowing what it computes (the output shape is assumed to be the input's).`);
+    }
+  }
+  return '';
+}
 function renderInspector() {
   const el = $('#insp');
   const has = S.sel.nodes.size || S.sel.edges.size || S.sel.group;
-  $('#drawer').hidden = !has || S.drawerClosed;
+  if (!has) S.drawerOpen = false; // the details panel opens on a double-click (or Enter, or Details in the menu) and then follows the selection
+  $('#drawer').hidden = !has || !S.drawerOpen;
   if (!has) { el.innerHTML = ''; return; }
   const datalist = `<datalist id="symList">${Object.keys(S.g.symbols).filter(k => k !== NN.BATCH).map(k => `<option value="${esc(k)}">`).join('')}</datalist>`;
   const nSel = S.sel.nodes.size;
@@ -1406,8 +1912,9 @@ function renderInspector() {
   const p = n.params; let h = '';
   const errMsg = S.info.errors.get(n.id);
   const sh = S.info.shapes.get(n.id);
-  const titles = { embed: p.positions ? 'Position embedding' : 'Embedding', heads: 'Split heads', merge: 'Merge heads', transpose: 'Transpose', scale: 'Scale by 1/√d', mask: 'Causal mask', rope: 'Rotary position embedding', loss: 'Loss', input: 'Input', output: 'Output', linear: 'Linear', norm: 'Normalization', act: 'Activation', binop: 'Elementwise op', dropout: 'Dropout', func: 'Custom op' };
+  const titles = { embed: p.positions ? 'Position embedding' : 'Embedding', reshape: 'Reshape', heads: 'Split heads', merge: 'Merge heads', transpose: 'Transpose', scale: 'Scale by 1/√d', conv: 'Convolution (2-D)', pool: 'Pooling', upsample: 'Upsample', delay: 'Delay', token: 'Learned token', select: 'Select a position', param: 'Parameter', conv1d: 'Causal convolution', noise: 'Noise', mask: 'Causal mask', rope: 'Rotary position embedding', loss: 'Loss', input: 'Input', output: 'Output', linear: 'Linear', norm: 'Normalization', act: 'Activation', binop: n.params.const !== '' && n.params.const != null ? ({ '*': 'Multiply by a constant', '+': 'Add a constant', '-': p.rev ? 'Subtract from a constant' : 'Subtract a constant', '/': 'Divide by a constant' }[p.op] || 'Operation with a constant') : 'Elementwise op', dropout: 'Dropout', func: 'Custom op' };
   h += `<h4>${titles[n.type]}</h4>`;
+  h += opExplain(n);
   switch (n.type) {
     case 'input': {
       const all = NN.parseShape(p.shape), batched = all[0] === NN.BATCH, dims = all.filter((d, i) => !(i === 0 && d === NN.BATCH));
@@ -1425,6 +1932,7 @@ function renderInspector() {
         + tieField(n)
         + (p.tie ? '' : field('Weight init', sel('init', p.init || 'default', Object.entries(NN.INITS).map(([k, v]) => [k, v.label])))
         + (NN.INITS[p.init || 'default'].arg ? field(NN.INITS[p.init].arg === 'std' ? 'std' : 'gain', txt('init_arg', p.init_arg, true, `placeholder="${NN.INITS[p.init].def}"`)) : ''))
+        + (p.bias && !p.tie ? field('Bias init', sel('bias_init', p.bias_init || '', [['', 'PyTorch default'], ['dt', 'Mamba time step (Δ)']])) : '')
         + (p.bias && (p.tie || (p.init || 'default') !== 'default') ? field('Zero the bias', `<input type="checkbox" id="f-zero_bias" data-f="zero_bias"${(p.tie ? p.zero_bias === true : p.zero_bias !== false) ? ' checked' : ''}>`) : '')
         + field('Code name', txt('name', p.name, true, 'placeholder="fc"'));
       h += `<p class="hint">${settersOf(String(p.out)).length > 1 ? `This size is linked to ${settersOf(String(p.out)).length - 1} other layer${settersOf(String(p.out)).length > 2 ? 's' : ''} that must match, so they change together. To size just this layer, click its size on the canvas and choose Only this layer. ` : ''}Right-click for weight init.</p>`;
@@ -1433,8 +1941,60 @@ function renderInspector() {
       + `<p class="hint" style="margin-top:-6px">${esc((NN.NORMS[p.kind] || {}).note || '')}${NN.NORMS[p.kind] && NN.NORMS[p.kind].channelFirst ? '. Sequence inputs (e × t × d) are transposed to channels-first around the call.' : ''}</p>`
       + (p.kind === 'GroupNorm' ? field('Groups', `<input type="number" id="f-groups" data-f="groups" min="1" value="${esc(p.groups || 8)}">`) : '')
       + field('eps', txt('eps', p.eps, true, 'placeholder="default"'))
+      + (p.kind === 'LayerNorm' ? field('Scale and shift', `<input type="checkbox" id="f-affine" data-f="affine"${p.affine !== false ? ' checked' : ''}>`) + (p.affine === false ? `<p class="hint" style="margin-top:-6px">No weights: <span class="mono">elementwise_affine=False</span>, a plain normalization (I-JEPA's targets).</p>` : '') : '')
       + field('Width', `<span class="mono">${esc(dimText(p.dim))} <small style="font-family:var(--sans);color:var(--faint)">from the stream</small></span>`) + field('Code name', txt('name', p.name, true, 'placeholder="norm"')); break;
-    case 'act': h += field('Function', sel('fn', p.fn, NN.ACTS.map(a => [a, a]))) + (p.fn === 'softmax' ? field('dim', txt('dim', p.dim)) : ''); break;
+    case 'act': h += field('Function', sel('fn', p.fn, NN.ACTS.map(a => [a, a]))) + (p.fn === 'softmax' ? field('dim', txt('dim', p.dim)) : '') + (p.fn === 'leaky_relu' ? field('Negative slope', txt('slope', p.slope ?? '0.01')) : ''); break;
+    case 'conv': {
+      const iv = NN.evalDim(p.in, S.g.symbols), ov = NN.evalDim(p.out, S.g.symbols), kv = NN.evalDim(p.k, S.g.symbols);
+      h += `<div class="sub">nn.${p.transposed ? 'ConvTranspose2d' : 'Conv2d'}(${esc(dimText(p.in))}, ${esc(dimText(p.out))}, ${esc(p.k)}), weight ${esc(dimText(p.out))} × ${esc(dimText(p.in))} × ${esc(p.k)} × ${esc(p.k)}${iv != null && ov != null && kv != null ? ` = ${(iv * ov * kv * kv).toLocaleString('en-US')}` : ''}</div>`;
+      h += field('Input channels', `<span class="mono">${esc(dimText(p.in))} <small style="font-family:var(--sans);color:var(--faint)">from the stream</small></span>`)
+        + field('Output channels', `<input type="number" min="1" id="f-wsize" data-wsize="1" value="${esc(ov ?? '')}">`)
+        + field('Kernel', txt('k', p.k)) + field('Stride', txt('stride', p.stride)) + field('Padding', txt('pad', p.pad))
+        + field('Bias', `<input type="checkbox" id="f-bias" data-f="bias"${p.bias ? ' checked' : ''}>`)
+        + field('Transposed', `<input type="checkbox" id="f-transposed" data-f="transposed"${p.transposed ? ' checked' : ''}>`)
+        + field('Code name', txt('name', p.name, true, 'placeholder="conv"'));
+      h += p.transposed ? `<p class="hint">nn.ConvTranspose2d enlarges the image: output size per side (size − 1)·stride − 2·padding + kernel, so kernel 2 with stride 2 doubles it.</p>`
+        : `<p class="hint">Output size per side: ⌊(size + 2·padding − kernel) / stride⌋ + 1. Padding (kernel − 1) / 2 keeps the size at stride 1. Usually no bias when a BatchNorm follows.</p>`;
+      break;
+    }
+    case 'pool':
+      h += field('Kind', sel('kind', p.kind, [['max', 'Max'], ['avg', 'Average'], ['adaptive', 'Adaptive average']]))
+        + (p.kind === 'adaptive' ? field('Output size', txt('size', p.size)) + `<p class="hint">Averages each channel down to this size per side; 1 is global average pooling.</p>`
+          : field('Window', txt('k', p.k)) + field('Stride', txt('stride', p.stride, true, `placeholder="${esc(p.k)} (the window)"`)) + field('Padding', txt('pad', p.pad)));
+      break;
+    case 'delay':
+      h += `<div class="sub">Passes on what it received one time step earlier: out[:, t] = in[:, t − 1], zeros at the first step. A loop through a Delay is a recurrence (an RNN): the code runs it as a for loop over time, with this as the state carried from step to step.</div>`
+        + field('State name', txt('name', p.name, true, 'placeholder="h"')) + `<p class="hint">The variable that holds it in the code, e.g. h or c.</p>`
+        + field('Split in / out', `<input type="checkbox" data-f="split"${splitOf(n) ? ' checked' : ''}>`)
+        + (splitOf(n) ? field('Return wire', sel('split_lane', p.split.lane === 'above' ? 'above' : 'below', [['below', 'Below'], ['above', 'Above']])) : '')
+        + `<p class="hint">Draws it like one step of a textbook cell: ${esc(p_name(n) + SUB_T.prev)} comes in where this node is, ${esc(p_name(n) + SUB_T.cur)} leaves at a second tab you can drag anywhere, and a faint wire joins the two. Only the drawing changes.</p>`;
+      break;
+    case 'token':
+      h += `<div class="sub">Puts learned vectors in front of the sequence, the same for every example (ViT's and BERT's class token): <span class="mono">torch.cat([token.expand(e, −1, −1), x], dim=1)</span>. Starts at zeros.</div>`
+        + field('Name', txt('name', p.name, true, 'placeholder="class_token"')) + field('Tokens', txt('n', p.n)) + field('Size', txt('dim', p.dim));
+      break;
+    case 'noise':
+      h += `<div class="sub">Fresh standard Gaussian noise shaped like its input, <span class="mono">torch.randn_like(x)</span>: a VAE's ε in z = μ + ε·σ. Only the shape of the input is used; no gradient flows back through it.</div>`;
+      break;
+    case 'param':
+      h += `<div class="sub">A learned tensor used as it is, e.g. Mamba's A_log and D: <span class="mono">nn.Parameter(…)</span>. It has no input; it broadcasts against what it is combined with.</div>`
+        + field('Name', txt('name', p.name, true, 'placeholder="w"')) + field('Shape', txt('shape', p.shape))
+        + field('Init', sel('init', p.init || 'zeros', [['zeros', 'Zeros'], ['ones', 'Ones'], ['normal', 'Normal N(0, std²)'], ['s4d', 'log 1 … N (Mamba\'s S4D-real A)'], ['sincos2d', '2-D sine/cosine positions (I-JEPA, MAE)']]))
+        + (p.init === 'normal' ? field('std', txt('init_arg', p.init_arg, true, 'placeholder="0.02"')) : '')
+        + (p.init === 'sincos2d' ? `<p class="hint" style="margin-top:-6px">Shape (1, N, d): N patches on a square grid; usually frozen.</p>` : '');
+      break;
+    case 'conv1d':
+      h += `<div class="sub">A convolution along time with one filter per channel that sees only the current and earlier steps (Mamba's conv1d): <span class="mono">nn.Conv1d(${esc(dimText(p.ch))}, ${esc(dimText(p.ch))}, ${esc(p.k)}, groups=${esc(dimText(p.ch))}, padding=${esc(p.k)} − 1)</span>, cut back to t steps.</div>`
+        + field('Channels', `<span class="mono">${esc(dimText(p.ch))} <small style="font-family:var(--sans);color:var(--faint)">from the stream</small></span>`)
+        + field('Width', txt('k', p.k)) + field('Bias', `<input type="checkbox" id="f-bias" data-f="bias"${p.bias ? ' checked' : ''}>`) + field('Code name', txt('name', p.name, true, 'placeholder="conv1d"'));
+      break;
+    case 'select':
+      h += `<div class="sub">Keeps one position of the sequence: <span class="mono">x[:, ${esc(p.index)}]</span>, e.g. the class token for a classifier head.</div>`
+        + field('Position', txt('index', p.index)) + `<p class="hint">0 is the first; −1 the last.</p>`;
+      break;
+    case 'upsample':
+      h += field('Scale', txt('scale', p.scale)) + field('Mode', sel('mode', p.mode || 'nearest', [['nearest', 'Nearest'], ['bilinear', 'Bilinear']])) + `<p class="hint">Makes the image larger by this factor per side.</p>`;
+      break;
     case 'binop': h += field('Operation', sel('op', p.op, [['+', '+  add'], ['*', '⊙  multiply'], ['-', '−  subtract'], ['/', '÷  divide'], ['@', '@  matmul']])) + field('Constant', txt('const', p.const, true, 'placeholder="(second input)"')) + (p.const !== '' ? field('Constant first', `<input type="checkbox" id="f-rev" data-f="rev"${p.rev ? ' checked' : ''}>`) : ''); break;
     case 'embed':
       h += `<div class="sub">${p.positions ? 'Looks up a learned vector for each position 0…T−1; the result is added to the token embeddings.' : 'Looks up a learned vector for each token id.'} <span class="mono">nn.Embedding(${esc(dimText(p.num))}, ${esc(dimText(p.dim))})</span></div>`
@@ -1449,6 +2009,12 @@ function renderInspector() {
     case 'heads':
       h += `<div class="sub">Reshapes ${esc('e × t × d')} into ${esc('e × heads × t × d/heads')} so each head attends separately. <span class="mono">split_heads(x, ${esc(dimText(p.heads))})</span></div>` + field('Heads', `<input type="number" min="1" id="f-esz-heads" data-esz="heads" value="${esc(NN.evalDim(p.heads, S.g.symbols) ?? '')}">`); break;
     case 'merge': h += `<div class="sub">Joins the heads back: e × heads × t × d/heads → e × t × d. <span class="mono">merge_heads(y)</span></div>`; break;
+    case 'reshape':
+      h += field('Pattern', txt('pattern', p.pattern, true, 'placeholder="e t (h d) -> e h t d"'))
+        + `<p class="hint">Name the axes before and after the arrow. <span class="mono">(h d)</span> is one axis made of two, <span class="mono">1</span> an axis of size 1, <span class="mono">...</span> any axes you don't name. Splitting, merging, reordering and adding or removing size-1 axes are all written this way.</p>`
+        + field('Sizes', txt('sizes', p.sizes, true, 'placeholder="h = n_head"'))
+        + `<p class="hint">For a split, the sizes of all but one part, e.g. <span class="mono">h = n_head</span>; the last is worked out.</p>`;
+      break;
     case 'transpose': h += `<div class="sub">Swaps the last two dimensions, e.g. turns K into Kᵀ for Q @ Kᵀ. <span class="mono">k.transpose(-2, -1)</span></div>`; break;
     case 'scale': h += `<div class="sub">Multiplies by 1/√(last size), the attention temperature. <span class="mono">q * q.size(-1) ** -0.5</span></div>`; break;
     case 'mask': h += (p.mode === 'given'
@@ -1467,7 +2033,7 @@ function renderInspector() {
         h += field('Label smoothing', txt('label_smoothing', p.label_smoothing, true, 'placeholder="0"'));
       }
       if (p.fn === 'huber') h += field('δ', txt('delta', p.delta, true, 'placeholder="1.0"'));
-      h += field('Weight', txt('weight', p.weight, true, 'placeholder="1"')) + `<p class="hint">Several losses are added up, each times its weight. Port 1 takes the model output, port 2 the target.</p>`;
+      h += field('Weight', txt('weight', p.weight, true, 'placeholder="1"')) + `<p class="hint">Several losses are added up, each times its weight. ${p.fn === 'kl' ? 'Port 1 takes the mean, port 2 the log-variance (both model outputs).' : 'Port 1 takes the model output, port 2 the target.'}</p>`;
       break;
     }
     case 'rope': h += ({
@@ -1478,9 +2044,19 @@ function renderInspector() {
       + field('Base', txt('base', p.base, true, 'placeholder="10000"'))
       + (p.mode === 'mrope' ? field('Sections', txt('sections', p.sections, true, 'placeholder="16, 24, 24"')) + `<p class="hint">Feature pairs per section; together half the head width.</p>` : ''); break;
     case 'dropout': h += field('p', `<input type="number" id="f-p" data-f="p" step="0.05" min="0" max="1" value="${esc(p.p)}">`) + field('Attribute', txt('name', p.name)); break;
-    case 'func': h += (NN.HELPER_OPS[p.fn] ? `<div class="sub">${esc(NN.helperDoc(p.fn))} Written as a helper function above the classes.</div>` : '') + field('Function', txt('fn', p.fn)) + field('Extra args', txt('extra', p.extra)) + field('Inputs', `<input type="number" id="f-n" data-f="n" min="1" max="8" value="${esc(p.n)}">`) + field('Module init', txt('init', p.init, true, 'placeholder="nn.Conv1d(…)"')) + field('Attribute', txt('name', p.name)); break;
+    case 'func': if (REDUCE_RE.test(String(p.fn || '')) && !p.init) {
+        const m = /^\s*(?:dim\s*=\s*)?(-?\d+)\s*(?:,\s*keepdim\s*=\s*(True|False))?\s*$/.exec(String(p.extra || '')), sh = (S.info.shapes.get((S.info.ix.inKeys.get(n.id) || [])[0]) || []);
+        const axes = sh.map((d, i) => [String(i - sh.length), `${i - sh.length}  (${i === 0 && String(d) === NN.BATCH ? 'batch' : dimText(d)})`]).reverse();
+        h += field('Axis', m && axes.length ? sel('axis', m[1], axes.some(a => a[0] === m[1]) ? axes : axes.concat([[m[1], m[1]]])) : txt('extra', p.extra))
+          + field('Keep the axis', `<input type="checkbox" data-f="keepdim"${m && m[2] === 'True' ? ' checked' : ''}>`) + `<p class="hint">Kept as size 1, so the result still broadcasts against the input.</p>`
+          + field('Attribute', txt('name', p.name)); break;
+      }
+      h += (NN.HELPER_OPS[p.fn] ? `<div class="sub">${esc(NN.helperDoc(p.fn))} Written as a helper function above the classes.</div>` : '') + field('Function', txt('fn', p.fn)) + field('Extra args', txt('extra', p.extra)) + field('Inputs', `<input type="number" id="f-n" data-f="n" min="1" max="8" value="${esc(p.n)}">`) + field('Module init', txt('init', p.init, true, 'placeholder="nn.Conv1d(…)"')) + field('Attribute', txt('name', p.name)); break;
   }
-  h += field('Nickname', txt('title', p.title, false, 'placeholder="optional, shown beside it"'));
+  h += followField(n);
+  if (canFreeze(n) && !p.follows) h += field('Freeze ❄', `<input type="checkbox" id="f-frozen" data-f="frozen"${p.frozen ? ' checked' : ''}>`) + `<p class="hint" style="margin-top:-6px">${n.type === 'block' ? 'Every weight in this block use' : 'Its weights'} get no updates in training: <span class="mono">requires_grad_(False)</span>, left out of the optimizer. Gradients still pass through to the layers before it.</p>`;
+  h += field('Nickname', txt('title', p.title, false, 'placeholder="optional, shown in the box"'));
+  h += field('Note', `<textarea data-f="note" rows="2" placeholder="optional: what this step is for, shown above">${esc(p.note || '')}</textarea>`);
   if (!['input', 'output', 'loss'].includes(n.type)) h += field('Variable', txt('var', p.var, true, 'placeholder="auto"'));
   const cf = S.info.conflicts.get(n.id), fixes = [];
   if (cf && (cf.kind === 'groups' || cf.kind === 'rank')) {
@@ -1534,6 +2110,14 @@ function renderInspector() {
         return;
       }
       if (f === 'tie') { setTie(n, v); return; }
+      if (f === 'axis' || f === 'keepdim') {
+        const m = /^\s*(?:dim\s*=\s*)?(-?\d+)\s*(?:,\s*keepdim\s*=\s*(True|False))?\s*$/.exec(String(p.extra || '')) || [null, '-1', null];
+        const ax = f === 'axis' ? v : m[1], keep = f === 'keepdim' ? v : m[2] === 'True';
+        p.extra = ax + (keep ? ', keepdim=True' : ''); return;
+      }
+      if (f === 'split') { if (v) p.split = { x: n.x + 240, y: n.y, lane: 'below' }; else delete p.split; return; }
+      if (f === 'split_lane') { if (p.split) p.split.lane = v; return; }
+      if (f === 'follows') { if (v) { p.follows = v; if (p.momentum == null) p.momentum = '0.996'; if (p.momentum_end == null) p.momentum_end = '1.0'; delete p.frozen; } else { delete p.follows; delete p.momentum; delete p.momentum_end; } return; }
       if (n.type === 'loss' && (f === 'fn' || f === 'mode')) { p[f] = v; fitLossTarget(n); return; }
       if (f === 'init' || f === 'init_arg' || f === 'zero_bias') {
         const vals = f === 'init' ? { init: v, init_arg: '' } : { [f]: v };
@@ -1574,6 +2158,8 @@ function blockInspector(el, n) {
   const reps = Math.max(1, Math.floor(+n.params.repeat || 1)), canRep = canRepeat(n);
   h += field('Repeat', `<span style="display:flex;align-items:center;gap:8px"><input type="number" min="1" max="64" id="f-repeat" data-brepeat="1" value="${reps}" style="width:80px"${canRep || reps > 1 ? '' : ' disabled'}><small style="color:var(--faint)">${canRep ? 'copies chained in a row' : reps > 1 ? 'output no longer matches input' : 'needs the same size in and out'}</small></span>`);
   if (reps > 1) h += `<p class="hint" style="margin-top:-4px">Written as <span class="mono">nn.ModuleList([…] for _ in range(${reps}))</span> with a loop; every copy uses the sizes above.</p>`;
+  h += followField(n);
+  if (!n.params.follows && !S.edit) h += field('Freeze ❄', `<input type="checkbox" id="f-frozen" data-f="frozen"${n.params.frozen ? ' checked' : ''}>`) + `<p class="hint" style="margin-top:-6px">Every weight in this block use gets no updates in training: <span class="mono">requires_grad_(False)</span>, left out of the optimizer.</p>`;
   h += field('Code name', txt('name', n.params.name, true, 'placeholder="auto"')) + field('Nickname', txt('title', n.params.title, false, 'placeholder="optional, shown beside it"'));
   if (cf) h += `<div class="errbox"><b>! Size conflict inside ${esc(blk.name)}.</b> ${esc(dimText(cf.a))} ≠ ${esc(dimText(cf.b))}. Open the block to fix it.</div>`;
   h += `<div class="row"><button class="btn primary" id="iOpenBlk">Open block</button><button class="btn" id="iExpand">Expand into layers</button><button class="btn" id="iDel">Delete</button></div>`;
@@ -1585,7 +2171,10 @@ function blockInspector(el, n) {
     if (t.dataset.barg) { const v = parseInt(t.value, 10); if (!(v > 0)) return toast('Sizes must be positive whole numbers.'); commit(() => setBlockArg(n, t.dataset.barg, v)); return; }
     if (t.dataset.brepeat) { const v = Math.max(1, Math.min(64, parseInt(t.value, 10) || 1)); if (v > 1 && !canRepeat(n)) return toast('A block can repeat only when its output has the same size as its input.'); commit(() => setRepeat(n, v)); return; }
     if (t.dataset.blabel) { commit(() => { blk.labels = blk.labels || {}; if (t.value.trim()) blk.labels[t.dataset.blabel] = t.value.trim(); else delete blk.labels[t.dataset.blabel]; }); return; }
-    const f = t.dataset.f; if (f) commit(() => { n.params[f] = t.value; });
+    const f = t.dataset.f; if (!f) return;
+    if (f === 'frozen') { commit(() => { if (t.checked) n.params.frozen = true; else delete n.params.frozen; }); return; }
+    if (f === 'follows') { const v = t.value; commit(() => { if (v) { n.params.follows = v; if (n.params.momentum == null) n.params.momentum = '0.996'; if (n.params.momentum_end == null) n.params.momentum_end = '1.0'; delete n.params.frozen; } else { delete n.params.follows; delete n.params.momentum; delete n.params.momentum_end; } }); return; }
+    commit(() => { n.params[f] = t.value; });
   };
   $('#iOpenBlk').onclick = () => enterBlock(blk.id);
   const rs = $('#iResetSizes'); if (rs) rs.onclick = () => commit(() => params.forEach(p => setBlockArg(n, p, +blk.graph.symbols[p] || 64)));
@@ -1665,11 +2254,12 @@ function tidyRoute(e) {
   if (P.length < 3) { delete e.route; return; }
   e.route = { pts: P.slice(1, -1), o0: orient(P[0], P[1]), o1: orient(P[P.length - 2], P[P.length - 1]) };
 }
-function reaches(from, to) { const ix = NN.index(S.g), seen = new Set(), st = [from]; while (st.length) { const id = st.pop(); if (id === to) return true; if (seen.has(id)) continue; seen.add(id); for (const o of ix.outs.get(id) || []) st.push(o.to); } return false; }
+// is there a path from → to that doesn't pass through a Delay (a loop through a Delay is a recurrence, which is fine)
+function reaches(from, to) { const ix = NN.index(S.g), seen = new Set(), st = [from]; while (st.length) { const id = st.pop(); if (id === to) return true; if (seen.has(id)) continue; seen.add(id); const n = byId(id); if (n && n.type === 'delay') continue; for (const o of ix.outs.get(id) || []) st.push(o.to); } return false; }
 function connect(from, to, pt, out = 0) {
   const t = byId(to); if (!t || from === to) return;
   const k = NN.inCount(t); if (!k) return toast('Inputs have no incoming connections.');
-  if (reaches(to, from)) return toast('That connection would create a loop.');
+  if (t.type !== 'delay' && reaches(to, from)) return toast('That connection would create a loop. To feed a value back, put a Delay in the loop: it passes on the previous step.');
   const used = new Set(S.g.edges.filter(e => e.to === to).map(e => e.port));
   let port = [...Array(k).keys()].find(i => !used.has(i));
   if (port === undefined) port = k > 1 && pt && pt[0] > t.x ? 1 : 0;
@@ -1758,8 +2348,9 @@ function toWorld(cx, cy) { const r = svg.getBoundingClientRect(); return [(cx - 
 function fit() {
   if (!S.g.nodes.length) { S.view = { x: 40, y: 40, k: 1 }; render(); return; }
   let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
-  for (const n of S.g.nodes) { const b = box(n); x0 = Math.min(x0, b.x - 70); y0 = Math.min(y0, b.y - 20); x1 = Math.max(x1, b.x + b.w + 20); y1 = Math.max(y1, b.y + b.h + 30); }
+  for (const n of [...S.g.nodes, ...S.g.nodes.filter(splitOf).map(splitTab)]) { const b = box(n); x0 = Math.min(x0, b.x - 70); y0 = Math.min(y0, b.y - 20); x1 = Math.max(x1, b.x + b.w + 20); y1 = Math.max(y1, b.y + b.h + 30); }
   for (const g of S.g.groups) { const b = groupBox(g); if (b) { x0 = Math.min(x0, b.x - 20); y1 = Math.max(y1, b.y + b.h + 10); } }
+  for (const e of S.g.edges) if (e.route && Array.isArray(e.route.pts)) for (const [x, y] of e.route.pts) { x0 = Math.min(x0, x - 20); x1 = Math.max(x1, x + 20); y0 = Math.min(y0, y - 20); y1 = Math.max(y1, y + 20); }
   const r = svg.getBoundingClientRect(); const pad = 30;
   const k = Math.min(1.6, (r.width - pad * 2) / (x1 - x0), (r.height - pad * 2 - 30) / (y1 - y0));
   S.view.k = Math.max(0.2, k);
@@ -1795,7 +2386,17 @@ svg.addEventListener('pointerdown', e => {
   const t = e.target;
   const pt = toWorld(e.clientX, e.clientY);
   const dimT = t.closest('[data-dimedge]'), out = t.closest('[data-out]'), nodeT = t.closest('[data-node]'), edgeT = t.closest('[data-edge]'), gT = t.closest('[data-glabel]');
-  const linT = t.closest('[data-lindim]');
+  const linT = t.closest('[data-lindim]'), tieT = t.closest('[data-tielink]');
+  // double-click, detected here because the first press redraws the canvas (so the browser's dblclick doesn't arrive)
+  const tap = !linT && !tieT && !dimT && !out ? (nodeT ? 'n' + nodeT.dataset.node : edgeT ? 'e' + edgeT.dataset.edge : null) : null, now = Date.now();
+  const dbl = tap && S.lastTap && S.lastTap.k === tap && now - S.lastTap.t < 450 && Math.hypot(e.clientX - S.lastTap.x, e.clientY - S.lastTap.y) < 8;
+  S.lastTap = dbl ? null : { k: tap, t: now, x: e.clientX, y: e.clientY };
+  if (dbl) { e.stopPropagation(); S.drag = null; return doubleTap(nodeT, edgeT); }
+  if (tieT) {
+    const n = byId(tieT.dataset.tielink); e.stopPropagation(); svg.setPointerCapture(e.pointerId);
+    S.drag = { kind: 'tie', n, start: pt, lane0: +tieT.dataset.lane, before: snap(), moved: false };
+    clearSel(); S.sel.nodes.add(n.id); selectionChanged(); return;
+  }
   if (linT) { const id = linT.dataset.lindim; clearSel(); S.sel.nodes.add(id); selectionChanged(); openWidthPop(id, e); e.stopPropagation(); return; }
   if (dimT) {
     const ed = S.g.edges.find(x => x.id === dimT.dataset.dimedge); if (!ed) return;
@@ -1805,6 +2406,13 @@ svg.addEventListener('pointerdown', e => {
   }
   svg.setPointerCapture(e.pointerId);
   if (out) { S.drag = { kind: 'connect', from: out.dataset.out, out: +(out.dataset.outport || 0), pt }; return; }
+  const splitT = t.closest('[data-splitin]');
+  if (splitT) {
+    const n = byId(splitT.dataset.splitin), sp = splitOf(n);
+    if (!S.sel.nodes.has(n.id)) { clearSel(); S.sel.nodes.add(n.id); }
+    S.drag = { kind: 'splitmove', n, start: pt, orig: [sp.x, sp.y], before: snap(), moved: false };
+    selectionChanged(); return;
+  }
   if (nodeT) {
     const id = nodeT.dataset.node;
     if (e.shiftKey || e.metaKey) { S.sel.nodes.has(id) ? S.sel.nodes.delete(id) : S.sel.nodes.add(id); }
@@ -1831,6 +2439,17 @@ svg.addEventListener('pointermove', e => {
     const dx = pt[0] - d.start[0], dy = pt[1] - d.start[1];
     if (Math.abs(dx) + Math.abs(dy) > 2) d.moved = true;
     for (const [id, [x, y]] of d.orig) { const n = byId(id); if (n) { n.x = Math.round((x + dx) / 2) * 2; n.y = Math.round((y + dy) / 2) * 2; } }
+    // moving several nodes together carries a split Delay's second tab along; moving the Delay alone doesn't
+    if (d.orig.size > 1) { if (!d.tabs) d.tabs = new Map([...d.orig.keys()].map(byId).filter(splitOf).map(n => [n, [n.params.split.x, n.params.split.y]]));
+      for (const [n, [x, y]] of d.tabs) { n.params.split.x = Math.round((x + dx) / 2) * 2; n.params.split.y = Math.round((y + dy) / 2) * 2; } }
+    render();
+  } else if (d.kind === 'tie') {
+    const dx = pt[0] - d.start[0]; if (Math.abs(dx) > 3) d.moved = true;
+    if (d.moved) { d.n.params.tie_x = Math.round((d.lane0 + dx) / 2) * 2; render(); }
+  } else if (d.kind === 'splitmove') {
+    const dx = pt[0] - d.start[0], dy = pt[1] - d.start[1];
+    if (Math.abs(dx) + Math.abs(dy) > 2) d.moved = true;
+    const sp = splitOf(d.n); if (sp) { sp.x = Math.round((d.orig[0] + dx) / 2) * 2; sp.y = Math.round((d.orig[1] + dy) / 2) * 2; }
     render();
   } else if (d.kind === 'edge') {
     const dx = pt[0] - d.start[0], dy = pt[1] - d.start[1];
@@ -1856,7 +2475,11 @@ svg.addEventListener('pointerup', e => {
   const d = S.drag; S.drag = null; $('#gOver').innerHTML = '';
   if (!d) return;
   if (d.kind === 'pan' && !d.moved) { if (S.sel.nodes.size || S.sel.edges.size || S.sel.group) { clearSel(); selectionChanged(); } if (S.focusDim) { S.focusDim = null; render(); renderDims(); } }
-  if (d.kind === 'move' && d.moved) { S.undo.push(d.before); S.redo = []; changed(); }
+  if ((d.kind === 'move' || d.kind === 'splitmove' || d.kind === 'tie') && d.moved) { S.undo.push(d.before); S.redo = []; changed(); }
+  if (d.kind === 'tie' && !d.moved) {
+    const now = Date.now(), last = S.lastTieClick; S.lastTieClick = { id: d.n.id, t: now };
+    if (last && last.id === d.n.id && now - last.t < 450 && d.n.params.tie_x != null) { S.lastTieClick = null; commit(() => { delete d.n.params.tie_x; }); }
+  }
   if (d.kind === 'edge') {
     if (d.moved) { tidyRoute(d.edge); S.undo.push(d.before); S.redo = []; changed(); }
     else {
@@ -1883,12 +2506,21 @@ svg.addEventListener('pointerup', e => {
     selectionChanged();
   }
 });
-svg.addEventListener('dblclick', e => {
-  const nt = e.target.closest('[data-node]'); if (!nt) return;
-  const n = byId(nt.dataset.node);
-  if (n && n.type === 'block') enterBlock(n.params.block); else setTab('insp');
-});
-function selectionChanged() { S.drawerClosed = false; render(); renderCode(); renderInspector(); }
+// double-click: a block opens its inside; any other layer or connection opens the details panel (a routed
+// connection goes back to its automatic path instead)
+function doubleTap(nodeT, edgeT) {
+  if (nodeT) {
+    const n = byId(nodeT.dataset.node); if (!n) return;
+    if (n.type === 'block') return enterBlock(n.params.block);
+    if (!S.sel.nodes.has(n.id) || S.sel.nodes.size > 1) { clearSel(); S.sel.nodes.add(n.id); }
+  } else if (edgeT) {
+    const ed = S.g.edges.find(x => x.id === edgeT.dataset.edge); if (!ed) return;
+    if (ed.route) return commit(() => { delete ed.route; });
+    clearSel(); S.sel.edges.add(ed.id);
+  }
+  S.drawerOpen = true; selectionChanged();
+}
+function selectionChanged() { render(); renderCode(); renderInspector(); }
 
 // The layer that decides a tensor's width: walk back through width-preserving ops.
 function setterOf(id) {
@@ -1904,7 +2536,7 @@ function setterOf(id) {
   return null;
 }
 const isIdent = x => /^[A-Za-z_]\w*$/.test(String(x).trim());
-function settersOf(sym) { return S.g.nodes.filter(n => (n.type === 'linear' && NN.identsIn(n.params.out).includes(sym)) || (n.type === 'embed' && NN.identsIn(n.params.dim).includes(sym)) || (n.type === 'input' && NN.identsIn(n.params.shape).includes(sym))); }
+function settersOf(sym) { return S.g.nodes.filter(n => ((n.type === 'linear' || n.type === 'conv') && NN.identsIn(n.params.out).includes(sym)) || (n.type === 'embed' && NN.identsIn(n.params.dim).includes(sym)) || (n.type === 'input' && NN.identsIn(n.params.shape).includes(sym))); }
 function renameSymbol(a, b) {
   S.g.symbols[b] = S.g.symbols[a]; delete S.g.symbols[a];
   const re = /\b[A-Za-z_]\w*\b/g;
@@ -1963,6 +2595,7 @@ function openWidthPop(id, ev) {
   let html = '';
   const slots = [];
   if (n.type === 'linear') slots.push({ key: 'out', label: 'Output size' });
+  else if (n.type === 'conv') slots.push({ key: 'out', label: 'Output channels' });
   else if (n.type === 'embed') slots.push({ key: 'dim', label: 'Embedding size' }, { key: 'num', label: n.params.positions ? 'Positions in the table (max length)' : 'Vocabulary size' });
   else if (n.type === 'heads') slots.push({ key: 'heads', label: 'Number of heads' });
   else if (n.type === 'input') NN.parseShape(n.params.shape).forEach((d, i) => { if (!(i === 0 && d === NN.BATCH)) slots.push({ key: i, label: slots.length ? 'Size ' + (slots.length + 1) : 'Feature size' }); });
@@ -2094,6 +2727,8 @@ function nodeMenu(x, y, clickedId) {
     if (normTargets(normIds, true).length > normIds.length) h += `<label class="chk"><input type="checkbox" id="ctx-all2" data-all="1"${S.ctxAll ? ' checked' : ''}> Same layer in every ${esc(S.info.ix.groupOf.get(normIds[0]).cls)}</label>`;
     h += '<hr>';
   }
+  const frzIds = ids.filter(id => canFreeze(byId(id)));
+  if (frzIds.length) h += `<label class="chk"><input type="checkbox" id="ctx-frz" data-frz="1"${frzIds.every(id => byId(id).params.frozen) ? ' checked' : ''}> Freeze ❄ <span style="color:var(--faint)">no updates in training${frzIds.length > 1 ? ` · ${frzIds.length} items` : ''}</span></label><hr>`;
   if (ids.length === 1) h += `<label class="argrow" style="padding-left:10px">Nickname <input type="text" id="ctx-nick" data-nick="1" value="${esc(byId(ids[0]).params.title || '')}" placeholder="optional" style="width:150px;text-align:left;font-family:var(--sans)"></label>`;
   const one = ids.length === 1 ? byId(ids[0]) : null;
   if (one && one.type === 'block') {
@@ -2104,7 +2739,7 @@ function nodeMenu(x, y, clickedId) {
       + item('expand', 'Expand into layers', 'Replace this use with its layers') + '<hr>' + h;
   }
   if (ids.length && !ids.every(id => byId(id) && ['input', 'output', 'loss'].includes(byId(id).type))) h += item('saveblock', 'Save selection as block', 'A library block with as many inputs and outputs as the selection has');
-  h += item('dup', ids.length > 1 ? 'Duplicate layers' : one && one.type === 'block' ? 'Duplicate block' : 'Duplicate layer') + item('inspect', 'Show details') + item('del', 'Delete', '', '', 'danger');
+  h += item('dup', ids.length > 1 ? 'Duplicate layers' : one && one.type === 'block' ? 'Duplicate block' : 'Duplicate layer') + item('inspect', 'Show details', one && one.type === 'block' ? 'Double-click opens the inside' : 'Or double-click · Enter') + item('del', 'Delete', '', '', 'danger');
   openCtx(x, y, h, el => {
     el.addEventListener('click', e => {
       const b = e.target.closest('[data-act]'); if (!b) return;
@@ -2143,6 +2778,7 @@ function nodeMenu(x, y, clickedId) {
       if (e.target.dataset.repeat) { const v = Math.max(1, Math.min(64, parseInt(e.target.value, 10) || 1)); if (v > 1 && !canRepeat(byId(ids[0]))) { toast('A block can repeat only when its output has the same size as its input.'); return; } commit(() => setRepeat(byId(ids[0]), v)); return; }
       if (e.target.dataset.nick) { const v = e.target.value.trim(); commit(() => { byId(ids[0]).params.title = v; }); return; }
       if (e.target.dataset.groups) { const v = parseInt(e.target.value, 10); if (!(v > 0)) return toast('Use a positive whole number.'); commit(() => normTargets(normIds, S.ctxAll).forEach(id => { byId(id).params.groups = v; })); return; }
+      if (e.target.dataset.frz) { const v = e.target.checked; commit(() => frzIds.forEach(id => { if (v) byId(id).params.frozen = true; else delete byId(id).params.frozen; })); return; }
       if (e.target.dataset.zb) { const v = e.target.checked; commit(() => tg().forEach(id => { byId(id).params.zero_bias = v; })); return; }
       if (e.target.dataset.arg) {
         const v = e.target.value.trim();
@@ -2161,7 +2797,7 @@ function edgeMenu(x, y, id) {
     + (es.some(z => z.route) ? item('reroute', 'Reset route', 'Back to the automatic path') : '') + (es.some(z => z.style) ? item('relook', 'Reset look') : '')
     + item('del', ids.length > 1 ? 'Delete connections' : 'Delete connection', '', '', 'danger'), el => el.addEventListener('click', ev => {
     const a = ev.target.closest('[data-act]'); if (!a) return; closeCtx();
-    if (a.dataset.act === 'look') { S.drawerClosed = false; renderInspector(); }
+    if (a.dataset.act === 'look') { S.drawerOpen = true; renderInspector(); }
     if (a.dataset.act === 'reroute') commit(() => es.forEach(z => delete z.route));
     if (a.dataset.act === 'relook') commit(() => es.forEach(z => delete z.style));
     if (a.dataset.act === 'del') deleteSel();
@@ -2170,7 +2806,7 @@ function edgeMenu(x, y, id) {
 function groupMenu(x, y, gid) {
   clearSel(); S.sel.group = gid; selectionChanged();
   const gr = S.g.groups.find(g => g.id === gid);
-  openCtx(x, y, `<div class="hd">${esc(gr.label)} <span>${esc(gr.cls)}</span></div>` + item('dup', 'Duplicate block', 'Gets its own width') + item('ungroup', 'Ungroup') + item('inspect', 'Open in inspector') + item('del', 'Delete layers', '', '', 'danger'), el => {
+  openCtx(x, y, `<div class="hd">${esc(gr.label)} <span>${esc(gr.cls)}</span></div>` + item('dup', 'Duplicate block', 'Gets its own width') + item('ungroup', 'Ungroup') + item('inspect', 'Details…', 'Or double-click') + item('del', 'Delete layers', '', '', 'danger'), el => {
     el.addEventListener('click', e => {
       const b = e.target.closest('[data-act]'); if (!b) return; const act = b.dataset.act;
       if (act === 'dup') { copySel(); paste(); }
@@ -2192,7 +2828,7 @@ function canvasMenu(x, y, wpt) {
 }
 svg.addEventListener('dblclick', e => {
   const he = e.target.closest && e.target.closest('[data-edge]');
-  if (he) { const ed = S.g.edges.find(x => x.id === he.dataset.edge); if (ed && ed.route) { e.stopPropagation(); commit(() => { delete ed.route; }); } return; }
+  if (he || e.target.closest('[data-node]')) return; // handled on pointerdown (doubleTap)
   const t = e.target.closest && e.target.closest('[data-dimedge]'); if (!t) return;
   const ed = S.g.edges.find(x => x.id === t.dataset.dimedge); if (!ed || !ed.lbl) return;
   e.stopPropagation(); closePop(); commit(() => { delete ed.lbl; });
@@ -2219,6 +2855,15 @@ const COMP = [
     { k: 'linear', label: 'Linear', sw: 'sw-lin', icon: 'W', desc: 'A learned weight matrix, plus an optional bias', torch: 'nn.Linear' },
     { k: 'embed', label: 'Embedding', sw: 'sw-lin', icon: 'E', desc: 'A learned vector for each token id', torch: 'nn.Embedding' },
     { k: 'embed:pos', label: 'Position emb.', sw: 'sw-lin', icon: 'P', desc: 'A learned vector for each position in the sequence', torch: 'nn.Embedding + torch.arange' } ] },
+  { id: 'images', label: 'Images', note: 'e × C × H × W', items: [
+    { k: 'conv', label: 'Conv2d', sw: 'sw-conv', icon: '▦', desc: 'A learned 2-D convolution over an image', torch: 'nn.Conv2d' },
+    { k: 'conv:transposed', label: 'ConvTranspose2d', sw: 'sw-conv', icon: '▦', desc: 'Enlarges an image: a 2×2 kernel with stride 2 doubles its size (U-Net\'s way up)', torch: 'nn.ConvTranspose2d' },
+    { k: 'norm:BatchNorm2d', label: 'BatchNorm2d', sw: 'sw-norm', icon: 'N', desc: 'Normalizes each channel over the batch and pixels', torch: 'nn.BatchNorm2d' },
+    { k: 'pool:max', label: 'Max pool', sw: 'sw-op2', icon: '⊡', desc: 'Largest value in each window', torch: 'F.max_pool2d' },
+    { k: 'pool:avg', label: 'Avg pool', sw: 'sw-op2', icon: '⊡', desc: 'Mean of each window', torch: 'F.avg_pool2d' },
+    { k: 'pool:adaptive', label: 'Global avg pool', sw: 'sw-op2', icon: '⊙', desc: 'Averages each channel to one value (or a fixed size)', torch: 'F.adaptive_avg_pool2d' },
+    { k: 'upsample', label: 'Upsample', sw: 'sw-op2', icon: '⤢', desc: 'Makes the image larger, e.g. 2× per side', torch: 'F.interpolate' },
+    { k: 'reshape:flatten', label: 'Reshape: flatten', sw: 'sw-op2', icon: '⇄', desc: 'A Reshape e c h w → e (c h w): the image as one vector, before a Linear', torch: 'x.flatten(1)' } ] },
   { id: 'norms', label: 'Norms', items: [
     { k: 'norm:LayerNorm', label: 'LayerNorm', sw: 'sw-norm', icon: 'N', desc: 'Normalizes each example over its features', torch: 'nn.LayerNorm' },
     { k: 'norm:RMSNorm', label: 'RMSNorm', sw: 'sw-norm', icon: 'N', desc: 'LayerNorm without mean-centering or bias', torch: 'nn.RMSNorm' },
@@ -2228,23 +2873,40 @@ const COMP = [
   { id: 'ops', label: 'Operations', note: 'no weights', subs: [
     { label: 'Activations', items: [
       { k: 'act:relu', label: 'ReLU', sw: 'sw-act', icon: 'ƒ', desc: 'max(0, x)', torch: 'F.relu' },
+      { k: 'act:leaky_relu', label: 'LeakyReLU', sw: 'sw-act', icon: 'ƒ', desc: 'ReLU with a small slope below zero, as in YOLO', torch: 'F.leaky_relu' },
       { k: 'act:gelu', label: 'GELU', sw: 'sw-act', icon: 'ƒ', desc: 'Smooth ReLU used in transformers', torch: 'F.gelu' },
       { k: 'act:gelu_tanh', label: 'GELU (tanh)', sw: 'sw-act', icon: 'ƒ', desc: 'GELU with the tanh approximation, as in GPT-2', torch: 'F.gelu(x, approximate="tanh")' },
       { k: 'act:silu', label: 'SiLU', sw: 'sw-act', icon: 'ƒ', desc: 'x · σ(x), also called swish', torch: 'F.silu' },
       { k: 'act:sigmoid', label: 'Sigmoid σ', sw: 'sw-act', icon: 'σ', desc: 'Squashes to (0, 1); used for gates', torch: 'torch.sigmoid' },
       { k: 'act:tanh', label: 'Tanh', sw: 'sw-act', icon: 'ƒ', desc: 'Squashes to (−1, 1)', torch: 'torch.tanh' },
-      { k: 'act:softmax', label: 'Softmax', sw: 'sw-act', icon: 'ƒ', desc: 'Turns scores into probabilities', torch: 'torch.softmax' } ] },
+      { k: 'act:softmax', label: 'Softmax', sw: 'sw-act', icon: 'ƒ', desc: 'Turns scores into probabilities', torch: 'torch.softmax' },
+      { k: 'act:softplus', label: 'Softplus', sw: 'sw-act', icon: 'ƒ', desc: 'log(1 + eˣ), a smooth positive ReLU; Mamba\'s time step', torch: 'F.softplus' } ] },
+    { label: 'Sequence', items: [
+      { k: 'delay', label: 'Delay', sw: 'sw-op2', icon: '◷', desc: 'The value from one time step earlier (zeros at the first step). Feed an output back through a Delay to make a recurrence: RNN, LSTM, GRU', torch: 'for t in range(T): h = …' },
+      { k: 'token', label: 'Learned token', sw: 'sw-op2', icon: '⊕', desc: 'A learned vector put in front of the sequence, e.g. the class token of ViT', torch: 'torch.cat([tok.expand(…), x], 1)' },
+      { k: 'conv1d', label: 'Causal conv', sw: 'sw-op2', icon: '⫶', desc: 'A convolution along time, one filter per channel, seeing only earlier steps (Mamba)', torch: 'nn.Conv1d(c, c, k, groups=c)' },
+      { k: 'param', label: 'Parameter', sw: 'sw-op2', icon: 'θ', desc: 'A learned tensor used as it is, e.g. Mamba\'s A_log and D', torch: 'nn.Parameter(…)' },
+      { k: 'func:sinusoidal_pe', label: 'Sin/cos positions', sw: 'sw-op2', icon: '∿', desc: 'The fixed sine/cosine position table of the original Transformer, shaped by its input; add it to the embeddings with a +', torch: 'x + sinusoidal_pe(x)' },
+      { k: 'noise', label: 'Noise', sw: 'sw-op2', icon: 'ε', desc: 'Standard Gaussian noise shaped like its input, e.g. a VAE\'s ε', torch: 'torch.randn_like(x)' },
+      { k: 'func:take_positions', label: 'Take positions', sw: 'sw-op2', icon: '⌖', desc: 'The positions listed in an index input (B × K) of a sequence or a (1, N, d) table, e.g. I-JEPA\'s context and target patches', torch: 'take_positions(x, idx)' },
+      { k: 'func:last_positions', label: 'Last positions', sw: 'sw-op2', icon: '⌖', desc: 'The last K positions of a sequence, K from its second input (what came of tokens appended at the end)', torch: 'last_positions(x, like)' },
+      { k: 'select', label: 'Select position', sw: 'sw-op2', icon: '⌖', desc: 'One position of the sequence, e.g. the class token for the head', torch: 'x[:, 0]' } ] },
     { label: 'Math', items: [
       { k: 'binop:+', label: 'Add', sw: 'sw-op', icon: '+', desc: 'a + b, e.g. a residual connection', torch: 'a + b' },
       { k: 'binop:*', label: 'Multiply ⊙', sw: 'sw-op', icon: '⊙', desc: 'Elementwise product, e.g. a gate', torch: 'a * b' },
       { k: 'binop:-', label: 'Subtract', sw: 'sw-op', icon: '−', desc: 'a − b', torch: 'a - b' },
       { k: 'binop:/', label: 'Divide', sw: 'sw-op', icon: '÷', desc: 'a ÷ b', torch: 'a / b' },
-      { k: 'binop:@', label: 'Matmul @', sw: 'sw-op', icon: '@', desc: 'Multiplies two activations, e.g. attention scores. For a learned weight, use Linear', torch: 'a @ b' } ] },
+      { k: 'reshape', label: 'Reshape', sw: 'sw-op', icon: '⇄', desc: 'Rearranges a tensor\'s axes: split, merge, reorder, add or remove size-1 axes, written as a pattern (e t (h d) → e h t d). No values change', torch: 'unflatten / transpose / flatten / …' },
+      { k: 'constop:*', label: 'Constant operation', sw: 'sw-op', icon: '×c', desc: 'Multiplies (or adds, subtracts, divides) by a fixed number c, e.g. √d or 0.5. Choose the operation and c in its details (sizes can be used: d ** 0.5); a nickname says which constant it is', torch: 'x * c' },
+      { k: 'binop:@', label: 'Matmul @', sw: 'sw-op', icon: '@', desc: 'Multiplies two activations, e.g. attention scores. For a learned weight, use Linear', torch: 'a @ b' },
+      { k: 'func:sum', label: 'Sum over axis', sw: 'sw-op', icon: 'Σ', desc: 'Adds up the values along one axis, which goes away (choose the axis in its details)', torch: 'x.sum(-1)' },
+      { k: 'func:mean', label: 'Mean over axis', sw: 'sw-op', icon: 'x̄', desc: 'Averages the values along one axis, which goes away (choose the axis in its details)', torch: 'x.mean(-1)' },
+      { k: 'func:exp', label: 'Exponential eˣ', sw: 'sw-op', icon: 'eˣ', desc: 'eˣ for each value; turns a value learned as a log back into a positive one', torch: 'torch.exp(x)' } ] },
     { label: 'Attention', items: [
-      { k: 'heads', label: 'Split heads', sw: 'sw-op2', icon: '⫼', desc: 'e × t × d → e × heads × t × d/heads', torch: 'unflatten + transpose' },
-      { k: 'merge', label: 'Merge heads', sw: 'sw-op2', icon: '⫴', desc: 'e × heads × t × d/heads → e × t × d', torch: 'transpose + flatten' },
-      { k: 'transpose', label: 'Transpose', sw: 'sw-op2', icon: 'ᵀ', desc: 'Swaps the last two dimensions (Kᵀ)', torch: 'x.transpose(-2, -1)' },
-      { k: 'scale', label: 'Scale 1/√d', sw: 'sw-op2', icon: '√', desc: 'Multiplies by 1/√(last size)', torch: 'x * x.size(-1) ** -0.5' },
+      { k: 'reshape:heads', label: 'Reshape: split heads', sw: 'sw-op2', icon: '⇄', desc: 'A Reshape e t (h d) → e h t d: each position\'s features cut into h heads, the head axis moved in front', torch: 'x.unflatten(-1, (h, -1)).transpose(1, 2)' },
+      { k: 'reshape:merge', label: 'Reshape: merge heads', sw: 'sw-op2', icon: '⇄', desc: 'A Reshape e h t d → e t (h d): the inverse of split heads', torch: 'x.transpose(1, 2).flatten(2)' },
+      { k: 'reshape:swap', label: 'Reshape: swap last two', sw: 'sw-op2', icon: '⇄', desc: 'A Reshape … a b → … b a, e.g. Kᵀ', torch: 'x.transpose(-2, -1)' },
+      { k: 'binop:scale', label: 'Multiply: 1/√(head width)', sw: 'sw-op2', icon: '√', desc: 'A Multiply by the constant (d / n_head) ** -0.5, with a note on why: it keeps q · k from growing with the head width', torch: 'q * (d / n_head) ** -0.5' },
       { k: 'mask', label: 'Causal mask', sw: 'sw-op2', icon: '◣', desc: 'Hides future positions from attention', torch: 'masked_fill(…, -inf)' },
       { k: 'rope', label: 'Rotary (RoPE)', sw: 'sw-op2', icon: '↻', desc: 'Rotary position embedding for q and k, as in Llama', torch: 'apply_rope(q)' },
       { k: 'mask:given', label: 'Attention mask', sw: 'sw-op2', icon: '▦', desc: 'Scores become −inf where the mask on input 2 is False', torch: 'masked_fill(~allowed, -inf)' },
@@ -2268,12 +2930,13 @@ const COMP = [
     { k: 'loss:bce', label: 'Binary cross-entropy', sw: 'sw-loss', icon: 'ℓ', desc: 'Independent yes/no outputs; takes logits. predict() adds sigmoid', torch: 'F.binary_cross_entropy_with_logits' },
     { k: 'loss:mse', label: 'Mean squared error', sw: 'sw-loss', icon: 'ℓ', desc: 'Regression', torch: 'F.mse_loss' },
     { k: 'loss:l1', label: 'L1 (absolute error)', sw: 'sw-loss', icon: 'ℓ', desc: 'Regression, robust to outliers', torch: 'F.l1_loss' },
-    { k: 'loss:huber', label: 'Huber', sw: 'sw-loss', icon: 'ℓ', desc: 'Squared error near zero, absolute error far away', torch: 'F.huber_loss' } ] },
+    { k: 'loss:huber', label: 'Huber', sw: 'sw-loss', icon: 'ℓ', desc: 'Squared error near zero, absolute error far away', torch: 'F.huber_loss' },
+    { k: 'loss:kl', label: 'KL to N(0, 1)', sw: 'sw-loss', icon: 'ℓ', desc: 'A VAE\'s latent term: input 1 the mean, input 2 the log-variance (both outputs)', torch: 'kl_normal(mu, logvar)' } ] },
 ];
 const compItems = () => COMP.flatMap(g => g.items || g.subs.flatMap(s => s.items));
 let compOpen = {}; try { compOpen = JSON.parse(localStorage.getItem('torchcanvas.compOpen') || '{}') || {}; } catch {}
 const pal = it => `<button class="pal" draggable="true" data-pal="${it.k}" title="${esc(it.desc)} · ${esc(it.torch)}"><i class="${it.sw}">${it.icon}</i>${esc(it.label)}</button>`;
-const TABS = [['io', 'I/O'], ['layers', 'Layers'], ['norms', 'Norms'], ['ops', 'Ops'], ['loss', 'Loss'], ['blocks', 'Blocks']];
+const TABS = [['io', 'I/O'], ['layers', 'Layers'], ['images', 'Images'], ['norms', 'Norms'], ['ops', 'Ops'], ['loss', 'Loss'], ['blocks', 'Blocks']];
 const TAB_NOTE = { io: 'Where data enters and leaves a network.', layers: 'Components with learned weights.', norms: 'Normalization layers.', ops: 'Operations without weights.', loss: 'What training minimizes. A loss takes a model output (raw, before softmax or sigmoid) and a target; it becomes loss() in the code, and predict() adds the final activation the loss leaves out.', blocks: 'Your own reusable networks. Each is its own class in the code.' };
 try { S.compTab = localStorage.getItem('torchcanvas.compTab') || 'io'; } catch { S.compTab = 'io'; }
 function renderComp() {
@@ -2313,12 +2976,17 @@ function nextFreeIn(g, base) { base = String(base).replace(/\d+$/, '') || 'h'; l
 function nextFree(base) { let k = 1; while (S.g.symbols[base + k] != null) k++; return base + k; }
 function lastStreamWidth() { const lin = S.g.nodes.filter(n => n.type === 'linear'); return lin.length ? lin[lin.length - 1].params.out : 'f'; }
 function addFromPalette(k, x, y) {
+  if (k.startsWith('constop:')) return addNode('binop', { op: k.slice(8), const: k.endsWith('*') ? '2' : '1' }, x, y);
   if (k.startsWith('block:')) return addBlockUse(k.slice(6), x, y);
   const [type, sub] = k.split(':');
   if (type === 'loss') return addLoss(sub, x, y);
   const params = {};
   if (type === 'act') params.fn = sub;
   if (type === 'binop') params.op = sub;
+  if (type === 'binop' && sub === 'scale') {
+    Object.assign(params, { op: '*', const: '(d / n_head) ** -0.5', note: 'Keeps the attention scores from growing with the head width. Each score q · k adds up one product per feature of the head; with q and k of variance about 1, that sum has variance equal to the head width. Multiplying by 1/√(head width) brings it back to about 1, so the softmax stays smooth instead of putting nearly all the weight on one key.' });
+    if (S.g.symbols.d == null) S.g.symbols.d = 256; if (S.g.symbols.n_head == null) S.g.symbols.n_head = 8;
+  }
   if (type === 'func' && sub === 'cat') Object.assign(params, { fn: 'torch.cat', extra: 'dim=-1', n: 2 });
   if (type === 'func' && NN.HELPER_OPS[sub]) Object.assign(params, { fn: sub }, NN.HELPER_OPS[sub].defaults);
   if ((type === 'rope' || type === 'mask') && sub) params.mode = sub;
@@ -2331,6 +2999,18 @@ function addFromPalette(k, x, y) {
   }
   if (type === 'heads') { if (S.g.symbols.n_head == null) S.g.symbols.n_head = 8; params.heads = 'n_head'; }
   if (type === 'norm') { params.dim = 'f'; if (sub) params.kind = sub; }
+  if (type === 'act' && sub === 'leaky_relu') params.slope = '0.01';
+  if (type === 'conv') { const w = nextFree('c'); S.g.symbols[w] = 64; params.out = w; params.in = 'f'; if (sub === 'transposed') Object.assign(params, { transposed: true, k: '2', stride: '2', pad: '0', bias: true }); }
+  if (type === 'pool' && sub) params.kind = sub;
+  if (type === 'delay') { const used = new Set(S.g.nodes.filter(z => z.type === 'delay').map(z => z.params.name)); let nm = used.has('h') ? (used.has('c') ? 'h2' : 'c') : 'h', k = 2; while (used.has(nm)) nm = 'h' + ++k; params.name = nm; }
+  if (type === 'func' && sub === 'flatten') Object.assign(params, { fn: '.flatten', extra: '1', n: 1 });
+  if (type === 'reshape') {
+    const pre = { heads: ['e t (h d) -> e h t d', 'h=n_head', 'split heads'], merge: ['e h t d -> e t (h d)', '', 'merge heads'], swap: ['... a b -> ... b a', '', ''], flatten: ['e c h w -> e (c h w)', '', ''] }[sub] || ['... a b -> ... b a', '', ''];
+    Object.assign(params, { pattern: pre[0], sizes: pre[1], title: pre[2] });
+    if (sub === 'heads' && S.g.symbols.n_head == null) S.g.symbols.n_head = 8;
+  }
+  if (type === 'func' && (sub === 'sum' || sub === 'mean')) Object.assign(params, { fn: '.' + sub, extra: '-1', n: 1 });
+  if (type === 'func' && sub === 'exp') Object.assign(params, { fn: 'torch.exp', extra: '', n: 1 });
   if (type === 'input') { params.name = S.g.nodes.some(n => n.type === 'input') ? 'x' + (S.g.nodes.filter(n => n.type === 'input').length + 1) : 'x'; if (S.g.symbols.d_in == null) S.g.symbols.d_in = 784; }
   addNode(type, params, x, y);
 }
@@ -2735,6 +3415,7 @@ document.addEventListener('keydown', e => {
   else if (mod && e.key.toLowerCase() === 'c') { if (copySel()) toast('Copied. Paste with Ctrl+V.'); }
   /* Ctrl+V is handled by the paste event: model code builds a diagram, otherwise copied layers are pasted */
   else if (mod && e.key.toLowerCase() === 'a') { e.preventDefault(); clearSel(); S.g.nodes.forEach(n => S.sel.nodes.add(n.id)); selectionChanged(); }
+  else if (e.key === 'Enter' && (S.sel.nodes.size || S.sel.edges.size || S.sel.group)) { e.preventDefault(); S.drawerOpen = true; renderInspector(); }
   else if (e.key === 'f' || e.key === 'F') fit();
   else if (e.key === 'Escape') { if (!S.sel.nodes.size && !S.sel.edges.size && S.edit) exitBlock(); else { clearSel(); closePop(); selectionChanged(); } }
 });
@@ -2750,8 +3431,8 @@ function doRedo() { if (!S.redo.length) return; S.undo.push(snap()); restore(S.r
 
 // ── header / tabs ──
 // The details panel slides in over the right side of the canvas whenever something is selected.
-function setTab(t) { if (t === 'insp') { S.drawerClosed = false; renderInspector(); } }
-$('#drawerClose').onclick = () => { S.drawerClosed = true; renderInspector(); };
+function setTab(t) { if (t === 'insp') { S.drawerOpen = true; renderInspector(); } }
+$('#drawerClose').onclick = () => { S.drawerOpen = false; renderInspector(); };
 $('#bUndo').onclick = doUndo; $('#bRedo').onclick = doRedo;
 $('#bLayout').onclick = () => commit(() => { NN.autoLayout(S.g, sizeOf); S.g.edges.forEach(e => delete e.route); }) || fit();
 function starterModel() {
@@ -2772,6 +3453,19 @@ $('#bNew').onclick = () => {
   openDoc(g);
   toast('New model in its own tab. Click a size to change it, and add components from the left.');
 };
+// the model's category: its own, or the example's it was opened from; setting it writes it into the model
+function renderModelCat() {
+  const el = $('#modelCat'); if (!el) return;
+  const lib = curLibEntry(), cur = R().category || (lib && lib.kind === 'network' && lib.category) || 'Other';
+  const opts = [...NET_CATS, ...new Set(S.library.filter(x => x.kind === 'network').map(catOf).filter(c => !NET_CATS.includes(c) && c !== 'Other')), 'Other'];
+  if (!opts.includes(cur)) opts.splice(opts.length - 1, 0, cur);
+  el.innerHTML = opts.map(c => `<option${c === cur ? ' selected' : ''}>${esc(c)}</option>`).join('') + '<option value="__new">New category…</option>';
+}
+$('#modelCat').addEventListener('change', async e => {
+  let v = e.target.value;
+  if (v === '__new') { v = (window.prompt('Name of the new category') || '').trim(); if (!v) return renderModelCat(); }
+  commit(() => { if (v === 'Other') delete R().category; else R().category = v; }); renderModelCat();
+});
 $('#modelName').addEventListener('change', e => commit(() => { R().name = e.target.value.replace(/[^\w]/g, '_') || 'Model'; }));
 $('#oShapes').onchange = e => { S.opts.shapeComments = e.target.checked; renderCode(); };
 $('#oSilu').onchange = e => { S.opts.fuseSilu = e.target.checked; renderCode(); renderFileBar(); };
@@ -2782,18 +3476,32 @@ async function copyText(t, ok) {
   catch { const ta = document.createElement('textarea'); ta.value = t; document.body.appendChild(ta); ta.select(); try { document.execCommand('copy'); toast(ok); } catch { toast('Copy was blocked. Select the text and copy it manually.'); } ta.remove(); }
 }
 $('#bCopy').onclick = () => copyText(S.gen.code, 'PyTorch code copied.');
+// ── categories in Open / import: each example says which family it belongs to; anything else is Other ──
+let catOpen = {}; try { catOpen = JSON.parse(localStorage.getItem('torchcanvas.menuCats') || '{}') || {}; } catch { catOpen = {}; }
+function catGroups(list, order, kind, curFile) {
+  const groups = new Map(); for (const c of order) groups.set(c, []);
+  for (const x of list) { const c = catOf(x); if (!groups.has(c)) groups.set(c, []); groups.get(c).push(x); }
+  // custom categories before Other, Other last
+  const keys = [...groups.keys()].filter(c => c !== 'Other' && groups.get(c).length); if ((groups.get('Other') || []).length) keys.push('Other');
+  return keys.map(c => {
+    const items = groups.get(c), key = kind + ':' + c, open = key in catOpen ? catOpen[key] : items.some(x => x.file === curFile);
+    return `<div class="cat${open ? ' open' : ''}"><button class="cat-hd" data-cat="${esc(key)}"><span class="cat-arrow">▸</span>${esc(c)}<span class="cat-n">${items.length}</span></button><div class="cat-items">${items.map(x => item('lib:' + x.file, x.title, x.description || '')).join('')}</div></div>`;
+  }).join('');
+}
 $('#bMore').onclick = e => {
   if (ctxEl && ctxEl.classList.contains('ctx-open')) return closeCtx();  // the button toggles the menu
   const r = e.currentTarget.getBoundingClientRect();
   const nets = S.library.filter(x => x.kind === 'network'), blks = S.library.filter(x => x.kind === 'block'), curLib = curLibEntry();
   openCtx(r.left, r.bottom + 4,
     `<div class="ctx-top"><b>Open / import</b><button class="ctx-x" data-close aria-label="Close" title="Close (Esc)">×</button></div>`
-    + (nets.length ? `<div class="hd">Example networks <span>open in a new tab</span></div>` + nets.map(x => item('lib:' + x.file, x.title, x.description || '')).join('') : '')
-    + (blks.length ? `<div class="hd">Blocks <span>open in a new tab to edit</span></div>` + blks.map(x => item('lib:' + x.file, x.title, x.description || '')).join('') : '')
+    + (nets.length ? `<div class="hd">Example networks <span>open in a new tab</span></div>` + catGroups(nets, NET_CATS, 'net', curLib && curLib.file) : '')
+    + (blks.length ? `<div class="hd">Blocks <span>open in a new tab to edit</span></div>` + catGroups(blks, BLOCK_CATS, 'blk', curLib && curLib.file) : '')
     + `<hr><div class="hd">From your computer</div>` + item('ofile', 'Open file…', 'A .py model, edited in place · Ctrl+O') + item('odir', 'Open folder…', 'Browse the models in a project') + item('paste', 'Paste code…', 'Or press Ctrl+V anywhere')
     + '<hr>' + (curLib ? item('link', 'Copy link to this example', `Opens ${curLib.title} directly`) : '') + item('json', 'Copy graph JSON', 'Restore it later with Paste code'),
     el => { el.classList.add('ctx-open'); el.addEventListener('click', ev => {
       if (ev.target.closest('[data-close]')) return closeCtx();
+      const ch = ev.target.closest('[data-cat]');
+      if (ch) { const c = ch.parentElement; c.classList.toggle('open'); catOpen[ch.dataset.cat] = c.classList.contains('open'); try { localStorage.setItem('torchcanvas.menuCats', JSON.stringify(catOpen)); } catch {} ev.stopPropagation(); return; }
       const b = ev.target.closest('[data-act]'); if (!b) return; closeCtx();
       const a = b.dataset.act;
       if (a.startsWith('lib:')) return openLibrary(S.library.find(x => x.file === a.slice(4)));
@@ -2821,7 +3529,7 @@ function openLibrary(entry) {
     let g; try { const j = JSON.parse(entry.source); g = j.graph || j; } catch { return toast(`Couldn't read ${entry.title}.`); }
     openDoc(g, null, { byName: true }); toast(`Opened example: ${entry.title}.`);
   } else importText(entry.source, null, { libTitle: entry.title });
-  const d = S.cur !== before && docById(S.cur); if (d) { d.fromLib = entry.file; save(); }
+  const d = S.cur !== before && docById(S.cur); if (d) { d.fromLib = entry.file; d.libSig = libSigOf(entry.source); d.edited = false; save(); }
 }
 // ── links to an example: ?open=gpt2 opens examples/networks/07_gpt2.json (or a library block, e.g. ?open=swiglu) ──
 const libBase = f => f.split('/').pop().replace(/\.\w+$/, '').toLowerCase();
@@ -3510,6 +4218,7 @@ function varDataSizes(root) {
   for (const n of flat.nodes) {
     if (n.type === 'input') NN.parseShape(n.params.shape).forEach(d => NN.identsIn(d).forEach(x => inSyms.add(x)));
     else for (const k of ['in', 'out', 'dim', 'num', 'heads', 'groups']) if (n.params[k] != null) NN.identsIn(n.params[k]).forEach(x => used.add(x));
+    if (n.type === 'reshape') { try { Object.values(NN.parseSizes(n.params.sizes)).forEach(v => NN.identsIn(v).forEach(x => used.add(x))); } catch { /* bad sizes */ } }
   }
   return [...inSyms].filter(x => x !== NN.BATCH && !used.has(x) && flat.symbols[x] != null);
 }
@@ -3760,13 +4469,13 @@ function fmtRatio(r) {
 function drawVar(res, dims, root) {
   const pane = $('#varPane'); varShown = root;
   let sym = {}; try { sym = NN.expandBlocks(root).flat.symbols; } catch {}
-  let h = `<p class="var-lede">Expected variance at each Linear right after init, input → output. <span style="color:var(--stream)">Forward</span>: standard Gaussian input. <span style="color:var(--bwd)">Backward</span>: standard Gaussian gradient at the output. Worked out from the init rules; nothing is run.</p>`
-    + `<div class="var-ctl"><div class="seg" role="group" aria-label="Measure at">${[['out', 'Linear outputs'], ['in', 'Linear inputs']].map(([k, t]) => `<button data-vat="${k}" aria-pressed="${S.varAt === k}">${t}</button>`).join('')}</div>`
+  let h = `<p class="var-lede">Expected variance at each Linear and Conv2d right after init, input → output. <span style="color:var(--stream)">Forward</span>: standard Gaussian input. <span style="color:var(--bwd)">Backward</span>: standard Gaussian gradient at the output. Worked out from the init rules; nothing is run.</p>`
+    + `<div class="var-ctl"><div class="seg" role="group" aria-label="Measure at">${[['out', 'Layer outputs'], ['in', 'Layer inputs']].map(([k, t]) => `<button data-vat="${k}" aria-pressed="${S.varAt === k}">${t}</button>`).join('')}</div>`
     + dims.map(d => `<label title="Data size used for the prediction (the model's value is ${esc(String(sym[d]))})">${esc(d)} <input data-vsize="${esc(d)}" type="number" min="1" step="1" value="${esc(String(S.varSizes[d] || sym[d]))}"></label>`).join('') + `</div>`;
   if (!res) { pane.innerHTML = h; return; }
   if (res.error) { pane.innerHTML = h + `<div class="var-err">${esc(res.error)}</div>`; return; }
   const L = res.layers;
-  if (!L.length) { pane.innerHTML = h + `<div class="var-err">This model has no Linear layers to plot.</div>`; return; }
+  if (!L.length) { pane.innerHTML = h + `<div class="var-err">This model has no Linear or Conv2d layers to plot.</div>`; return; }
   const at = S.varAt, F = L.map(l => (at === 'out' ? l.fwdOut : l.fwdIn)), B = L.map(l => (at === 'out' ? l.bwdOut : l.bwdIn));
   const n = L.length, W = Math.max(300, (pane.clientWidth || 440) - 28), H = 200, ml = 46, mr = 14, mt = 10;
   const many = n > 16, maxLen = Math.min(18, Math.max(...L.map(l => l.name.length)));
@@ -3800,9 +4509,9 @@ function drawVar(res, dims, root) {
       : `<text class="xl" text-anchor="end" transform="translate(${X(i) + 3},${Y0 + 12}) rotate(-45)">${esc(nm)}</text>`;
   });
   L.forEach((l, i) => { svg += `<rect class="hit" data-vi="${i}" x="${X(i) - colW / 2}" y="0" width="${colW}" height="${H}"/>`; });
-  if (many) svg += `<text class="xl" x="${ml + pw / 2}" y="${H - 4}" text-anchor="middle">Linear layer, input → output</text>`;
+  if (many) svg += `<text class="xl" x="${ml + pw / 2}" y="${H - 4}" text-anchor="middle">Linear / Conv2d layer, input → output</text>`;
   h += `<div class="var-legend"><span><i style="--c:var(--stream)"></i>forward (activations)</span><span><i style="--c:var(--bwd)"></i>backward (gradients)</span><span><i class="dash"></i>1, the input's variance</span></div>`;
-  h += `<svg class="var-plot" viewBox="0 0 ${W} ${H}" role="img" aria-label="Log plot of forward and backward variance at each Linear layer">${svg}</svg>`;
+  h += `<svg class="var-plot" viewBox="0 0 ${W} ${H}" role="img" aria-label="Log plot of forward and backward variance at each Linear and Conv2d layer">${svg}</svg>`;
   // summary
   const first = L[0].name, last = L[n - 1].name;
   const f0 = F[0], f1 = F[n - 1], b1 = B[n - 1], b0 = B[0];
@@ -3810,11 +4519,11 @@ function drawVar(res, dims, root) {
     + `<div><span style="color:var(--stream)">Forward</span>: <b>${fmtV(f0)}</b> at ${esc(first)} → <b>${fmtV(f1)}</b> at ${esc(last)}${f0 > 0 && f1 > 0 && n > 1 ? ` (${fmtRatio(f1 / f0)})` : ''}.</div>`
     + (b1 != null ? `<div><span style="color:var(--bwd)">Backward</span>: <b>${fmtV(b1)}</b> at ${esc(last)} → <b>${fmtV(b0)}</b> at ${esc(first)}${b0 > 0 && b1 > 0 && n > 1 ? ` (${fmtRatio(b0 / b1)})` : ''}.</div>` : '')
     + `</div>`;
-  h += `<details class="var-note var-vals"${S.varVals ? ' open' : ''}><summary>Values by layer</summary><table class="var-tab"><thead><tr><th>#</th><th>Linear</th><th>Var(w)</th><th class="r">forward</th><th class="r">backward</th></tr></thead><tbody>`
+  h += `<details class="var-note var-vals"${S.varVals ? ' open' : ''}><summary>Values by layer</summary><table class="var-tab"><thead><tr><th>#</th><th>Layer</th><th>Var(w)</th><th class="r">forward</th><th class="r">backward</th></tr></thead><tbody>`
     + L.map((l, i) => `<tr data-vi="${i}"><td>${i + 1}</td><td class="nm" title="${esc(l.name + (l.title ? ' · ' + l.title : ''))}">${esc(l.name)}</td><td>${esc(l.wvarText)}</td><td class="r f">${fmtV(F[i])}</td><td class="r b">${fmtV(B[i])}</td></tr>`).join('')
     + `</tbody></table></details>`;
   h += `<details class="var-note"><summary>How this is worked out</summary><ul>`
-    + `<li>Weights are averaged out rather than drawn: a Linear's output is Gaussian with Var = fan_in · Var(w) · E[x²] + Var(b), and its input gradient has Var = fan_out · Var(w) · E[dy²]. Var(w) comes from the init: PyTorch default 1/(3·fan_in), Kaiming 2/fan_in, Xavier 2g²/(fan_in + fan_out), normal σ², orthogonal g²/max(fan_in, fan_out).</li>`
+    + `<li>Weights are averaged out rather than drawn: a Linear's output is Gaussian with Var = fan_in · Var(w) · E[x²] + Var(b), and its input gradient has Var = fan_out · Var(w) · E[dy²]. A Conv2d is the same over each k × k window (fan_in = C_in·k²), with the covariance between pixels carried along: maps up to 8 × 8 are simulated pixel by pixel, padding included; larger maps as an 8 × 8 patch that wraps around, with each value taking the window of a random actual pixel so the edges count. BatchNorm2d normalizes each channel. Var(w) comes from the init: PyTorch default 1/(3·fan_in), Kaiming 2/fan_in, Xavier 2g²/(fan_in + fan_out), normal σ², orthogonal g²/max(fan_in, fan_out).</li>`
     + `<li>Activations, gates, residual adds and norms are applied to sampled values of one feature, so correlations such as σ(w)·w are exact.</li>`
     + `<li>For sequences, each feature is followed across positions, including what positions share (bias, attention averages). Attention runs on these values with simulated heads, so softmax and the causal mask act as they do in the model.</li>`
     + `<li>Gradients are taken as independent of the forward weights, the standard mean-field assumption. Against PyTorch the plot is within a few percent for the MLP examples, and within about 25% for attention gradients in deep transformers.</li>`
@@ -3841,7 +4550,7 @@ function varHover(i) {
   const pr = pane.getBoundingClientRect(), sr = svg.getBoundingClientRect(), k = sr.width / v.W;
   const x = sr.left - pr.left + pane.scrollLeft + v.X(i) * k, y = sr.top - pr.top + pane.scrollTop + 6;
   tip = document.createElement('div'); tip.className = 'var-tip';
-  tip.innerHTML = `<b>${esc(l.name)}</b>${l.title ? ` <span class="k">· ${esc(l.title)}</span>` : ''}<br><span class="k">Linear ${l.fin} → ${l.fout} · Var(w) = ${esc(l.wvarText)}</span><br>`
+  tip.innerHTML = `<b>${esc(l.name)}</b>${l.title ? ` <span class="k">· ${esc(l.title)}</span>` : ''}<br><span class="k">${l.kind === 'conv' ? `Conv2d ${l.k}×${l.k}, fan-in ${l.fin} → fan-out ${l.fout}` : `Linear ${l.fin} → ${l.fout}`} · Var(w) = ${esc(l.wvarText)}</span><br>`
     + `forward <span class="f">${fmtV(v.F[i])}</span> · backward <span class="b">${fmtV(v.B[i])}</span>`;
   pane.appendChild(tip);
   const tw = tip.offsetWidth; tip.style.left = Math.max(4, Math.min(pane.clientWidth - tw - 4, x - tw / 2)) + 'px'; tip.style.top = y + 'px';
@@ -3884,6 +4593,22 @@ if (!roots.length) roots = [NN.presetResidualMLP()];
 for (const g of roots) for (const n of g.nodes) { if ('tone' in n.params) delete n.params.tone; if (['Down projection', 'Output projection', 'Final norm'].includes(n.params.title)) n.params.title = ''; }
 roots.forEach(r => syncLinked(r));
 S.docs = roots.map(r => ({ id: NN.uid('d'), root: r, file: null, undo: [], redo: [], tabs: [], views: {}, fromLib: fromOf.get(r) || null }));
+// tabs of examples that have changed since they were opened: untouched ones (or ones saved before edits were tracked)
+// get the current version, with Undo bringing back the copy that was open; edited ones are left as they are
+{
+  const sigs = (saved && saved.sig) || [], eds = (saved && saved.ed) || [], updated = [], kept = [];
+  S.docs.forEach((d, i) => {
+    const entry = d.fromLib && S.library.find(x => x.file === d.fromLib && x.kind === 'network' && x.type === 'json'); if (!entry) return;
+    const now = libSigOf(entry.source); d.libSig = sigs[i] || null; d.edited = eds[i] === true;
+    if (d.libSig === now) return;
+    if (d.edited) { kept.push(entry.title); return; }
+    let g; try { const j = JSON.parse(entry.source); g = j.graph || j; } catch { return; }
+    syncLinked(g, { byName: true });
+    d.undo = [JSON.stringify({ root: d.root, edit: null })]; d.baseUndo = 1; d.root = g; d.libSig = now; d.edited = false; updated.push(entry.title);
+  });
+  if (updated.length) setTimeout(() => toast(`Updated ${updated.length === 1 ? 'the ' + updated[0] + ' tab' : updated.length + ' example tabs'} to the current version of the example. Undo brings back the copy that was open.`), 600);
+  else if (kept.length) setTimeout(() => toast(`The ${kept.join(', ')} example has changed since you opened it; your edited tab is unchanged. Open / import opens the current version.`), 600);
+}
 S.cur = null;
 activateDoc(S.docs[Math.min(saved && saved.cur || 0, S.docs.length - 1)].id);
 renderProject();
@@ -3895,7 +4620,7 @@ renderProject();
   if (!entry) return setTimeout(() => toast(`There is no example called “${want}”. Open / import lists them all.`), 300);
   // already open in a tab (from an earlier visit): switch to it
   const have = S.docs.find(d => d.fromLib === entry.file || (d.id === S.cur ? S.root : d.root).libHost === entry.file);
-  if (have) { if (have.id !== S.cur) activateDoc(have.id); return; }
+  if (have && (!have.libSig || have.libSig === libSigOf(entry.source) || docEdited(have))) { if (have.id !== S.cur) activateDoc(have.id); if (have.libSig && have.libSig !== libSigOf(entry.source)) setTimeout(() => toast('This tab has your edits; Open / import opens the current version of the example.'), 300); return; }
   const first = S.cur;
   openLibrary(entry);
   // someone opening the link for the first time sees just that model, not the default example beside it
@@ -3905,6 +4630,6 @@ idb.get('last').then(r => { if (r && (r.dir || r.file)) { S.remembered = r; if (
 requestAnimationFrame(fit);
 window.addEventListener('resize', () => render());
 // for the routing checks in tools/ (read-only access to the open graph and the router)
-window.__tc = { S, route, drawFrom, box, keyOf, byId, switchTo, openLibrary, findLibEntry, render };
+window.__tc = { S, route, drawFrom, box, keyOf, byId, switchTo, openLibrary, openLibraryBlock, findLibEntry, render, renderInspector, selectionChanged, fit, sizeOf };
 })();
 </script>
