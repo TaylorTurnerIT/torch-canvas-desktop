@@ -549,14 +549,18 @@ test('a block can be drawn open in place, inside its frame, without touching the
   // the Inside button on the box draws its layers where it stood
   await press(page, '.node [data-peek]');
   await expect(page.locator('.pvf')).toHaveCount(1);
-  await expect(page.locator('.pvf .pv-title')).toHaveText('GatedBlock × 3');
+  await expect(page.locator('.pv-title')).toHaveText('GatedBlock × 3');
   await expect(page.locator('.node.t-block')).toHaveCount(0);
   const inner = await page.locator('.node.pv').count();
   expect(inner).toBeGreaterThan(5);
   expect(await page.locator('.node.pv[data-node]').count()).toBe(0);
+  // what is drawn inside the frame is flat (nothing to hover or click), and the frame drags like any other block
+  await expect(page.locator('.node.pv .n-box').first()).toHaveCSS('pointer-events', 'none');
+  await expect(page.locator('.eg.pv .edge-hit').first()).toHaveCSS('pointer-events', 'none');
+  await expect(page.locator('.pvf .pv-box')).toHaveCSS('cursor', 'grab');
   // the stream runs on into the block's first layer and out of its last one: no Input or Output arrow of the block is drawn
   await expect(page.locator('.node.pv.t-io')).toHaveCount(0);
-  await expect(page.locator('.pvf [data-openblock]')).toHaveCount(1);
+  await expect(page.locator('.pvb [data-openblock]')).toHaveCount(1);
   // nothing in the model changed
   expect(await state()).toEqual(before);
   // a click on one of its layers selects the block use and shows the block's details
@@ -570,7 +574,7 @@ test('a block can be drawn open in place, inside its frame, without touching the
   await expect(page.locator('.node.t-block')).toHaveCount(1);
   await press(page, '.node [data-peek]');
   await expect(page.locator('.pvf')).toHaveCount(1);
-  await press(page, '.pvf [data-peek]');
+  await press(page, '.pvb [data-peek]');
   await expect(page.locator('.pvf')).toHaveCount(0);
   expect(await state()).toEqual(before);
   expect(errors).toEqual([]);
