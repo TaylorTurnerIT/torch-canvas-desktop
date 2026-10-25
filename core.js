@@ -1193,12 +1193,14 @@ const NN = (() => {
     return { flat: d.flat, origin: org, outsOf };
   }
   // Draw some block uses open: each use whose key is in `open` is replaced, in a copy of g, by one copy of the layers
-  // inside it, wired to what feeds the use and to what it feeds (a repeated use shows one copy). A use's key is
-  // keyOf(node), or its id; a use nested in an opened one has the opened use's key, ">", and its own name inside the
-  // block, so it can be told apart again after the diagram is rebuilt from code (which gives every node a new id).
-  // Every block node of the copy carries its key as pk. Only for drawing: the code is unchanged.
-  // place(use, nodes, edges, { blk, ins }, flat) is called per opened use once its layers are in flat.nodes, so a caller
-  // can position them; copies carry the block's own coordinates until it does.
+  // inside it (a repeated use shows one copy). A use's key is keyOf(node), or its id; a use nested in an opened one has
+  // the opened use's key, ">", and its own name inside the block, so it can be told apart again after the diagram is
+  // rebuilt from code (which gives every node a new id). Every block node of the copy carries its key as pk.
+  // The connections to the use keep their ids and end at an anchor on the block's edge: a stand-in node (a dropout that
+  // passes its input on, flagged with .anchor) per input, which also feeds the layers inside, and per output, which the
+  // layers inside feed. Everything inside is made of new connections (flagged pv). Only for drawing: the code is unchanged.
+  // place(use, nodes, edges, { blk, ins, anchors }, flat) is called per opened use once its layers and anchors are in
+  // flat.nodes, so a caller can position them; copies carry the block's own coordinates until it does.
   function inlineBlocks(g, open, place, keyOf) {
     const clone = o => JSON.parse(JSON.stringify(o)), isIO = z => z.type === 'input' || z.type === 'output';
     const flat = { name: g.name, symbols: Object.assign({}, g.symbols), nodes: g.nodes.map(clone), edges: g.edges.map(clone), groups: (g.groups || []).slice(), blocks: g.blocks };
@@ -1206,36 +1208,37 @@ const NN = (() => {
     for (let pass = 0; pass < 8; pass++) {
       const uses = flat.nodes.filter(n => n.type === 'block' && open.has(n.pk) && flat.blocks && flat.blocks[n.params.block] && flat.blocks[n.params.block].graph.nodes.some(z => !isIO(z)));
       if (!uses.length) break;
-      const { shapes } = inferShapes(flat), ix = index(flat), outOf = new Map(), added = [];
+      const { shapes } = inferShapes(flat), ix = index(flat);
       for (const n of uses) {
         const blk = flat.blocks[n.params.block], src = ix.inKeys.get(n.id).slice(), ins = blockInputs(blk), outNs = blockOutputs(blk);
         const map = bindBlock(flat, n, src.map(s => (s ? shapes.get(s) : null))), pre = n.id + '::';
-        const idm = new Map(), nodes = [], edges = [], producers = [], hold = !!(n.params.frozen || n.params.follows);
+        const idm = new Map(), nodes = [], edges = [], hold = !!(n.params.frozen || n.params.follows);
+        const anchor = (kind, k) => ({ id: `${pre}$${kind}${k}`, type: 'dropout', x: n.x, y: n.y, params: { p: '0' }, anchor: { use: n.pk, kind, k } });
+        const anchors = { ins: ins.map((_, k) => anchor('in', k)), outs: outNs.map((_, j) => anchor('out', j)) };
         for (const m of blk.graph.nodes) {
           if (isIO(m)) continue;
           const c = clone(m); c.id = pre + m.id; substDims(c, map); if (c.params.tie) c.params.tie = pre + c.params.tie; if (hold) c.params.frozen = true;
           if (c.type === 'block') c.pk = n.pk + '>' + (m.params.name || (flat.blocks[m.params.block] || {}).name || 'block');
           idm.set(m.id, c.id); nodes.push(c);
         }
+        const link = (id, key, to, port) => { const [f, o] = splitKey(key); const c = { id, from: f, to, port, pv: true }; if (o) c.out = o; edges.push(c); };
         for (const e of blk.graph.edges) {
-          const k = ins.findIndex(z => z.id === e.from);
-          const from = k >= 0 ? src[k] : idm.has(e.from) ? (e.out ? idm.get(e.from) + '@' + e.out : idm.get(e.from)) : null;
-          const j = outNs.findIndex(z => z.id === e.to);
-          if (j >= 0) { producers[j] = from; continue; }
-          if (from && idm.has(e.to)) { const c = clone(e); c.id = pre + e.id; c.from = from; delete c.out; c.to = idm.get(e.to); edges.push(c); }
+          const k = ins.findIndex(z => z.id === e.from), j = outNs.findIndex(z => z.id === e.to);
+          const from = k >= 0 ? anchors.ins[k].id : idm.has(e.from) ? (e.out ? idm.get(e.from) + '@' + e.out : idm.get(e.from)) : null;
+          if (!from) continue;
+          if (j >= 0) link(`${pre}$to${j}`, from, anchors.outs[j].id, 0);
+          else if (idm.has(e.to)) { const c = clone(e); c.id = pre + e.id; delete c.out; link(c.id, from, idm.get(e.to), e.port); Object.assign(edges[edges.length - 1], { route: c.route, style: c.style, lbl: c.lbl }); }
         }
-        flat.nodes = flat.nodes.filter(z => z.id !== n.id).concat(nodes); flat.edges = flat.edges.filter(e => e.to !== n.id);
-        outOf.set(n.id, producers); added.push(...edges);
-        if (place) place(n, nodes, edges, { blk, ins }, flat);
+        // the connections to and from the use now end at its anchors
+        flat.edges = flat.edges.filter(e => !(e.to === n.id && !anchors.ins[e.port]));
+        for (const e of flat.edges) {
+          if (e.to === n.id) { e.to = anchors.ins[e.port].id; e.port = 0; }
+          if (e.from === n.id) { const a = anchors.outs[e.out || 0]; if (a) { e.from = a.id; delete e.out; } else e.from = null; }
+        }
+        flat.edges = flat.edges.filter(e => e.from).concat(edges);
+        flat.nodes = flat.nodes.filter(z => z.id !== n.id).concat(nodes, anchors.ins, anchors.outs);
+        if (place) place(n, nodes, edges, { blk, ins, anchors }, flat);
       }
-      // an edge's source is a key ("id" or "id@k"): follow it through uses that were just opened
-      const resolve = key => { for (let i = 0; key && i < 100; i++) { const [id, k] = splitKey(key); if (!outOf.has(id)) return key; key = outOf.get(id)[k]; } return key || null; };
-      for (const e of [...flat.edges, ...added]) {
-        const r = resolve(srcKey(e)); if (!r) { e.from = null; continue; }
-        const [id, k] = splitKey(r); e.from = id; if (k) e.out = k; else delete e.out;
-      }
-      flat.edges = [...flat.edges.filter(e => e.from && !added.includes(e)), ...added.filter(e => e.from)];
-      for (const e of added) e.pv = true;
     }
     return flat;
   }

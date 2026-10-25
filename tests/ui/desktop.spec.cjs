@@ -558,6 +558,17 @@ test('a block can be drawn open in place, inside its frame, without touching the
   await expect(page.locator('.node.pv .n-box').first()).toHaveCSS('pointer-events', 'none');
   await expect(page.locator('.eg.pv .edge-hit').first()).toHaveCSS('pointer-events', 'none');
   await expect(page.locator('.pvf .pv-box')).toHaveCSS('cursor', 'grab');
+  // connections to the block end at anchors on its frame; the ones inside are drawn, not editable
+  await expect(page.locator('.pvanc')).toHaveCount(2);
+  const into = await page.evaluate(() => { const S = torchCanvas.state, use = S.g.nodes.find(n => n.type === 'block'); return S.g.edges.find(e => e.to === use.id).id; });
+  await expect(page.locator(`[data-edge="${into}"]`)).toHaveCount(1);
+  await expect(page.locator('.eg.pv [data-edge]')).toHaveCount(0);
+  // the connection into the block can be reshaped while it is open, and keeps its shape when folded
+  const grab = await page.evaluate(id => { const el = document.querySelector(`[data-edge="${id}"]`), p = el.getPointAtLength(el.getTotalLength() / 2), m = el.getScreenCTM(); return [m.a * p.x + m.e, m.d * p.y + m.f]; }, into);
+  await page.mouse.move(grab[0], grab[1]); await page.mouse.down(); await page.mouse.move(grab[0] + 25, grab[1] + 25, { steps: 4 }); await page.mouse.up();
+  expect(await page.evaluate(id => !!torchCanvas.state.g.edges.find(e => e.id === id).route, into)).toBe(true);
+  await page.evaluate(id => { delete torchCanvas.state.g.edges.find(e => e.id === id).route; }, into);
+  await page.evaluate(() => torchCanvas.commit(() => {}));
   // the stream runs on into the block's first layer and out of its last one: no Input or Output arrow of the block is drawn
   await expect(page.locator('.node.pv.t-io')).toHaveCount(0);
   await expect(page.locator('.pvb [data-openblock]')).toHaveCount(1);

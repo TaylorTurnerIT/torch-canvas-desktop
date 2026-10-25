@@ -249,11 +249,11 @@ for (const [f, want] of [['23_residual_cnn_gap.json', 57098], ['24_residual_cnn_
     const g = NN.presetResidualMLPBlocks(), use = g.nodes.find(n => n.type === 'block'), blk = g.blocks[use.params.block];
     const inner = blk.graph.nodes.filter(n => n.type !== 'input' && n.type !== 'output'), before = JSON.stringify(g);
     const placed = [], flat = NN.inlineBlocks(g, new Set([use.id]), (u, nodes, edges) => placed.push([u.id, nodes.length, edges.length]));
-    const lens = flat.nodes.length - (g.nodes.length - 1), toUse = g.edges.filter(e => e.to === use.id), fromUse = g.edges.filter(e => e.from === use.id);
+    const anchors = flat.nodes.filter(n => n.anchor), lens = flat.nodes.length - anchors.length - (g.nodes.length - 1), toUse = g.edges.filter(e => e.to === use.id), fromUse = g.edges.filter(e => e.from === use.id);
     if (JSON.stringify(g) !== before) { console.error('inlineBlocks changed the graph'); process.exit(1); }
-    if (flat.nodes.some(n => n.id === use.id) || lens !== inner.length || placed.length !== 1 || placed[0][1] !== inner.length) { console.error('inlineBlocks: wrong layers'); process.exit(1); }
+    if (flat.nodes.some(n => n.id === use.id) || anchors.length !== 2 || lens !== inner.length || placed.length !== 1 || placed[0][1] !== inner.length) { console.error('inlineBlocks: wrong layers'); process.exit(1); }
     const ids = new Set(flat.nodes.map(n => n.id));
-    if (flat.edges.some(e => !ids.has(e.from) || !ids.has(e.to)) || !flat.edges.some(e => e.from === toUse[0].from && e.to.startsWith(use.id + '::')) || !fromUse.every(o => flat.edges.some(e => e.to === o.to && e.from.startsWith(use.id + '::')))) { console.error('inlineBlocks: wrong wiring'); process.exit(1); }
+    if (flat.edges.some(e => !ids.has(e.from) || !ids.has(e.to)) || !flat.edges.some(e => e.id === toUse[0].id && e.from === toUse[0].from && e.to === anchors[0].id) || !flat.edges.some(e => e.from === anchors[0].id && e.pv) || !fromUse.every(o => flat.edges.some(e => e.id === o.id && e.to === o.to && e.from === anchors[1].id)) || !flat.edges.some(e => e.to === anchors[1].id && e.pv)) { console.error('inlineBlocks: wrong wiring'); process.exit(1); }
     const r = NN.inferShapes(flat);
     if (r.conflicts.size || r.errors.size) { console.error('inlineBlocks: shapes do not check out'); process.exit(1); }
     // examples with blocks inside blocks open all the way down

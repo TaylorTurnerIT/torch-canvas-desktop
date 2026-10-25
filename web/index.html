@@ -188,6 +188,9 @@ kbd { font-family: var(--mono); font-size: 10.5px; border: 1px solid var(--line)
 /* what is drawn inside a frame is flat: no hovering, no clicking; the frame itself is the block, so it drags like one */
 .pvf { cursor: grab; }
 .pvb .openbtn { pointer-events: all; }
+.pvanc { cursor: default; }
+.pvanc .pv-port { fill: var(--blk-bd); stroke: var(--bg); stroke-width: 1.5; }
+.pvanc.out .pv-port { cursor: crosshair; }
 .pv-plate { fill: var(--blk-bg); pointer-events: none; }
 .pvt { pointer-events: none; }
 .node.pv, .node.pv *, .eg.pv, .eg.pv *, .tie-link.pv, .tie-link.pv *, .delay-link.pv, .delay-link.pv * { pointer-events: none !important; }
@@ -1848,12 +1851,14 @@ const NN = (() => {
     return { flat: d.flat, origin: org, outsOf };
   }
   // Draw some block uses open: each use whose key is in `open` is replaced, in a copy of g, by one copy of the layers
-  // inside it, wired to what feeds the use and to what it feeds (a repeated use shows one copy). A use's key is
-  // keyOf(node), or its id; a use nested in an opened one has the opened use's key, ">", and its own name inside the
-  // block, so it can be told apart again after the diagram is rebuilt from code (which gives every node a new id).
-  // Every block node of the copy carries its key as pk. Only for drawing: the code is unchanged.
-  // place(use, nodes, edges, { blk, ins }, flat) is called per opened use once its layers are in flat.nodes, so a caller
-  // can position them; copies carry the block's own coordinates until it does.
+  // inside it (a repeated use shows one copy). A use's key is keyOf(node), or its id; a use nested in an opened one has
+  // the opened use's key, ">", and its own name inside the block, so it can be told apart again after the diagram is
+  // rebuilt from code (which gives every node a new id). Every block node of the copy carries its key as pk.
+  // The connections to the use keep their ids and end at an anchor on the block's edge: a stand-in node (a dropout that
+  // passes its input on, flagged with .anchor) per input, which also feeds the layers inside, and per output, which the
+  // layers inside feed. Everything inside is made of new connections (flagged pv). Only for drawing: the code is unchanged.
+  // place(use, nodes, edges, { blk, ins, anchors }, flat) is called per opened use once its layers and anchors are in
+  // flat.nodes, so a caller can position them; copies carry the block's own coordinates until it does.
   function inlineBlocks(g, open, place, keyOf) {
     const clone = o => JSON.parse(JSON.stringify(o)), isIO = z => z.type === 'input' || z.type === 'output';
     const flat = { name: g.name, symbols: Object.assign({}, g.symbols), nodes: g.nodes.map(clone), edges: g.edges.map(clone), groups: (g.groups || []).slice(), blocks: g.blocks };
@@ -1861,36 +1866,37 @@ const NN = (() => {
     for (let pass = 0; pass < 8; pass++) {
       const uses = flat.nodes.filter(n => n.type === 'block' && open.has(n.pk) && flat.blocks && flat.blocks[n.params.block] && flat.blocks[n.params.block].graph.nodes.some(z => !isIO(z)));
       if (!uses.length) break;
-      const { shapes } = inferShapes(flat), ix = index(flat), outOf = new Map(), added = [];
+      const { shapes } = inferShapes(flat), ix = index(flat);
       for (const n of uses) {
         const blk = flat.blocks[n.params.block], src = ix.inKeys.get(n.id).slice(), ins = blockInputs(blk), outNs = blockOutputs(blk);
         const map = bindBlock(flat, n, src.map(s => (s ? shapes.get(s) : null))), pre = n.id + '::';
-        const idm = new Map(), nodes = [], edges = [], producers = [], hold = !!(n.params.frozen || n.params.follows);
+        const idm = new Map(), nodes = [], edges = [], hold = !!(n.params.frozen || n.params.follows);
+        const anchor = (kind, k) => ({ id: `${pre}$${kind}${k}`, type: 'dropout', x: n.x, y: n.y, params: { p: '0' }, anchor: { use: n.pk, kind, k } });
+        const anchors = { ins: ins.map((_, k) => anchor('in', k)), outs: outNs.map((_, j) => anchor('out', j)) };
         for (const m of blk.graph.nodes) {
           if (isIO(m)) continue;
           const c = clone(m); c.id = pre + m.id; substDims(c, map); if (c.params.tie) c.params.tie = pre + c.params.tie; if (hold) c.params.frozen = true;
           if (c.type === 'block') c.pk = n.pk + '>' + (m.params.name || (flat.blocks[m.params.block] || {}).name || 'block');
           idm.set(m.id, c.id); nodes.push(c);
         }
+        const link = (id, key, to, port) => { const [f, o] = splitKey(key); const c = { id, from: f, to, port, pv: true }; if (o) c.out = o; edges.push(c); };
         for (const e of blk.graph.edges) {
-          const k = ins.findIndex(z => z.id === e.from);
-          const from = k >= 0 ? src[k] : idm.has(e.from) ? (e.out ? idm.get(e.from) + '@' + e.out : idm.get(e.from)) : null;
-          const j = outNs.findIndex(z => z.id === e.to);
-          if (j >= 0) { producers[j] = from; continue; }
-          if (from && idm.has(e.to)) { const c = clone(e); c.id = pre + e.id; c.from = from; delete c.out; c.to = idm.get(e.to); edges.push(c); }
+          const k = ins.findIndex(z => z.id === e.from), j = outNs.findIndex(z => z.id === e.to);
+          const from = k >= 0 ? anchors.ins[k].id : idm.has(e.from) ? (e.out ? idm.get(e.from) + '@' + e.out : idm.get(e.from)) : null;
+          if (!from) continue;
+          if (j >= 0) link(`${pre}$to${j}`, from, anchors.outs[j].id, 0);
+          else if (idm.has(e.to)) { const c = clone(e); c.id = pre + e.id; delete c.out; link(c.id, from, idm.get(e.to), e.port); Object.assign(edges[edges.length - 1], { route: c.route, style: c.style, lbl: c.lbl }); }
         }
-        flat.nodes = flat.nodes.filter(z => z.id !== n.id).concat(nodes); flat.edges = flat.edges.filter(e => e.to !== n.id);
-        outOf.set(n.id, producers); added.push(...edges);
-        if (place) place(n, nodes, edges, { blk, ins }, flat);
+        // the connections to and from the use now end at its anchors
+        flat.edges = flat.edges.filter(e => !(e.to === n.id && !anchors.ins[e.port]));
+        for (const e of flat.edges) {
+          if (e.to === n.id) { e.to = anchors.ins[e.port].id; e.port = 0; }
+          if (e.from === n.id) { const a = anchors.outs[e.out || 0]; if (a) { e.from = a.id; delete e.out; } else e.from = null; }
+        }
+        flat.edges = flat.edges.filter(e => e.from).concat(edges);
+        flat.nodes = flat.nodes.filter(z => z.id !== n.id).concat(nodes, anchors.ins, anchors.outs);
+        if (place) place(n, nodes, edges, { blk, ins, anchors }, flat);
       }
-      // an edge's source is a key ("id" or "id@k"): follow it through uses that were just opened
-      const resolve = key => { for (let i = 0; key && i < 100; i++) { const [id, k] = splitKey(key); if (!outOf.has(id)) return key; key = outOf.get(id)[k]; } return key || null; };
-      for (const e of [...flat.edges, ...added]) {
-        const r = resolve(srcKey(e)); if (!r) { e.from = null; continue; }
-        const [id, k] = splitKey(r); e.from = id; if (k) e.out = k; else delete e.out;
-      }
-      flat.edges = [...flat.edges.filter(e => e.from && !added.includes(e)), ...added.filter(e => e.from)];
-      for (const e of added) e.pv = true;
     }
     return flat;
   }
@@ -6253,6 +6259,7 @@ const byId = id => S.g.nodes.find(n => n.id === id);
 const NICK_H = 13;
 const nickInside = n => !!(n.params.title && !NN.isCircle(n) && n.type !== 'block');
 function sizeOf(n) {
+  if (n.anchor) return { w: 8, h: 8 };
   const s = sizeOf0(n);
   if (!nickInside(n)) return s;
   return { w: Math.max(s.w, n.params.title.length * 6.3 + 22), h: s.h + NICK_H };
@@ -6598,7 +6605,7 @@ function previewGraph() {
     return { x0, y0, x1, y1 };
   };
   const kids = fr => [fr, ...frames.filter(f => f.parent === fr).flatMap(kids)];
-  const flat = NN.inlineBlocks(S.g, S.open, (use, nodes, edges, { blk, ins }, g) => {
+  const flat = NN.inlineBlocks(S.g, S.open, (use, nodes, edges, { blk, ins, anchors }, g) => {
     const O = box(use), parent = inFrame.get(use.id) || null, root = parent ? parent.root : use.id;
     // the block's own column of layers lines up with the stream that enters the box
     const a = ins[0], first = a && blk.graph.edges.find(e => e.from === a.id), t = first && blk.graph.nodes.find(z => z.id === first.to);
@@ -6606,10 +6613,11 @@ function previewGraph() {
     const e0 = extent(nodes), cx = (e0.x0 + e0.x1) / 2, cy = (e0.y0 + e0.y1) / 2;
     const dx = a && vert ? use.x - a.x : use.x - cx, dy = a && !vert ? use.y - a.y : use.y - cy + (FR_TOP - FR_PAD) / 2;
     for (const m of nodes) shift(m, dx, dy);
-    for (const m of nodes) m.pv = root;
-    const f = { use: use.pk, root, blk, parent, ids: new Set(nodes.map(m => m.id)), reps: Math.max(1, Math.floor(+use.params.repeat || 1)), dir: vert ? (t && a && t.y > a.y ? 'down' : 'up') : (t && a && t.x < a.x ? 'left' : 'right') };
+    const anch = [...anchors.ins, ...anchors.outs], members = [...nodes, ...anch];
+    for (const m of members) m.pv = root;
+    const f = { use: use.pk, root, blk, parent, anch, att: new Map(), ids: new Set(members.map(m => m.id)), od: parent ? parent.dir : flowDir(use), reps: Math.max(1, Math.floor(+use.params.repeat || 1)), dir: vert ? (t && a && t.y > a.y ? 'down' : 'up') : (t && a && t.x < a.x ? 'left' : 'right') };
     const fit = fr => {
-      const ns = [...fr.ids].map(id => byFlat.get(id)).filter(Boolean), e = extent(ns);
+      const ns = [...fr.ids].map(id => byFlat.get(id)).filter(z => z && !z.anchor), e = extent(ns);
       let x0 = e.x0, y0 = e.y0, x1 = e.x1, y1 = e.y1;
       for (const k of frames) if (k.parent === fr) { x0 = Math.min(x0, k.x); y0 = Math.min(y0, k.y); x1 = Math.max(x1, k.x + k.w); y1 = Math.max(y1, k.y + k.h); }
       Object.assign(fr, { x: x0 - FR_PAD, y: y0 - FR_TOP, w: x1 - x0 + 2 * FR_PAD, h: y1 - y0 + FR_PAD + FR_TOP });
@@ -6622,7 +6630,16 @@ function previewGraph() {
     const anc = new Set(); for (let p = parent; p; p = p.parent) anc.add(p);
     const away = (px, py) => (py < O.y ? [0, -top] : py > O.y + O.h ? [0, bottom] : [px < use.x ? -left : right, 0]);
     const unitOf = fr => { let u = fr; while (u.parent && !anc.has(u.parent)) u = u.parent; return u; };
-    const done = new Set(), mine = new Set(nodes);
+    // the connections to the block end at anchors on its frame: inputs on the side the stream comes from, outputs on
+    // the other (along the edge when there are several); each starts level with where its connection met the box
+    const vo = f.od === 'up' || f.od === 'down', IN = { up: 'bottom', down: 'top', right: 'left', left: 'right' }[f.od];
+    for (const [list, kind] of [[anchors.ins, 'in'], [anchors.outs, 'out']]) list.forEach((q, i) => {
+      const sp = vo ? Math.min(44, (O.w - 28) / Math.max(1, list.length - 1)) : Math.min(24, (O.h - 8) / Math.max(1, list.length - 1)), off = (i - (list.length - 1) / 2) * sp;
+      const side = kind === 'in' ? IN : { bottom: 'top', top: 'bottom', left: 'right', right: 'left' }[IN];
+      q.x = use.x + (vo ? off : 0); q.y = use.y + (vo ? 0 : off);
+      f.att.set(q.id, [side === 'left' ? O.x : side === 'right' ? O.x + O.w : q.x, side === 'top' ? O.y : side === 'bottom' ? O.y + O.h : q.y, side]);
+    });
+    const done = new Set(), mine = new Set(members);
     for (const m of g.nodes) {
       if (mine.has(m)) continue;
       const fr = inFrame.get(m.id);
@@ -6632,15 +6649,25 @@ function previewGraph() {
         for (const d of kids(u)) { d.x += mx; d.y += my; for (const id of d.ids) { const z = byFlat.get(id); if (z) shift(z, mx, my); } }
       } else { const [mx, my] = away(m.x, m.y); shift(m, mx, my); }
     }
-    frames.push(f); for (const m of nodes) inFrame.set(m.id, f);
+    frames.push(f); for (const m of members) inFrame.set(m.id, f);
     for (let p = parent; p; p = p.parent) fit(p);
   }, n => keys.get(n.id));
-  // a connection you routed by hand keeps its bends only if both of its ends moved together
-  for (const e of flat.edges) if (e.route && Array.isArray(e.route.pts)) {
-    const A = moved.get(e.from) || [0, 0], B = moved.get(e.to) || [0, 0];
-    if (A[0] !== B[0] || A[1] !== B[1]) delete e.route; else if (A[0] || A[1]) e.route.pts = e.route.pts.map(p => [p[0] + A[0], p[1] + A[1]]);
+  // the anchors sit on the finished frame's edge; a connection to the block moved by how far its anchor is from where it met the box
+  const outAt = new Map();
+  for (const f of frames) for (const q of f.anch) {
+    const [ox, oy, side] = f.att.get(q.id);
+    if (side === 'left' || side === 'right') q.x = side === 'left' ? f.x : f.x + f.w; else q.y = side === 'top' ? f.y : f.y + f.h;
+    if (!f.parent) { moved.set(q.id, [q.x - ox, q.y - oy]); if (q.anchor.kind === 'out') outAt.set(f.root + ':' + q.anchor.k, [q.x, q.y]); }
   }
-  return { g: flat, frames };
+  // a connection you routed by hand keeps its bends only if both of its ends moved together; one of the model's own whose
+  // ends moved differently can't be reshaped while the block is open (it'd bend by one amount here and another folded)
+  const edgesInfo = new Map();
+  for (const e of flat.edges) {
+    const A = moved.get(e.from) || [0, 0], B = moved.get(e.to) || [0, 0], same = A[0] === B[0] && A[1] === B[1];
+    if (!e.pv) edgesInfo.set(e.id, same ? { shift: A } : { fixed: true });
+    if (e.route && Array.isArray(e.route.pts)) { if (!same) delete e.route; else if (A[0] || A[1]) e.route.pts = e.route.pts.map(p => [p[0] + A[0], p[1] + A[1]]); }
+  }
+  return { g: flat, frames, edges: edgesInfo, outAt };
 }
 // the frames of a previewed graph, behind its layers: the box, its name, and the Fold and Open buttons
 function frameSvg(pv) {
@@ -6971,7 +6998,8 @@ function render() {
   $('#emptyMsg').hidden = S.g.nodes.length > 0;
   // blocks drawn open: everything below is drawn from a copy of the graph that has their layers in place of them
   const real = [S.g, S.info], pv = previewGraph();
-  if (pv) { S.g = pv.g; analyze(); }
+  S.pv = pv;
+  if (pv) { S.g = pv.g; analyze(); pv.info = S.info; }
   try {
   const { ix, shapes, errors } = S.info;
   // groups
@@ -7043,6 +7071,12 @@ function render() {
   // nodes
   let nh = '';
   for (const n of S.g.nodes) {
+    if (n.anchor) {
+      // where connections meet an open block: on its frame; a top-level block's outputs can be dragged from, as from its box
+      const out = n.anchor.kind === 'out' && !String(n.anchor.use).includes('>');
+      nh += `<g class="pvanc${out ? ' out' : ''}" data-frame="${esc(n.pv)}"><circle class="pv-port" cx="${n.x}" cy="${n.y}" r="4.5"${out ? ` data-out="${esc(n.pv)}" data-outport="${n.anchor.k}"` : ''}><title>${n.anchor.kind === 'in' ? 'Input' : 'Output'}${n.anchor.k ? ' ' + (n.anchor.k + 1) : ''} of the block${out ? '. Drag to connect.' : ''}</title></circle></g>`;
+      continue;
+    }
     const b = box(n), p = n.params, sel = S.sel.nodes.has(n.id), cf = S.info.conflicts.get(n.id), bad = !cf && errors.has(n.id);
     let cls = 'node', inner = '';
     const cap = (txt) => `<text class="caption" x="${b.x - 8}" y="${n.y + 4}" text-anchor="end">${esc(txt)}</text>`;
@@ -7840,6 +7874,18 @@ function tidyRoute(e) {
   if (P.length < 3) { delete e.route; return; }
   e.route = { pts: P.slice(1, -1), o0: orient(P[0], P[1]), o1: orient(P[P.length - 2], P[P.length - 1]) };
 }
+// Run something against the graph as it is drawn (blocks open), then put things back. viewEdge: a connection of the model as drawn.
+function inView(fn) {
+  const pv = S.pv; if (!pv) return fn();
+  const keep = [S.g, S.info]; S.g = pv.g; S.info = pv.info; routeCache = null;
+  try { return fn(); } finally { S.g = keep[0]; S.info = keep[1]; routeCache = null; }
+}
+const viewEdge = e => (S.pv && S.pv.g.edges.find(x => x.id === e.id)) || e;
+function tidyInView(e, off) {
+  const ve = viewEdge(e); if (ve === e) return tidyRoute(e);
+  inView(() => tidyRoute(ve));
+  if (ve.route) e.route = { pts: ve.route.pts.map(p => [p[0] - off[0], p[1] - off[1]]), o0: ve.route.o0, o1: ve.route.o1 }; else delete e.route;
+}
 // is there a path from → to that doesn't pass through a Delay (a loop through a Delay is a recurrence, which is fine)
 function reaches(from, to) { const ix = NN.index(S.g), seen = new Set(), st = [from]; while (st.length) { const id = st.pop(); if (id === to) return true; if (seen.has(id)) continue; seen.add(id); const n = byId(id); if (n && n.type === 'delay') continue; for (const o of ix.outs.get(id) || []) st.push(o.to); } return false; }
 function connect(from, to, pt, out = 0) {
@@ -8020,7 +8066,7 @@ svg.addEventListener('pointerdown', e => {
     S.drag = { kind: 'move', start: pt, before: snap(), orig: new Map(gr.nodes.map(i => { const n = byId(i); return [i, [n.x, n.y]]; })), moved: false };
     selectionChanged(); setTab('insp'); return;
   }
-  if (edgeT) { const ed = S.g.edges.find(x => x.id === edgeT.dataset.edge); if (ed) S.drag = { kind: 'edge', edge: ed, start: pt, moved: false, before: snap(), shift: e.shiftKey || e.metaKey }; return; }
+  if (edgeT) { const ed = S.g.edges.find(x => x.id === edgeT.dataset.edge); if (ed) S.drag = { kind: 'edge', edge: ed, start: pt, moved: false, before: snap(), shift: e.shiftKey || e.metaKey, pe: S.pv && S.pv.edges.get(ed.id) }; return; }
   if (e.shiftKey) { S.drag = { kind: 'marquee', start: pt, cur: pt }; return; }
   S.drag = { kind: 'pan', sx: e.clientX, sy: e.clientY, vx: S.view.x, vy: S.view.y, moved: false };
 });
@@ -8047,18 +8093,21 @@ svg.addEventListener('pointermove', e => {
   } else if (d.kind === 'edge') {
     const dx = pt[0] - d.start[0], dy = pt[1] - d.start[1];
     if (!d.moved && Math.abs(dx) + Math.abs(dy) <= 3) return;
-    if (!d.moved) { d.moved = true; Object.assign(d, grabSegment(d.edge, d.start)); }
+    // with blocks drawn open, what is on screen is the preview: bends are worked out there and stored where the model keeps them
+    if (d.pe && d.pe.fixed) { if (!d.told) { d.told = true; toast('This connection is moved aside by an open block, so it keeps its shape. Fold the block to reshape it.'); } return; }
+    const off = d.pe ? d.pe.shift : [0, 0];
+    if (!d.moved) { d.moved = true; Object.assign(d, inView(() => grabSegment(viewEdge(d.edge), d.start))); }
     const F = d.F.map(p => p.slice()), [a, b] = [F[d.k], F[d.k + 1]];
     if (d.horiz) { a[1] += dy; b[1] += dy; } else { a[0] += dx; b[0] += dx; }
-    d.edge.route = { pts: F.slice(1, -1).map(p => p.map(Math.round)), o0: orient(F[0], F[1]), o1: orient(F[F.length - 2], F[F.length - 1]) };
+    d.edge.route = { pts: F.slice(1, -1).map(p => [Math.round(p[0] - off[0]), Math.round(p[1] - off[1])]), o0: orient(F[0], F[1]), o1: orient(F[F.length - 2], F[F.length - 1]) };
     render();
   } else if (d.kind === 'label') {
     const dx = pt[0] - d.start[0], dy = pt[1] - d.start[1];
     if (Math.abs(dx) + Math.abs(dy) > 3) d.moved = true;
     if (d.moved) { d.edge.lbl = { dx: Math.round(d.orig[0] + dx), dy: Math.round(d.orig[1] + dy) }; render(); }
   } else if (d.kind === 'connect') {
-    const s = byId(d.from), b = box(s), sx = outX(s, d.out);
-    $('#gOver').innerHTML = `<path class="tmp-edge" d="M${sx},${b.y} C${sx},${b.y - 50} ${pt[0]},${pt[1] + 50} ${pt[0]},${pt[1]}"/>`;
+    const s = byId(d.from), b = box(s), at = S.pv && S.pv.outAt.get(d.from + ':' + d.out), sx = at ? at[0] : outX(s, d.out), sy = at ? at[1] : b.y;
+    $('#gOver').innerHTML = `<path class="tmp-edge" d="M${sx},${sy} C${sx},${sy - 50} ${pt[0]},${pt[1] + 50} ${pt[0]},${pt[1]}"/>`;
   } else if (d.kind === 'marquee') {
     d.cur = pt; const [x0, y0] = d.start;
     $('#gOver').innerHTML = `<rect class="marquee" x="${Math.min(x0, pt[0])}" y="${Math.min(y0, pt[1])}" width="${Math.abs(pt[0] - x0)}" height="${Math.abs(pt[1] - y0)}"/>`;
@@ -8074,7 +8123,7 @@ svg.addEventListener('pointerup', e => {
     if (last && last.id === d.n.id && now - last.t < 450 && d.n.params.tie_x != null) { S.lastTieClick = null; commit(() => { delete d.n.params.tie_x; }); }
   }
   if (d.kind === 'edge') {
-    if (d.moved) { tidyRoute(d.edge); S.undo.push(d.before); S.redo = []; changed(); }
+    if (d.moved) { d.pe && S.pv ? tidyInView(d.edge, d.pe.shift) : tidyRoute(d.edge); S.undo.push(d.before); S.redo = []; changed(); }
     else {
       // two quick clicks on the same connection: back to the automatic route (the first click redraws it, so the
       // browser's own double-click doesn't fire)
@@ -8088,7 +8137,8 @@ svg.addEventListener('pointerup', e => {
     else { const setter = setterOf(d.edge.from); if (setter) openWidthPop(setter.id, d.ev); else openDimPop(d.edge.id, d.ev); }
   }
   if (d.kind === 'connect') {
-    const el = document.elementFromPoint(e.clientX, e.clientY); const tn = el && el.closest && el.closest('[data-node]');
+    const el = document.elementFromPoint(e.clientX, e.clientY), fr = el && el.closest && el.closest('[data-frame]');
+    const tn = (el && el.closest && el.closest('[data-node]')) || (fr && byId(fr.dataset.frame) ? { dataset: { node: fr.dataset.frame } } : null);
     if (tn) connect(d.from, tn.dataset.node, toWorld(e.clientX, e.clientY), d.out);
   }
   if (d.kind === 'marquee') {
