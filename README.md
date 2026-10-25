@@ -100,6 +100,8 @@ Opening a `.py` file from Finder (or `open -a`) loads it into the editor. The ap
 
 Resize the palette and the right pane by dragging their dividers. Double-click a divider to reset it, or focus it and press the left or right arrow keys. Sizes persist between launches.
 
+Choose **Preview contents** in a block's inspector or right-click menu to draw one copy inside the block on the canvas. Tensor shapes use that instance's sizes. The canvas makes temporary room for the preview; **Hide** or Escape restores the original layout. Previewing leaves model code, files, tabs, and undo history unchanged. Drag to pan while previewing; editing closes the preview.
+
 ## Editing in marimo
 
 The **Pooling** palette adds `AvgPool1d/2d`, `MaxPool1d/2d`, and `AdaptiveAvgPool1d/2d`. Inputs use channels before spatial dimensions, such as `(batch, channels, height, width)`. Configure scalar or comma-separated spatial parameters in the inspector; adaptive 2D pooling accepts `None` to preserve an axis. Python and FX imports recognize these layers. Max pooling with `return_indices=True` and pooling variance prediction are unsupported.

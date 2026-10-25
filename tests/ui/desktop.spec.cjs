@@ -482,11 +482,10 @@ test('auto-save is on by default and remembers being turned off', async ({ page 
   expect(await page.evaluate(() => document.querySelector('#oAuto').checked)).toBe(false);
 });
 
-async function openBranchedGate(page) {
-  await page.clock.install();
+async function openBranchedGate(page, source = fs.readFileSync('tests/fixtures/branched-gate.py', 'utf8'), pausedClock = true) {
+  if (pausedClock) await page.clock.install();
   await page.goto('http://127.0.0.1:4173');
-  await page.clock.pauseAt(Date.now() + 1000);
-  const source = fs.readFileSync('tests/fixtures/branched-gate.py', 'utf8');
+  if (pausedClock) await page.clock.pauseAt(Date.now() + 1000);
   await page.evaluate(text => {
     window.savedFiles['gate.py'] = Array.from(new TextEncoder().encode(text));
     window.nextPickedFile = { id: 'gate.py', identity: '/test/gate.py', name: 'gate.py', kind: 'file' };
@@ -495,6 +494,96 @@ async function openBranchedGate(page) {
   await expect(page.locator('#fileBar')).toContainText('gate.py');
   return source;
 }
+
+async function inlinePreviewSnapshot(page) {
+  return page.evaluate(() => {
+    const state = torchCanvas.state;
+    return {
+      root: JSON.stringify(state.root), current: JSON.stringify(state.g), source: state.file.text, code: state.gen.code,
+      undo: state.undo.length, redo: state.redo.length, tabs: JSON.stringify(state.tabs), edit: state.edit || null,
+      stored: localStorage.getItem('torchcanvas.graph.v1'),
+      writes: window.nativeCalls.filter(c => c.command === 'native_write').length,
+      disk: window.savedFiles['gate.py'],
+    };
+  });
+}
+
+test('inline preview draws one repeated block on the canvas without changing model or files', async ({ page }) => {
+  const errors = [];
+  page.on('pageerror', e => errors.push(e.message));
+  const source = fs.readFileSync('tests/fixtures/branched-gate.py', 'utf8')
+    .replace('self.gate = Gate(width)', 'self.gates = nn.ModuleList([Gate(width) for _ in range(7)])')
+    .replace('return self.head_norm(self.gate(x))', 'for gate in self.gates:\n            x = gate(x)\n        return self.head_norm(x)');
+  await openBranchedGate(page, source, false);
+  await expect(page.locator('#toast')).toBeHidden();
+  const id = await page.evaluate(() => torchCanvas.state.g.nodes.find(n => n.type === 'block').id);
+  const nodes = await page.locator('#gNodes > .node').count();
+  const originalView = await page.evaluate(() => ({ ...torchCanvas.state.view }));
+  await page.locator(`[data-node="${id}"]`).click({ button: 'right' });
+  const before = await inlinePreviewSnapshot(page);
+  await page.locator('[data-act="previewblock"]').click();
+  await expect(page.locator('#cv .inline-preview')).toHaveCount(1);
+  await expect(page.locator(`#cv [data-node="${id}"]`)).toContainText('1 of 7');
+  await expect(page.locator('#cv .inline-preview .ip-node')).toHaveCount(6);
+  await expect(page.locator('#cv .inline-preview')).toContainText('e × 4');
+  await expect(page.locator('#gNodes > .node')).toHaveCount(nodes);
+  await expect(page.locator('.modal-bg:visible')).toHaveCount(0);
+  expect(page.context().pages()).toHaveLength(1);
+  await page.locator('#zIn').click();
+  const bounds = await page.locator('#cv .inline-preview').boundingBox();
+  await page.mouse.move(bounds.x + bounds.width / 2, bounds.y + bounds.height / 2);
+  await page.mouse.down();
+  await page.mouse.move(bounds.x + bounds.width / 2 + 30, bounds.y + bounds.height / 2 + 20);
+  await page.mouse.up();
+  // Observe longer than the 700 ms auto-save debounce to detect accidental writes.
+  await page.waitForTimeout(1000);
+  expect(await inlinePreviewSnapshot(page)).toEqual(before);
+  await page.locator('#zFit').click();
+  await page.screenshot({ path: 'test-results/inline-block-preview.png', fullPage: true });
+  await page.locator(`[data-previewblock="${id}"]`).click();
+  await expect(page.locator('#cv .inline-preview')).toHaveCount(0);
+  expect(await page.evaluate(() => ({ ...torchCanvas.state.view }))).toEqual(originalView);
+  expect(await inlinePreviewSnapshot(page)).toEqual(before);
+  expect(errors).toEqual([]);
+});
+
+test('inline inspector preview binds instance sizes and leaves other copies collapsed', async ({ page }) => {
+  const source = fs.readFileSync('tests/fixtures/branched-gate.py', 'utf8')
+    .replace('self.gate = Gate(width)', 'self.gate = Gate(width)\n        self.other = Gate(width)')
+    .replace('self.head_norm(self.gate(x))', 'self.head_norm(self.other(self.gate(x)))')
+    .replace('class GatedNet(nn.Module):\n    def __init__(self, width=4):', 'class GatedNet(nn.Module):\n    def __init__(self, width=12):');
+  await openBranchedGate(page, source);
+  await page.clock.runFor(2000);
+  const ids = await page.evaluate(() => torchCanvas.state.g.nodes.filter(n => n.type === 'block').map(n => n.id));
+  await page.locator(`[data-node="${ids[0]}"]`).click({ button: 'right' });
+  await page.locator('[data-act="inspect"]').click();
+  const before = await inlinePreviewSnapshot(page);
+  await page.locator('#iPreviewBlk').click();
+  await expect(page.locator('#iPreviewBlk')).toHaveText('Hide preview');
+  await expect(page.locator(`#cv [data-node="${ids[0]}"] .inline-preview`)).toContainText('e × 12');
+  await expect(page.locator(`#cv [data-node="${ids[1]}"] .inline-preview`)).toHaveCount(0);
+  await page.keyboard.press('Escape');
+  await expect(page.locator('#cv .inline-preview')).toHaveCount(0);
+  expect(await inlinePreviewSnapshot(page)).toEqual(before);
+  await page.locator('#iPreviewBlk').click();
+  await page.evaluate(() => torchCanvas.commit(() => {
+    torchCanvas.state.g.nodes.find(n => n.type === 'norm').params.eps = '0.001';
+  }));
+  await expect(page.locator('#cv .inline-preview')).toHaveCount(0);
+  await expect(page.locator('#codeEdit')).toHaveValue(/eps=0\.001/);
+  expect(await page.evaluate(() => torchCanvas.state.g.nodes.find(n => n.type === 'norm').params.eps)).toBe('0.001');
+});
+
+test('inline preview handles multiple inputs and outputs', async ({ page }) => {
+  await openBranchedGate(page, fs.readFileSync('test_fixtures/multi/gru_like.py', 'utf8'));
+  const id = await page.evaluate(() => torchCanvas.state.g.nodes.find(n => n.params.name === 'cell2').id);
+  await page.locator(`[data-node="${id}"]`).click({ button: 'right' });
+  await page.locator('[data-act="previewblock"]').click();
+  await expect(page.locator('#cv .inline-preview .ip-input')).toHaveCount(2);
+  await expect(page.locator('#cv .inline-preview .ip-output')).toHaveCount(2);
+  await expect(page.locator('#cv .inline-preview')).toContainText('e × 64');
+  await expect(page.locator('#cv .inline-preview')).toContainText('e × 128');
+});
 
 test('an incomplete gate never auto-saves or manually saves over working Python', async ({ page }) => {
   const original = await openBranchedGate(page);
