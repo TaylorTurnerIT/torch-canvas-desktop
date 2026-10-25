@@ -18,6 +18,7 @@ const NN = (() => {
     norm: { kind: 'RMSNorm', dim: 'f', groups: 8, eps: '', name: '', title: '', var: '' },
     act: { fn: 'silu', dim: '-1', title: '', var: '' },
     dropout: { p: 0.1, name: '', title: '', var: '' },
+    pool: { kind: 'AvgPool2d', kernel_size: '2', stride: '', padding: '0', dilation: '1', ceil_mode: false, count_include_pad: true, divisor_override: '', output_size: '1', name: '', title: '', var: '' },
     binop: { op: '+', const: '', rev: false, title: '', var: '' },
     func: { fn: 'torch.cat', extra: 'dim=-1', n: 2, init: '', name: '', title: '', var: '' },
     block: { block: '', args: {}, nIn: 1, repeat: 1, name: '', title: '', var: '' },
@@ -34,6 +35,86 @@ const NN = (() => {
     loss: { fn: 'cross_entropy', mode: 'given', label_smoothing: '', ignore_index: '', delta: '1.0', weight: '1', mask_prob: '0.15', mask_id: '', title: '' },
   };
   const ACTS = ['sigmoid', 'silu', 'relu', 'gelu', 'gelu_tanh', 'tanh', 'softmax'];
+  const POOLS = Object.fromEntries(['AvgPool1d', 'AvgPool2d', 'MaxPool1d', 'MaxPool2d', 'AdaptiveAvgPool1d', 'AdaptiveAvgPool2d'].map(kind => [kind, {
+    dims: kind.endsWith('2d') ? 2 : 1, adaptive: kind.startsWith('Adaptive'), max: kind.startsWith('Max'),
+    fn: kind.replace('AdaptiveAvgPool', 'adaptive_avg_pool').replace('AvgPool', 'avg_pool').replace('MaxPool', 'max_pool'),
+  }]));
+  const poolText = value => value == null ? 'None' : Array.isArray(value) ? value.map(poolText).join(', ') : value.list ? value.list.map(poolText).join(', ') : value.sym || String(value);
+  function poolFromArgs(kind, get, functional = false) {
+    const def = POOLS[kind], p = Object.assign({}, DEFAULTS.pool, { kind });
+    if (def.adaptive) { p.output_size = poolText(get(0, 'output_size', 1)); return p; }
+    p.kernel_size = poolText(get(0, 'kernel_size', 2));
+    const stride = get(1, 'stride', null);
+    p.stride = stride == null ? '' : poolText(stride);
+    p.padding = poolText(get(2, 'padding', 0));
+    if (def.max) {
+      p.dilation = poolText(get(3, 'dilation', 1));
+      if (get(functional ? 5 : 4, 'return_indices', false)) throw new Error('Pooling with return_indices=True is not supported; use tensor-only pooling.');
+      p.ceil_mode = !!get(functional ? 4 : 5, 'ceil_mode', false);
+    } else {
+      p.ceil_mode = !!get(3, 'ceil_mode', false);
+      p.count_include_pad = !!get(4, 'count_include_pad', true);
+      const divisor = get(5, 'divisor_override', null);
+      p.divisor_override = divisor == null ? '' : poolText(divisor);
+    }
+    return p;
+  }
+  function poolVector(value, dims, fallback) {
+    const text = String(value == null || value === '' ? fallback : value).trim().replace(/^\((.*)\)$/, '$1');
+    const values = text.split(',').map(s => s.trim()).filter(Boolean);
+    if (values.length === 1) return Array(dims).fill(values[0]);
+    if (values.length !== dims) throw new Error(`Pooling expects one value or ${dims} values per spatial parameter.`);
+    return values;
+  }
+  function poolShape(shape, p, symbols) {
+    const def = POOLS[p.kind];
+    if (!def) throw new Error('Unknown pooling type.');
+    const d = def.dims;
+    if (![d + 1, d + 2].includes(shape.length)) throw new Error(`${p.kind} expects ${d + 1}D or ${d + 2}D input with channels before spatial dimensions.`);
+    const integer = (text, minimum, label) => {
+      const value = evalDim(text, symbols);
+      if (!Number.isInteger(value) || value < minimum) throw new Error(`${label} must be an integer >= ${minimum}; set numeric symbol values.`);
+      return value;
+    };
+    const input = shape.slice(-d);
+    const size = def.adaptive ? poolVector(p.output_size, d, '1') : poolVector(p.kernel_size, d, '2');
+    const stride = poolVector(p.stride === 'None' ? '' : p.stride, d, p.kernel_size || '2');
+    const padding = poolVector(p.padding, d, '0'), dilation = poolVector(p.dilation, d, '1');
+    if (!def.max && !def.adaptive && p.divisor_override && p.divisor_override !== 'None' && integer(p.divisor_override, -Infinity, 'Divisor') === 0) throw new Error('Pooling divisor_override cannot be zero.');
+    const output = input.map((length, i) => {
+      if (def.adaptive) {
+        if (size[i] === 'None' && d === 2) return length;
+        return String(integer(size[i], 1, 'Output size'));
+      }
+      const k = integer(size[i], 1, 'Kernel size'), s = integer(stride[i], 1, 'Stride');
+      const pad = integer(padding[i], 0, 'Padding'), dil = def.max ? integer(dilation[i], 1, 'Dilation') : 1;
+      if (pad > Math.floor(k / 2)) throw new Error('Pooling padding cannot exceed half the kernel size.');
+      const lengthValue = evalDim(length, symbols);
+      if (lengthValue == null) {
+        if (p.ceil_mode) throw new Error('Set numeric input dimensions to infer ceil-mode pooling.');
+        return `((${length}+${2 * pad}-${dil * (k - 1) + 1})//${s}+1)`;
+      }
+      let result = (p.ceil_mode ? Math.ceil : Math.floor)((lengthValue + 2 * pad - dil * (k - 1) - 1) / s) + 1;
+      if (p.ceil_mode && (result - 1) * s >= lengthValue + pad) result--;
+      if (result < 1) throw new Error('Pooling produces an empty output; reduce kernel size or increase input size.');
+      return String(result);
+    });
+    return shape.slice(0, -d).concat(output);
+  }
+  function poolCtor(p, substitute = x => x) {
+    const def = POOLS[p.kind];
+    const arg = (value, fallback) => {
+      const parts = poolVector(value, def.dims, fallback).map(v => v === 'None' ? v : substitute(v));
+      return parts.every(v => v === parts[0] && v !== 'None') ? parts[0] : `(${parts.join(', ')})`;
+    };
+    if (def.adaptive) return `nn.${p.kind}(output_size=${arg(p.output_size, '1')})`;
+    let code = `nn.${p.kind}(kernel_size=${arg(p.kernel_size, '2')}, stride=${p.stride && p.stride !== 'None' ? arg(p.stride) : 'None'}, padding=${arg(p.padding, '0')}`;
+    if (def.max) code += `, dilation=${arg(p.dilation, '1')}`;
+    code += `, ceil_mode=${p.ceil_mode ? 'True' : 'False'}`;
+    if (!def.max) code += `, count_include_pad=${p.count_include_pad ? 'True' : 'False'}`;
+    if (!def.max && def.dims === 2 && p.divisor_override && p.divisor_override !== 'None') code += `, divisor_override=${substitute(p.divisor_override)}`;
+    return code + ')';
+  }
   // Loss functions. act = what predict() applies at inference (the loss works on the raw output).
   const LOSSES = {
     cross_entropy: { label: 'Cross-entropy', torch: 'F.cross_entropy', act: 'softmax', note: 'Classes or tokens; takes logits' },
@@ -166,7 +247,7 @@ const NN = (() => {
     return null;
   }
   const parseShape = s => String(s || '').split(',').map(t => t.trim()).filter(Boolean);
-  const identsIn = expr => (String(expr).match(IDENT) || []);
+  const identsIn = expr => (String(expr).match(IDENT) || []).filter(t => !PY_KW.has(t));
 
   // ── shape inference ──
   function inferShapes(g, depth = 0) {
@@ -216,6 +297,10 @@ const NN = (() => {
           out = x; break;
         }
         case 'act': case 'dropout': case 'scale': out = inS[0]; break;
+        case 'pool':
+          try { out = poolShape(inS[0], p, sym); }
+          catch (error) { err(id, error.message); }
+          break;
         case 'loss': {
           const [P, Y] = inS, fn = p.fn || 'cross_entropy', mode = fn === 'cross_entropy' ? p.mode || 'given' : 'given';
           const same = (a, b) => a.length === b.length && a.every((d, i) => dimEq(d, b[i], sym) !== false);
@@ -471,9 +556,9 @@ const NN = (() => {
     gelu: x => `F.gelu(${x})`, gelu_tanh: x => `F.gelu(${x}, approximate="tanh")`, tanh: x => `torch.tanh(${x})`,
   };
   const OP_PREC = { '+': 10, '-': 10, '*': 20, '/': 20, '@': 20 };
-  const DEF_ATTR = { linear: 'fc', norm: 'norm', dropout: 'drop', func: 'mod', embed: 'emb' };
+  const DEF_ATTR = { linear: 'fc', norm: 'norm', dropout: 'drop', pool: 'pool', func: 'mod', embed: 'emb' };
   const DEF_VAR = n => n.params.var || ({ linear: 'h', norm: 'n', act: 'a', dropout: 'h', func: 'y', embed: 'x', heads: 'h', merge: 'y', transpose: 't', scale: 's', mask: 'att', rope: 'r' }[n.type] || (n.params.op === '*' ? 'g' : 'x'));
-  const DIM_FIELDS = { linear: ['in', 'out'], norm: ['dim'], embed: ['num', 'dim'], heads: ['heads'] };
+  const DIM_FIELDS = { linear: ['in', 'out'], norm: ['dim'], pool: ['kernel_size', 'stride', 'padding', 'dilation', 'output_size', 'divisor_override'], embed: ['num', 'dim'], heads: ['heads'] };
   // [field, expression] for every size a node is built with; a block use's sizes are its args
   const dimList = n => (DIM_FIELDS[n.type] || []).map(f => [f, n.params[f]]).concat(n.type === 'block' ? Object.entries(n.params.args || {}).sort().map(([k, v]) => ['args.' + k, v]) : []);
   const baseOf = k => splitKey(String(k))[0];
@@ -1181,7 +1266,7 @@ const NN = (() => {
         let u = a, k = 2; while (usedAttr.has(u)) u = a + '_' + k++;
         usedAttr.add(u); attrs.set(it.id, u); return u;
       };
-      const isModCall = it => it.kind === 'call' || it.kind === 'list' || ['linear', 'norm', 'dropout', 'embed'].includes(it.node.type) || (it.node.type === 'func' && it.node.params.init);
+      const isModCall = it => it.kind === 'call' || it.kind === 'list' || ['linear', 'norm', 'dropout', 'pool', 'embed'].includes(it.node.type) || (it.node.type === 'func' && it.node.params.init);
 
       // SiLU fusion
       const fused = new Set();
@@ -1246,6 +1331,7 @@ const NN = (() => {
         }
         else if (n.type === 'norm') init.push(`self.${attrFor(it)} = ${normCtor(p, S(p.dim))}`);
         else if (n.type === 'dropout') init.push(`self.${attrFor(it)} = nn.Dropout(${p.p})`);
+        else if (n.type === 'pool') init.push(`self.${attrFor(it)} = ${poolCtor(p, S)}`);
         else if (n.type === 'embed') { const a = attrFor(it); init.push(`self.${a} = nn.Embedding(${S(p.num)}, ${S(p.dim)})`); const ic = p.tie ? null : initCode(p, `self.${a}.weight`); if (ic) init.push(ic); }
         else if (n.type === 'func' && p.init) init.push(`self.${attrFor(it)} = ${S(p.init)}`);
         if (init.length > start) initAt.set(id, [start, init.length]);
@@ -1321,7 +1407,7 @@ const NN = (() => {
                 : `self.${attrFor(it)}(${a[0].code})`;
               break;
             }
-            case 'linear': case 'dropout': code = `self.${attrFor(it)}(${a[0].code})`; break;
+            case 'linear': case 'dropout': case 'pool': code = `self.${attrFor(it)}(${a[0].code})`; break;
             case 'embed': code = p.positions ? `self.${attrFor(it)}(torch.arange(${wrap(a[0], 100)}.size(1), device=${wrap(a[0], 100)}.device))` : `self.${attrFor(it)}(${a[0].code})`; break;
             case 'heads': code = `split_heads(${a[0].code}, ${fwdSize(p.heads)})`; break;
             case 'merge': code = `merge_heads(${a[0].code})`; break;
@@ -1534,7 +1620,7 @@ const NN = (() => {
     if (n.type === 'embed') return (p.positions ? 'Position embedding ' : 'Embedding ') + (p.name || '');
     if (n.type === 'loss') return LOSSES[p.fn] ? LOSSES[p.fn].label : 'Loss';
     if (['heads', 'merge', 'transpose', 'scale', 'mask', 'rope'].includes(n.type)) return { heads: 'Split heads', merge: 'Merge heads', transpose: 'Transpose', scale: 'Scale', mask: 'Causal mask', rope: 'Rotary embedding' }[n.type];
-    return ({ input: 'Input ' + p.name, output: 'Output', linear: `Linear ${p.out}×${p.in}`, norm: p.kind, act: p.fn, dropout: 'Dropout', binop: p.op, func: p.fn || p.init })[n.type];
+    return ({ input: 'Input ' + p.name, output: 'Output', linear: `Linear ${p.out}×${p.in}`, norm: p.kind, pool: p.kind, act: p.fn, dropout: 'Dropout', binop: p.op, func: p.fn || p.init })[n.type];
   }
 
   // ───────────────────────── Python importer ─────────────────────────
@@ -1957,6 +2043,7 @@ const NN = (() => {
         if (p === 'nn.BatchNorm1d' || p === 'nn.InstanceNorm1d') return { mod: 'norm', kind: p.slice(3), dim: arg(0, 'num_features'), eps: KW.eps };
         if (p === 'nn.GroupNorm') return { mod: 'norm', kind: 'GroupNorm', dim: arg(1, 'num_channels'), groups: arg(0, 'num_groups'), eps: KW.eps };
         if (p === 'nn.Dropout') return { mod: 'dropout', p: arg(0, 'p', 0.5) };
+        if (p.startsWith('nn.') && POOLS[p.slice(3)]) return { mod: 'pool', ...poolFromArgs(p.slice(3), arg) };
         if (SIMPLE_ACT[p]) return { mod: 'act', fn: SIMPLE_ACT[p] === 'gelu' && KW.approximate && KW.approximate.str === 'tanh' ? 'gelu_tanh' : SIMPLE_ACT[p], dim: arg(0, 'dim', -1) };
         if (p === 'nn.Sequential') return { mod: 'seq', items: A.flatMap(x => (x && x.list ? x.list : [x])) };
         if (p === 'nn.ModuleList') return { list: A[0] && A[0].list ? A[0].list : [] };
@@ -1966,6 +2053,8 @@ const NN = (() => {
         }
         // functional calls in forward
         const tens = A.filter(isT);
+        const pooling = Object.entries(POOLS).find(([, spec]) => p === 'F.' + spec.fn);
+        if (pooling && tens.length) return addNode('pool', poolFromArgs(pooling[0], (i, name, fallback) => arg(i + 1, name, fallback), true), [A[0]]);
         if (FN_ACT[p] && tens.length) return applyAct(FN_ACT[p] === 'gelu' && KW.approximate && KW.approximate.str === 'tanh' ? 'gelu_tanh' : FN_ACT[p], A[0], arg(1, 'dim', -1));
         if ((p === 'F.dropout' || p === 'nn.functional.dropout') && tens.length) return A[0];
         if ((p === 'torch.add' || p === 'torch.mul') && tens.length === 2) return addNode('binop', { op: p === 'torch.add' ? '+' : '*' }, tens);
@@ -2033,6 +2122,10 @@ const NN = (() => {
         case 'linear': { const r = addNode('linear', { in: dimStr(m.in), out: dimStr(m.out), bias: m.bias !== false, init: m.init || 'default', init_arg: m.init_arg || '', zero_bias: !!m.zero_bias, name: m.attrName || '' }, [x]); m._node = r.t; return r; }
         case 'norm': return addNode('norm', { kind: m.kind, dim: dimStr(m.dim), groups: num2(m.groups) || 8, eps: m.eps != null ? valStr(m.eps) : '', name: m.attrName || '' }, [x]);
         case 'dropout': return addNode('dropout', { p: m.p, name: m.attrName || '' }, [x]);
+        case 'pool': {
+          const params = Object.fromEntries(Object.keys(DEFAULTS.pool).filter(k => k in m).map(k => [k, m[k]]));
+          return addNode('pool', { ...params, name: m.attrName || '' }, [x]);
+        }
         case 'act': return applyAct(m.fn, x, m.dim);
         case 'seq': { let v = x; m.items.forEach((s, i) => { if (s && (s.mod || s.inst) && !s.attrName) s.attrName = (m.attrName || 'seq') + '_' + i; v = applyMod(s, [v], s.attrName); }); return v; }
         case 'custom': return addNode('func', { init: m.init, fn: '', n: args.filter(isT).length || 1, name: m.attrName || '' }, args.filter(isT));
@@ -2271,11 +2364,14 @@ const NN = (() => {
         if (m.type === 'Linear') n = makeNode('linear', { in: dim(m.in_features), out: dim(m.out_features), bias: !!m.bias, name: attr });
         else if (NORMS[m.type]) n = makeNode('norm', { kind: m.type, dim: dim(m.dim), groups: m.num_groups || 8, name: attr });
         else if (m.type === 'Dropout') n = makeNode('dropout', { p: m.p ?? 0.1, name: attr });
+        else if (POOLS[m.type]) n = makeNode('pool', { ...poolFromArgs(m.type, (i, key, fallback) => key in m ? m[key] : fallback), name: attr });
         else if (ACTM[m.type]) n = makeNode('act', { fn: ACTM[m.type], dim: String(m.dim ?? -1) });
         else { n = makeNode('func', { init: m.repr || `nn.${m.type}()`, n: Math.max(1, tensorArgs.length), name: attr }); warnings.push(`${m.type} kept as a custom module.`); }
       } else if (fn.op === 'call_function' || fn.op === 'call_method') {
         const t = fn.target;
-        if (BIN[t]) n = tensorArgs.length === 2 ? makeNode('binop', { op: BIN[t] }) : makeNode('binop', { op: BIN[t], const: String(consts[0]) });
+        const pooling = Object.entries(POOLS).find(([, spec]) => ['torch.nn.functional.' + spec.fn, 'F.' + spec.fn, 'torch.' + spec.fn, 'torch._C._nn.' + spec.fn].includes(t));
+        if (pooling) n = makeNode('pool', poolFromArgs(pooling[0], (i, key, fallback) => fn.kwargs && key in fn.kwargs ? fn.kwargs[key] : i < consts.length ? consts[i] : fallback, true));
+        else if (BIN[t]) n = tensorArgs.length === 2 ? makeNode('binop', { op: BIN[t] }) : makeNode('binop', { op: BIN[t], const: String(consts[0]) });
         else if (FN[t] || (fn.op === 'call_method' && ['sigmoid', 'relu', 'tanh', 'softmax'].includes(t))) n = makeNode('act', { fn: FN[t] || t, dim: String((fn.kwargs && fn.kwargs.dim) ?? -1) });
         else { n = makeNode('func', { fn: fn.op === 'call_method' ? '.' + t : t, extra: consts.map(String).join(', '), n: Math.max(1, tensorArgs.length) }); warnings.push(`${t} kept as a custom op.`); }
       } else continue;
@@ -2472,6 +2568,6 @@ const NN = (() => {
     return text.replace(/\n{4,}/g, '\n\n\n');
   }
 
-  return { HELPER_OPS, helperDoc, srcKey, splitKey, blockOutputs, blockClassCode, LOSSES, lossParts, lossPlan, weightShape, tieOwner, blockParams, blockInputs, expandBlocks, instantiateBlock, presetResidualMLPBlocks, NORMS, linkSizes, syncWidths, mergeIntoSource, uid, BATCH, DEFAULTS, ACTS, INITS, initCode, makeNode, inCount, isCircle, index, topo, evalDim, parseShape, inferShapes, paramCount, propagateWidth, generate, importPython, importFx, autoLayout, nodeSize, nodeLabel, presetResidualMLP, parse, identsIn };
+  return { POOLS, HELPER_OPS, helperDoc, srcKey, splitKey, blockOutputs, blockClassCode, LOSSES, lossParts, lossPlan, weightShape, tieOwner, blockParams, blockInputs, expandBlocks, instantiateBlock, presetResidualMLPBlocks, NORMS, linkSizes, syncWidths, mergeIntoSource, uid, BATCH, DEFAULTS, ACTS, INITS, initCode, makeNode, inCount, isCircle, index, topo, evalDim, parseShape, inferShapes, paramCount, propagateWidth, generate, importPython, importFx, autoLayout, nodeSize, nodeLabel, presetResidualMLP, parse, identsIn };
 })();
 if (typeof module !== 'undefined') module.exports = NN;

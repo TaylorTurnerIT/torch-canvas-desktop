@@ -226,6 +226,7 @@ const NNVar = (() => {
           out = mapX(A, f[0]); tape.set(id, { d: f[1] });
           break;
         }
+        case 'pool': return unsupported(n, p.kind + ' pooling');
         case 'dropout': out = A; notes.add('Dropout is treated as off (eval mode).'); break;
         case 'embed': {
           const nm = C.evalDim(p.num, sym), dm = C.evalDim(p.dim, sym);

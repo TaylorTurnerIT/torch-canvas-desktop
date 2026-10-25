@@ -102,6 +102,8 @@ Resize the palette and the right pane by dragging their dividers. Double-click a
 
 ## Editing in marimo
 
+The **Pooling** palette adds `AvgPool1d/2d`, `MaxPool1d/2d`, and `AdaptiveAvgPool1d/2d`. Inputs use channels before spatial dimensions, such as `(batch, channels, height, width)`. Configure scalar or comma-separated spatial parameters in the inspector; adaptive 2D pooling accepts `None` to preserve an axis. Python and FX imports recognize these layers. Max pooling with `return_indices=True` and pooling variance prediction are unsupported.
+
 Open a marimo notebook (a `.py` file with `import marimo` and `marimo.App(...)`) and the **marimo** tab appears beside **PyTorch**. Choosing the tab starts `marimo edit --headless --watch` for that file and embeds the page:
 
 - The server runs locally, on a random port on `127.0.0.1`, without an access token. It stops when you press **Stop** or quit the app.
