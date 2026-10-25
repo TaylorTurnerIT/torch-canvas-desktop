@@ -48,7 +48,7 @@ page = page.replace(needle, needle + '''
     }''')
 # marimo notebooks: keep @app.class_definition decorators and setup-cell imports on save.
 marimo = (ROOT / "scripts/patches/source-sync.js").read_text().rstrip()
-needle = '  return { HELPER_OPS, helperDoc,'
+needle = '  return { POOLS, HELPER_OPS, helperDoc,'
 if page.count(needle) != 1:
     raise RuntimeError('Expected exactly one core export list')
 page = page.replace(needle, marimo + '\n\n' + needle)

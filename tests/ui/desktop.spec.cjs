@@ -71,6 +71,30 @@ test('editor loads offline, edits, persists, and exports through native bridge',
   await page.screenshot({ path: 'test-results/editor.png', fullPage: true });
 });
 
+test('pooling palette and inspector persist native pooling options', async ({ page }) => {
+  const errors = [];
+  page.on('pageerror', error => errors.push(error.message));
+  await page.goto('http://127.0.0.1:4173');
+  await page.locator('[data-ctab="pooling"]').click();
+  await expect(page.locator('[data-pal^="pool:"]')).toHaveCount(6);
+  await page.locator('[data-pal="pool:AvgPool2d"]').click();
+  await expect(page.locator('#f-kind')).toHaveValue('AvgPool2d');
+  await page.locator('#f-kernel_size').fill('3, 2');
+  await page.locator('#f-kernel_size').press('Tab');
+  await page.locator('#f-kind').selectOption('MaxPool2d');
+  await expect(page.locator('#f-dilation')).toBeVisible();
+  await page.locator('#f-dilation').fill('2, 1');
+  await page.locator('#f-dilation').press('Tab');
+  await page.locator('#f-ceil_mode').check();
+  await expect.poll(() => page.evaluate(() => {
+    const p = torchCanvas.state.g.nodes.find(n => n.type === 'pool').params;
+    return [p.kind, p.kernel_size, p.dilation, p.ceil_mode];
+  })).toEqual(['MaxPool2d', '3, 2', '2, 1', true]);
+  await page.reload();
+  await expect.poll(() => page.evaluate(() => torchCanvas.state.g.nodes.find(n => n.type === 'pool')?.params.kind)).toBe('MaxPool2d');
+  expect(errors).toEqual([]);
+});
+
 test('training graph exports Python, ZIP, and a native folder', async ({ page }) => {
   await page.goto('http://127.0.0.1:4173');
   await page.locator('#bMore').click();
