@@ -49,7 +49,7 @@ File access is granted by native file/folder selection and lasts for the current
 - **Diagram ⇄ code.** Every edit to the diagram updates clean, runnable PyTorch beside it, and pasting a PyTorch module draws its diagram.
 - **Shapes you can see.** Tensor sizes are worked out on every connection, linked sizes change together, and mismatches show in red.
 - **Every operation explained.** Selecting a node shows what it computes, as a formula or a plain description. Reshapes are drawn as what they are, rearranging the same values (`e t (h d) → e h t d`), with an optional nickname and note.
-- **Reusable blocks.** Group layers into blocks such as a transformer layer or a ResNet bottleneck, repeat them, and keep them in a library.
+- **Reusable blocks.** Group layers into blocks such as a transformer layer or a ResNet bottleneck, repeat them, and keep them in a library. Draw any block open in place to see its layers inside the model.
 - **Variance before training.** A plot predicts how the signal and the gradients grow or shrink through the network at initialization.
 - **Ready to train.** Export a `train.py` with losses, frozen layers and EMA targets.
 - **A library of real models.** It ranges from an MLP to GPT-2, BERT, Llama 2, Qwen2.5-VL, ViT, ResNet-50, YOLOv3, Mamba, U-Net, a VAE, the original Transformer and I-JEPA, each checked against a reference implementation.

@@ -244,6 +244,27 @@ for (const [f, want] of [['23_residual_cnn_gap.json', 57098], ['24_residual_cnn_
     if (!nested || new Set(names).size !== names.length || NN.generate(NN.importPython(code).graph).code !== code) { console.error('nested blocks round trip failed: ' + f); process.exit(1); }
   }
   console.log('nested blocks OK');
+  // a block drawn open: its layers replace the use, wired to what feeds it and takes from it; the original graph is untouched
+  {
+    const g = NN.presetResidualMLPBlocks(), use = g.nodes.find(n => n.type === 'block'), blk = g.blocks[use.params.block];
+    const inner = blk.graph.nodes.filter(n => n.type !== 'input' && n.type !== 'output'), before = JSON.stringify(g);
+    const placed = [], flat = NN.inlineBlocks(g, new Set([use.id]), (u, nodes, edges) => placed.push([u.id, nodes.length, edges.length]));
+    const lens = flat.nodes.length - (g.nodes.length - 1), toUse = g.edges.filter(e => e.to === use.id), fromUse = g.edges.filter(e => e.from === use.id);
+    if (JSON.stringify(g) !== before) { console.error('inlineBlocks changed the graph'); process.exit(1); }
+    if (flat.nodes.some(n => n.id === use.id) || lens !== inner.length || placed.length !== 1 || placed[0][1] !== inner.length) { console.error('inlineBlocks: wrong layers'); process.exit(1); }
+    const ids = new Set(flat.nodes.map(n => n.id));
+    if (flat.edges.some(e => !ids.has(e.from) || !ids.has(e.to)) || !flat.edges.some(e => e.from === toUse[0].from && e.to.startsWith(use.id + '::')) || !fromUse.every(o => flat.edges.some(e => e.to === o.to && e.from.startsWith(use.id + '::')))) { console.error('inlineBlocks: wrong wiring'); process.exit(1); }
+    const r = NN.inferShapes(flat);
+    if (r.conflicts.size || r.errors.size) { console.error('inlineBlocks: shapes do not check out'); process.exit(1); }
+    // examples with blocks inside blocks open all the way down
+    for (const f of ['21_transformer_base.json', '22_ijepa_small.json', '10_qwen2_5_vl_3b.json']) {
+      const x = JSON.parse(fs.readFileSync(__dirname + '/examples/networks/' + f, 'utf8')).graph, all = new Set(x.nodes.filter(n => n.type === 'block').map(n => n.id));
+      for (let i = 0; i < 4; i++) { const f2 = NN.inlineBlocks(x, all); for (const n of f2.nodes) if (n.type === 'block') all.add(n.pk); }
+      const y = NN.inlineBlocks(x, all), q = NN.inferShapes(y);
+      if (y.nodes.some(n => n.type === 'block' && all.has(n.pk)) || q.conflicts.size || !y.edges.every(e => y.nodes.some(n => n.id === e.from) && y.nodes.some(n => n.id === e.to))) { console.error('inlineBlocks failed on ' + f); process.exit(1); }
+    }
+    console.log('blocks drawn open OK');
+  }
   // editing the code: the diagram comes back unchanged (layout, nicknames, notes, size names) when the code is read back,
   // and an edit changes only what it touches
   {

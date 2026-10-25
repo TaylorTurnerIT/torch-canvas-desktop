@@ -1192,6 +1192,53 @@ const NN = (() => {
     for (const [id, o2] of d.origin) { const o1 = origin.get(o2.use); org.set(id, o1 ? { use: o1.use, inner: o2.inner, rep: o1.rep } : o2); }
     return { flat: d.flat, origin: org, outsOf };
   }
+  // Draw some block uses open: each use whose key is in `open` is replaced, in a copy of g, by one copy of the layers
+  // inside it, wired to what feeds the use and to what it feeds (a repeated use shows one copy). A use's key is
+  // keyOf(node), or its id; a use nested in an opened one has the opened use's key, ">", and its own name inside the
+  // block, so it can be told apart again after the diagram is rebuilt from code (which gives every node a new id).
+  // Every block node of the copy carries its key as pk. Only for drawing: the code is unchanged.
+  // place(use, nodes, edges, { blk, ins }, flat) is called per opened use once its layers are in flat.nodes, so a caller
+  // can position them; copies carry the block's own coordinates until it does.
+  function inlineBlocks(g, open, place, keyOf) {
+    const clone = o => JSON.parse(JSON.stringify(o)), isIO = z => z.type === 'input' || z.type === 'output';
+    const flat = { name: g.name, symbols: Object.assign({}, g.symbols), nodes: g.nodes.map(clone), edges: g.edges.map(clone), groups: (g.groups || []).slice(), blocks: g.blocks };
+    for (const n of flat.nodes) if (n.type === 'block') n.pk = keyOf ? keyOf(n) : n.id;
+    for (let pass = 0; pass < 8; pass++) {
+      const uses = flat.nodes.filter(n => n.type === 'block' && open.has(n.pk) && flat.blocks && flat.blocks[n.params.block] && flat.blocks[n.params.block].graph.nodes.some(z => !isIO(z)));
+      if (!uses.length) break;
+      const { shapes } = inferShapes(flat), ix = index(flat), outOf = new Map(), added = [];
+      for (const n of uses) {
+        const blk = flat.blocks[n.params.block], src = ix.inKeys.get(n.id).slice(), ins = blockInputs(blk), outNs = blockOutputs(blk);
+        const map = bindBlock(flat, n, src.map(s => (s ? shapes.get(s) : null))), pre = n.id + '::';
+        const idm = new Map(), nodes = [], edges = [], producers = [], hold = !!(n.params.frozen || n.params.follows);
+        for (const m of blk.graph.nodes) {
+          if (isIO(m)) continue;
+          const c = clone(m); c.id = pre + m.id; substDims(c, map); if (c.params.tie) c.params.tie = pre + c.params.tie; if (hold) c.params.frozen = true;
+          if (c.type === 'block') c.pk = n.pk + '>' + (m.params.name || (flat.blocks[m.params.block] || {}).name || 'block');
+          idm.set(m.id, c.id); nodes.push(c);
+        }
+        for (const e of blk.graph.edges) {
+          const k = ins.findIndex(z => z.id === e.from);
+          const from = k >= 0 ? src[k] : idm.has(e.from) ? (e.out ? idm.get(e.from) + '@' + e.out : idm.get(e.from)) : null;
+          const j = outNs.findIndex(z => z.id === e.to);
+          if (j >= 0) { producers[j] = from; continue; }
+          if (from && idm.has(e.to)) { const c = clone(e); c.id = pre + e.id; c.from = from; delete c.out; c.to = idm.get(e.to); edges.push(c); }
+        }
+        flat.nodes = flat.nodes.filter(z => z.id !== n.id).concat(nodes); flat.edges = flat.edges.filter(e => e.to !== n.id);
+        outOf.set(n.id, producers); added.push(...edges);
+        if (place) place(n, nodes, edges, { blk, ins }, flat);
+      }
+      // an edge's source is a key ("id" or "id@k"): follow it through uses that were just opened
+      const resolve = key => { for (let i = 0; key && i < 100; i++) { const [id, k] = splitKey(key); if (!outOf.has(id)) return key; key = outOf.get(id)[k]; } return key || null; };
+      for (const e of [...flat.edges, ...added]) {
+        const r = resolve(srcKey(e)); if (!r) { e.from = null; continue; }
+        const [id, k] = splitKey(r); e.from = id; if (k) e.out = k; else delete e.out;
+      }
+      flat.edges = [...flat.edges.filter(e => e.from && !added.includes(e)), ...added.filter(e => e.from)];
+      for (const e of added) e.pv = true;
+    }
+    return flat;
+  }
   // Class text for a block nobody uses yet (so every block still appears in the code)
   function blockClassCode(blk, opts, blocks) { const c = blockClass(blk, opts || {}, blocks); return c ? c.text : ''; }
   // { text, lines: inner node id → lines relative to the class line, syms: the block sizes its __init__ takes, in order }
@@ -3487,6 +3534,6 @@ const NN = (() => {
     return neu;
   }
 
-  return { carryDiagram, lowerReshapes, reshapeSteps, reshapeStepCode, reshapeShape, reshapeAxisSource, stepsToPattern, reshapeDescribe, reshapePlan, stepsShape, parseSizes, HELPER_OPS, indexInputRange, FREEZABLE, helperDoc, srcKey, splitKey, blockOutputs, blockClassCode, LOSSES, lossParts, lossPlan, weightShape, tieOwner, blockParams, blockInputs, expandBlocks, instantiateBlock, presetResidualMLPBlocks, NORMS, linkSizes, syncWidths, mergeIntoSource, uid, BATCH, DEFAULTS, ACTS, INITS, initCode, makeNode, inCount, isCircle, index, topo, evalDim, parseShape, inferShapes, paramCount, propagateWidth, generate, importPython, importFx, autoLayout, nodeSize, nodeLabel, presetResidualMLP, parse, identsIn };
+  return { carryDiagram, lowerReshapes, reshapeSteps, reshapeStepCode, reshapeShape, reshapeAxisSource, stepsToPattern, reshapeDescribe, reshapePlan, stepsShape, parseSizes, HELPER_OPS, indexInputRange, FREEZABLE, helperDoc, srcKey, splitKey, blockOutputs, blockClassCode, LOSSES, lossParts, lossPlan, weightShape, tieOwner, blockParams, blockInputs, expandBlocks, inlineBlocks, instantiateBlock, presetResidualMLPBlocks, NORMS, linkSizes, syncWidths, mergeIntoSource, uid, BATCH, DEFAULTS, ACTS, INITS, initCode, makeNode, inCount, isCircle, index, topo, evalDim, parseShape, inferShapes, paramCount, propagateWidth, generate, importPython, importFx, autoLayout, nodeSize, nodeLabel, presetResidualMLP, parse, identsIn };
 })();
 if (typeof module !== 'undefined') module.exports = NN;
