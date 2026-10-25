@@ -1,0 +1,491 @@
+{
+ "title": "JEPABlock",
+ "description": "I-JEPA's Vision Transformer block (as timm's): pre-norm multi-head self-attention and a GELU MLP (4\u00d7 width), each with a residual add; LayerNorm eps 1e-6; weights N(0, 0.02), zero biases.",
+ "category": "Transformer blocks",
+ "labels": "n_head=heads, ff=MLP width",
+ "graph": {
+  "name": "JEPABlock",
+  "symbols": {
+   "e": 8,
+   "t": 64,
+   "d": 192,
+   "n_head": 3,
+   "ff": 768
+  },
+  "nodes": [
+   {
+    "id": "n1dxw0",
+    "type": "input",
+    "x": 126.5,
+    "y": 792,
+    "params": {
+     "name": "x",
+     "shape": "e, t, d",
+     "title": ""
+    }
+   },
+   {
+    "id": "n2h9r4",
+    "type": "norm",
+    "x": 525,
+    "y": 792,
+    "params": {
+     "kind": "LayerNorm",
+     "dim": "d",
+     "groups": 8,
+     "eps": "1e-6",
+     "name": "norm1",
+     "title": "",
+     "var": ""
+    }
+   },
+   {
+    "id": "n3sp22",
+    "type": "linear",
+    "x": 387,
+    "y": 717,
+    "params": {
+     "in": "d",
+     "out": "d",
+     "bias": true,
+     "init": "normal",
+     "init_arg": "0.02",
+     "zero_bias": true,
+     "bias_init": "",
+     "tie": "",
+     "name": "q_proj",
+     "title": "",
+     "var": ""
+    }
+   },
+   {
+    "id": "n448z5",
+    "type": "linear",
+    "x": 525,
+    "y": 717,
+    "params": {
+     "in": "d",
+     "out": "d",
+     "bias": true,
+     "init": "normal",
+     "init_arg": "0.02",
+     "zero_bias": true,
+     "bias_init": "",
+     "tie": "",
+     "name": "k_proj",
+     "title": "",
+     "var": ""
+    }
+   },
+   {
+    "id": "n5b87p",
+    "type": "linear",
+    "x": 663,
+    "y": 717,
+    "params": {
+     "in": "d",
+     "out": "d",
+     "bias": true,
+     "init": "normal",
+     "init_arg": "0.02",
+     "zero_bias": true,
+     "bias_init": "",
+     "tie": "",
+     "name": "v_proj",
+     "title": "",
+     "var": ""
+    }
+   },
+   {
+    "id": "n6jc5j",
+    "type": "reshape",
+    "x": 334,
+    "y": 631,
+    "params": {
+     "pattern": "e t (h d) -> e h t d",
+     "sizes": "h=n_head",
+     "note": "",
+     "title": "split heads",
+     "var": ""
+    }
+   },
+   {
+    "id": "n7tcsm",
+    "type": "reshape",
+    "x": 525,
+    "y": 631,
+    "params": {
+     "pattern": "e t (h d) -> e h t d",
+     "sizes": "h=n_head",
+     "note": "",
+     "title": "split heads",
+     "var": ""
+    }
+   },
+   {
+    "id": "n8r35o",
+    "type": "reshape",
+    "x": 716,
+    "y": 631,
+    "params": {
+     "pattern": "e t (h d) -> e h t d",
+     "sizes": "h=n_head",
+     "note": "",
+     "title": "split heads",
+     "var": ""
+    }
+   },
+   {
+    "id": "n9hauh",
+    "type": "binop",
+    "x": 437,
+    "y": 544,
+    "params": {
+     "op": "*",
+     "const": "(d / n_head) ** -0.5",
+     "rev": false,
+     "note": "Keeps the attention scores from growing with the head width. Each score q \u00b7 k adds up one product per feature of the head; with q and k of variance about 1, that sum has variance equal to the head width. Multiplying by 1/\u221a(head width) brings it back to about 1, so the softmax stays smooth instead of putting nearly all the weight on one key.",
+     "title": "\u00d71/\u221a(d/n_head)",
+     "var": ""
+    }
+   },
+   {
+    "id": "nacymq",
+    "type": "reshape",
+    "x": 594,
+    "y": 544,
+    "params": {
+     "pattern": "e h t d -> e h d t",
+     "sizes": "",
+     "note": "",
+     "title": "k\u1d40",
+     "var": ""
+    }
+   },
+   {
+    "id": "nbtlop",
+    "type": "binop",
+    "x": 525,
+    "y": 470,
+    "params": {
+     "op": "@",
+     "const": "",
+     "rev": false,
+     "title": "",
+     "var": ""
+    }
+   },
+   {
+    "id": "nc6yix",
+    "type": "act",
+    "x": 525,
+    "y": 408,
+    "params": {
+     "fn": "softmax",
+     "dim": "-1",
+     "title": "",
+     "var": ""
+    }
+   },
+   {
+    "id": "nddjvf",
+    "type": "binop",
+    "x": 525,
+    "y": 346,
+    "params": {
+     "op": "@",
+     "const": "",
+     "rev": false,
+     "title": "",
+     "var": ""
+    }
+   },
+   {
+    "id": "neak5z",
+    "type": "reshape",
+    "x": 525,
+    "y": 273,
+    "params": {
+     "pattern": "e h t d -> e t (h d)",
+     "sizes": "",
+     "note": "",
+     "title": "merge heads",
+     "var": ""
+    }
+   },
+   {
+    "id": "nfarj2",
+    "type": "linear",
+    "x": 525,
+    "y": 186,
+    "params": {
+     "in": "d",
+     "out": "d",
+     "bias": true,
+     "init": "normal",
+     "init_arg": "0.02",
+     "zero_bias": true,
+     "bias_init": "",
+     "tie": "",
+     "name": "proj",
+     "title": "",
+     "var": ""
+    }
+   },
+   {
+    "id": "ngsq6z",
+    "type": "binop",
+    "x": 525,
+    "y": 100,
+    "params": {
+     "op": "+",
+     "const": "",
+     "rev": false,
+     "title": "",
+     "var": ""
+    }
+   },
+   {
+    "id": "nhhdb5",
+    "type": "norm",
+    "x": 922,
+    "y": 411,
+    "params": {
+     "kind": "LayerNorm",
+     "dim": "d",
+     "groups": 8,
+     "eps": "1e-6",
+     "name": "norm2",
+     "title": "",
+     "var": ""
+    }
+   },
+   {
+    "id": "ni0yu4",
+    "type": "linear",
+    "x": 922,
+    "y": 336,
+    "params": {
+     "in": "d",
+     "out": "ff",
+     "bias": true,
+     "init": "normal",
+     "init_arg": "0.02",
+     "zero_bias": true,
+     "bias_init": "",
+     "tie": "",
+     "name": "fc1",
+     "title": "",
+     "var": ""
+    }
+   },
+   {
+    "id": "nj9ss3",
+    "type": "act",
+    "x": 922,
+    "y": 261,
+    "params": {
+     "fn": "gelu",
+     "dim": "-1",
+     "title": "",
+     "var": ""
+    }
+   },
+   {
+    "id": "nk89kr",
+    "type": "linear",
+    "x": 922,
+    "y": 186,
+    "params": {
+     "in": "ff",
+     "out": "d",
+     "bias": true,
+     "init": "normal",
+     "init_arg": "0.02",
+     "zero_bias": true,
+     "bias_init": "",
+     "tie": "",
+     "name": "fc2",
+     "title": "",
+     "var": ""
+    }
+   },
+   {
+    "id": "nldoze",
+    "type": "binop",
+    "x": 922,
+    "y": 100,
+    "params": {
+     "op": "+",
+     "const": "",
+     "rev": false,
+     "title": "",
+     "var": ""
+    }
+   },
+   {
+    "id": "nm36v1",
+    "type": "output",
+    "x": 1059,
+    "y": 100,
+    "params": {
+     "name": "out",
+     "title": ""
+    }
+   }
+  ],
+  "edges": [
+   {
+    "id": "enp8xb",
+    "from": "n1dxw0",
+    "to": "n2h9r4",
+    "port": 0
+   },
+   {
+    "id": "eojia5",
+    "from": "n2h9r4",
+    "to": "n3sp22",
+    "port": 0
+   },
+   {
+    "id": "ephthi",
+    "from": "n2h9r4",
+    "to": "n448z5",
+    "port": 0
+   },
+   {
+    "id": "eqe0ah",
+    "from": "n2h9r4",
+    "to": "n5b87p",
+    "port": 0
+   },
+   {
+    "id": "errtt3",
+    "from": "n3sp22",
+    "to": "n6jc5j",
+    "port": 0
+   },
+   {
+    "id": "esxoyl",
+    "from": "n448z5",
+    "to": "n7tcsm",
+    "port": 0
+   },
+   {
+    "id": "ety6mz",
+    "from": "n5b87p",
+    "to": "n8r35o",
+    "port": 0
+   },
+   {
+    "id": "euq1qf",
+    "from": "n6jc5j",
+    "to": "n9hauh",
+    "port": 0
+   },
+   {
+    "id": "evh1br",
+    "from": "n7tcsm",
+    "to": "nacymq",
+    "port": 0
+   },
+   {
+    "id": "ewhl5i",
+    "from": "n9hauh",
+    "to": "nbtlop",
+    "port": 0
+   },
+   {
+    "id": "exvd47",
+    "from": "nacymq",
+    "to": "nbtlop",
+    "port": 1
+   },
+   {
+    "id": "eyw992",
+    "from": "nbtlop",
+    "to": "nc6yix",
+    "port": 0
+   },
+   {
+    "id": "ez194q",
+    "from": "nc6yix",
+    "to": "nddjvf",
+    "port": 0
+   },
+   {
+    "id": "e10pl2c",
+    "from": "n8r35o",
+    "to": "nddjvf",
+    "port": 1
+   },
+   {
+    "id": "e11uelj",
+    "from": "nddjvf",
+    "to": "neak5z",
+    "port": 0
+   },
+   {
+    "id": "e12ogum",
+    "from": "neak5z",
+    "to": "nfarj2",
+    "port": 0
+   },
+   {
+    "id": "e13criz",
+    "from": "n1dxw0",
+    "to": "ngsq6z",
+    "port": 0
+   },
+   {
+    "id": "e14nlgo",
+    "from": "nfarj2",
+    "to": "ngsq6z",
+    "port": 1
+   },
+   {
+    "id": "e15vvh0",
+    "from": "ngsq6z",
+    "to": "nhhdb5",
+    "port": 0
+   },
+   {
+    "id": "e16om3p",
+    "from": "nhhdb5",
+    "to": "ni0yu4",
+    "port": 0
+   },
+   {
+    "id": "e17ppi2",
+    "from": "ni0yu4",
+    "to": "nj9ss3",
+    "port": 0
+   },
+   {
+    "id": "e1885tw",
+    "from": "nj9ss3",
+    "to": "nk89kr",
+    "port": 0
+   },
+   {
+    "id": "e19fvtc",
+    "from": "ngsq6z",
+    "to": "nldoze",
+    "port": 0
+   },
+   {
+    "id": "e1a7sav",
+    "from": "nk89kr",
+    "to": "nldoze",
+    "port": 1
+   },
+   {
+    "id": "e1bjkd9",
+    "from": "nldoze",
+    "to": "nm36v1",
+    "port": 0
+   }
+  ],
+  "groups": []
+ }
+}

@@ -7,11 +7,45 @@ ROOT = Path(__file__).resolve().parents[1]
 # build.js writes ./index.html from src.html, core.js, engine.js, export.js and the examples library.
 subprocess.run(["node", "build.js"], cwd=ROOT, check=True)
 page = (ROOT / "index.html").read_text()
+
+def remove_between(start, end):
+    global page
+    if page.count(start) != 1 or page.count(end) != 1:
+        raise RuntimeError('Expected exactly one upstream editor boundary: ' + start)
+    first, last = page.index(start), page.index(end)
+    if last <= first:
+        raise RuntimeError('Upstream editor boundaries are out of order')
+    page = page[:first] + page[last:]
+
+# Desktop keeps its continuous file editor and marimo sync. The web app's
+# Apply/Cancel editor remains in the upstream build, but must not share its IDs.
+remove_between('  // another open model: edits in progress stay with the model they were made in\n', '  const hl = new Set();')
+remove_between('// ── editing the code: the text is read back into the diagram (core carryDiagram keeps the layout, nicknames and notes) ──\n', 'const PY = ')
+upstream_editor = '<div class="code-edit" id="codeEdit" hidden><pre class="code" id="codeHl" aria-hidden="true"></pre><textarea id="codeTa" spellcheck="false" autocapitalize="off" autocomplete="off" wrap="off" aria-label="PyTorch code"></textarea></div>'
+if page.count(upstream_editor) != 1:
+    raise RuntimeError('Expected exactly one upstream code editor')
+page = page.replace(upstream_editor, '')
+for pattern in [
+    r'        <span class="cb-edit" hidden>.*?</span>\n',
+    r'        <button[^\n]+id="(?:bEditCode|bCodeCancel|bCodeApply)"[^\n]+</button>\n',
+    r'      <div class="warns code-err" id="codeErr"[^\n]+</div>\n',
+]:
+    page, count = re.subn(pattern, '', page)
+    if count != (3 if 'bEditCode' in pattern else 1):
+        raise RuntimeError('Expected upstream editor controls: ' + pattern)
+
 # Apply desktop compatibility fixes to the built upstream page.
 evaluator = (ROOT / "scripts/patches/eval-dim.js").read_text().rstrip()
 page, count = re.subn(r'  function evalDim\(expr, symbols\) \{.*?\n  \}(?=\n  function dimEq)', lambda _: evaluator, page, flags=re.S)
 if count != 1:
     raise RuntimeError('Expected exactly one upstream dimension evaluator')
+# Constants and layout matching need real values, rather than rounded sizes.
+page, count = re.subn(r'    const numConst = expr => \{.*?\n    \};', '    const numConst = expr => C.evalScalar(expr, sym);', page, flags=re.S)
+if count != 1:
+    raise RuntimeError('Expected exactly one variance constant evaluator')
+page, count = re.subn(r'    const evalNum = \(expr, syms\) => \{.*?\n    \};', '    const evalNum = (expr, syms) => evalDim(expr, syms, false);', page, flags=re.S)
+if count != 1:
+    raise RuntimeError('Expected exactly one layout size evaluator')
 needle = '      const n = byId.get(id), p = n.params, shape = shapeOf(id);'
 if page.count(needle) != 1:
     raise RuntimeError('Expected exactly one variance prediction loop')
@@ -48,11 +82,15 @@ page = page.replace(needle, needle + '''
     }''')
 # marimo notebooks: keep @app.class_definition decorators and setup-cell imports on save.
 marimo = (ROOT / "scripts/patches/source-sync.js").read_text().rstrip()
-needle = '  return { HELPER_OPS, helperDoc,'
+needle = '  return { carryDiagram, lowerReshapes,'
 if page.count(needle) != 1:
     raise RuntimeError('Expected exactly one core export list')
 page = page.replace(needle, marimo + '\n\n' + needle)
 page = page.replace('syncWidths, mergeIntoSource, uid,', 'syncWidths, mergeIntoSource, isMarimo, syncSource: (...a) => mergeIntoSource.sync(...a), uid,', 1)
+needle = 'topo, evalDim, parseShape,'
+if page.count(needle) != 1:
+    raise RuntimeError('Expected exactly one dimension export')
+page = page.replace(needle, 'topo, evalDim, evalScalar: (expr, symbols) => evalDim(expr, symbols, false), parseShape,')
 needle = "kind: k, diskText: text, used: res.usedClasses || [], root: o.root, changedOnDisk: false }) : null;"
 if page.count(needle) != 1:
     raise RuntimeError('Expected exactly one open-file record')
@@ -63,14 +101,14 @@ if page.count(needle) != 1:
 page = page.replace(needle, '${f.marimo ? \'<span class="pill" title="Saving rewrites only the model classes. marimo reloads the file when it changes.">marimo</span>\' : \'\'}\n    ' + needle)
 # Remember file identity without persisting filesystem permission. Reopening a
 # file after restarting reattaches a freshly granted handle to its saved tab.
-needle = 'from: S.docs.map(d => d.fromLib || null), cur:'
+needle = 'from: S.docs.map(d => d.fromLib || null), sig:'
 if page.count(needle) != 1:
     raise RuntimeError('Expected exactly one document autosave record')
 page = page.replace(needle, '''from: S.docs.map(d => d.fromLib || null), sourceFiles: S.docs.map(d => {
     const f = d.id === S.cur ? S.file : d.file;
     if (f && f.handle && f.handle._nativeIdentity) return { identity: f.handle._nativeIdentity, name: f.name, path: f.path, kind: f.kind, root: f.root, used: f.used, diskText: f.diskText, savedCode: f.savedCode };
     return d.sourceFile || null;
-  }), cur:''')
+  }), sig:''')
 needle = "const fromOf = new Map();"
 page = page.replace(needle, needle + '''
 const sourceOf = new Map();
@@ -97,7 +135,7 @@ for old, new, why in [
     ('\n    <div class="right">', '\n    <div class="resizer" id="resizeRight" role="separator" aria-orientation="vertical" aria-label="Resize the code and marimo pane" tabindex="0" title="Drag to resize. Double-click to reset."></div>\n    <div class="right">', 'right divider'),
     ('<div class="tabs"><span class="tab" aria-selected="true" style="cursor:default">PyTorch</span></div>',
      '<div class="tabs"><button class="tab" id="tabCode" aria-selected="true">PyTorch</button><button class="tab" id="tabMarimo" aria-selected="false" hidden>marimo</button></div>', 'right tabs'),
-    ('<span class="spacer"></span>\n        <button class="btn" id="bCopy">', '<label id="autoLabel" hidden title="Write the file shortly after each edit, so a running marimo notebook follows"><input type="checkbox" id="oAuto"> auto-save</label>\n        <span class="spacer"></span>\n        <button class="btn" id="bCopy">', 'auto-save toggle'),
+    ('<span class="spacer"></span>\n        <button class="btn cb-view" id="bCopy">', '<label id="autoLabel" hidden title="Write the file shortly after each edit, so a running marimo notebook follows"><input type="checkbox" id="oAuto"> auto-save</label>\n        <span class="spacer"></span>\n        <button class="btn cb-view" id="bCopy">', 'auto-save toggle'),
 ]:
     if page.count(old) != 1:
         raise RuntimeError('Expected exactly one ' + why)

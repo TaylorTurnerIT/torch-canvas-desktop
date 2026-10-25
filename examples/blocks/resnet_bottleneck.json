@@ -1,0 +1,259 @@
+{
+ "title": "Bottleneck",
+ "description": "ResNet bottleneck block: 1\u00d71 convolution down to the width, 3\u00d73, 1\u00d71 back up to the channels, each followed by BatchNorm (ReLU between), plus the identity shortcut and a final ReLU.",
+ "category": "Convolutional blocks",
+ "labels": "width=width",
+ "graph": {
+  "name": "Bottleneck",
+  "symbols": {
+   "e": 8,
+   "c": 256,
+   "width": 64,
+   "H": 56,
+   "W": 56
+  },
+  "nodes": [
+   {
+    "id": "nuuep9",
+    "type": "input",
+    "x": 145,
+    "y": 648,
+    "params": {
+     "name": "x",
+     "shape": "e, c, H, W",
+     "title": ""
+    }
+   },
+   {
+    "id": "nvph99",
+    "type": "conv",
+    "x": 339,
+    "y": 648,
+    "params": {
+     "in": "c",
+     "out": "width",
+     "k": "1",
+     "stride": "1",
+     "pad": "0",
+     "bias": false,
+     "name": "conv1",
+     "title": "",
+     "var": ""
+    }
+   },
+   {
+    "id": "nwtb1n",
+    "type": "norm",
+    "x": 339,
+    "y": 579,
+    "params": {
+     "kind": "BatchNorm2d",
+     "dim": "width",
+     "groups": 8,
+     "eps": "",
+     "name": "bn1",
+     "title": "",
+     "var": ""
+    }
+   },
+   {
+    "id": "nx6m2s",
+    "type": "act",
+    "x": 339,
+    "y": 515,
+    "params": {
+     "fn": "relu",
+     "dim": "-1",
+     "title": "",
+     "var": ""
+    }
+   },
+   {
+    "id": "nyq0lh",
+    "type": "conv",
+    "x": 339,
+    "y": 446,
+    "params": {
+     "in": "width",
+     "out": "width",
+     "k": "3",
+     "stride": "1",
+     "pad": "1",
+     "bias": false,
+     "name": "conv2",
+     "title": "",
+     "var": ""
+    }
+   },
+   {
+    "id": "nzaauz",
+    "type": "norm",
+    "x": 339,
+    "y": 377,
+    "params": {
+     "kind": "BatchNorm2d",
+     "dim": "width",
+     "groups": 8,
+     "eps": "",
+     "name": "bn2",
+     "title": "",
+     "var": ""
+    }
+   },
+   {
+    "id": "n10s320",
+    "type": "act",
+    "x": 339,
+    "y": 313,
+    "params": {
+     "fn": "relu",
+     "dim": "-1",
+     "title": "",
+     "var": ""
+    }
+   },
+   {
+    "id": "n117ujz",
+    "type": "conv",
+    "x": 339,
+    "y": 244,
+    "params": {
+     "in": "width",
+     "out": "c",
+     "k": "1",
+     "stride": "1",
+     "pad": "0",
+     "bias": false,
+     "name": "conv3",
+     "title": "",
+     "var": ""
+    }
+   },
+   {
+    "id": "n122xlm",
+    "type": "norm",
+    "x": 339,
+    "y": 175,
+    "params": {
+     "kind": "BatchNorm2d",
+     "dim": "c",
+     "groups": 8,
+     "eps": "",
+     "name": "bn3",
+     "title": "",
+     "var": ""
+    }
+   },
+   {
+    "id": "n134reo",
+    "type": "binop",
+    "x": 339,
+    "y": 100,
+    "params": {
+     "op": "+",
+     "const": "",
+     "rev": false,
+     "title": "",
+     "var": ""
+    }
+   },
+   {
+    "id": "n14bnn9",
+    "type": "act",
+    "x": 420,
+    "y": 100,
+    "params": {
+     "fn": "relu",
+     "dim": "-1",
+     "title": "",
+     "var": ""
+    }
+   },
+   {
+    "id": "n15jwoh",
+    "type": "output",
+    "x": 590,
+    "y": 100,
+    "params": {
+     "name": "out",
+     "title": ""
+    }
+   }
+  ],
+  "edges": [
+   {
+    "id": "e16kr96",
+    "from": "nuuep9",
+    "to": "nvph99",
+    "port": 0
+   },
+   {
+    "id": "e17di96",
+    "from": "nvph99",
+    "to": "nwtb1n",
+    "port": 0
+   },
+   {
+    "id": "e184jrx",
+    "from": "nwtb1n",
+    "to": "nx6m2s",
+    "port": 0
+   },
+   {
+    "id": "e19krlu",
+    "from": "nx6m2s",
+    "to": "nyq0lh",
+    "port": 0
+   },
+   {
+    "id": "e1anjtm",
+    "from": "nyq0lh",
+    "to": "nzaauz",
+    "port": 0
+   },
+   {
+    "id": "e1bwhv9",
+    "from": "nzaauz",
+    "to": "n10s320",
+    "port": 0
+   },
+   {
+    "id": "e1cx20j",
+    "from": "n10s320",
+    "to": "n117ujz",
+    "port": 0
+   },
+   {
+    "id": "e1dmmu1",
+    "from": "n117ujz",
+    "to": "n122xlm",
+    "port": 0
+   },
+   {
+    "id": "e1em9u7",
+    "from": "n122xlm",
+    "to": "n134reo",
+    "port": 0
+   },
+   {
+    "id": "e1fvodz",
+    "from": "nuuep9",
+    "to": "n134reo",
+    "port": 1
+   },
+   {
+    "id": "e1goff1",
+    "from": "n134reo",
+    "to": "n14bnn9",
+    "port": 0
+   },
+   {
+    "id": "e1h5a5p",
+    "from": "n14bnn9",
+    "to": "n15jwoh",
+    "port": 0
+   }
+  ],
+  "groups": []
+ }
+}

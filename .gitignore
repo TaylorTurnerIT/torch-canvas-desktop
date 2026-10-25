@@ -10,3 +10,4 @@ __pycache__/
 Thumbs.db
 site/
 /*.png
+tools/yolov3.cfg

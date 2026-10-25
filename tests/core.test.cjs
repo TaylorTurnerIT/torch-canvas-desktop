@@ -18,6 +18,25 @@ test('symbolic sizes and variance work when dynamic code compilation is blocked'
   assert.ok(result.layers.length > 0);
 });
 
+test('variance constants keep fractional values when dynamic compilation is blocked', () => {
+  const restricted = vm.createContext({}, { codeGeneration: { strings: false, wasm: false } });
+  vm.runInContext(scripts[0] + '\nglobalThis.api = { NN, NNVar };', restricted);
+  const { NN: core, NNVar: variance } = restricted.api;
+  assert.equal(core.evalScalar('d ** -0.5', { d: 16 }), 0.25);
+  assert.equal(core.evalScalar('(1 + 2) / 8', {}), 0.375);
+  const graph = core.presetResidualMLP(), baseline = variance.predict(graph);
+  const output = graph.nodes.find(n => n.type === 'output');
+  const edge = graph.edges.find(e => e.to === output.id);
+  const scale = core.makeNode('binop', { op: '*', const: 'd ** -0.5' });
+  graph.symbols.d = 16;
+  graph.nodes.push(scale);
+  graph.edges.push({ from: scale.id, to: output.id, port: 0 });
+  edge.to = scale.id;
+  const scaled = variance.predict(graph);
+  assert.equal(scaled.error, undefined);
+  assert.ok(Math.abs(scaled.layers.at(-1).bwdOut / baseline.layers.at(-1).bwdOut - 1 / 16) < 1e-6);
+});
+
 test('dimension arithmetic preserves precedence and rejects invalid sizes', () => {
   for (const [expression, value] of [
     ['2 + 3 * 4', 14], ['(2 + 3) * 4', 20], ['17 // 3', 5],
@@ -194,6 +213,27 @@ test('a connected output still rejects a missing multiplication input', () => {
   block.edges = block.edges.filter(e => !(e.to === multiply.id && e.port === 1));
   assert.throws(() => NN.generate(graph), /connect input 2 of .*before saving Python/);
   assert.throws(() => NN.syncSource(branchedGate, graph), /connect input 2 of .*before saving Python/);
+});
+
+test('Delay feedback allows recurrence but still validates its next-state dependencies', () => {
+  const makeGraph = () => JSON.parse(fs.readFileSync('examples/networks/14_rnn.json', 'utf8')).graph;
+  const graph = makeGraph();
+  assert.match(NN.generate(graph).code, /for t in range\(/);
+  const delay = graph.nodes.find(n => n.type === 'delay');
+  graph.edges = graph.edges.filter(e => e.to !== delay.id);
+  assert.throws(() => NN.generate(graph), /connect input 1 of Delay .*before saving Python/);
+
+  // Check dependencies reached only through Delay, beyond the output's path.
+  const input = NN.makeNode('input'), state = NN.makeNode('delay');
+  const next = NN.makeNode('binop', { op: '+' }), output = NN.makeNode('output');
+  const deferred = { name: 'DeferredState', symbols: {}, blocks: {}, groups: [], nodes: [input, state, next, output], edges: [
+    { from: state.id, to: output.id, port: 0 },
+    { from: next.id, to: state.id, port: 0 },
+    { from: input.id, to: next.id, port: 0 },
+  ] };
+  assert.throws(() => NN.generate(deferred), /connect input 2 of .*before saving Python/);
+  deferred.edges.push({ from: next.id, to: next.id, port: 1 });
+  assert.throws(() => NN.generate(deferred), /a connection cycle reaches an Output/);
 });
 
 test('completed gate repairs an older return-None block without losing other methods', () => {
