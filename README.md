@@ -100,9 +100,11 @@ Opening a `.py` file from Finder (or `open -a`) loads it into the editor. The ap
 
 Resize the palette and the right pane by dragging their dividers. Double-click a divider to reset it, or focus it and press the left or right arrow keys. Sizes persist between launches.
 
-## Editing in marimo
+Choose **Preview contents** in a block's inspector or right-click menu to view one copy with its instance sizes. Nested blocks open within the preview. Drag to pan, scroll to zoom, and press Escape to close. Previewing leaves model code, editor tabs, and undo history unchanged.
 
 The **Pooling** palette adds `AvgPool1d/2d`, `MaxPool1d/2d`, and `AdaptiveAvgPool1d/2d`. Inputs use channels before spatial dimensions, such as `(batch, channels, height, width)`. Configure scalar or comma-separated spatial parameters in the inspector; adaptive 2D pooling accepts `None` to preserve an axis. Python and FX imports recognize these layers. Max pooling with `return_indices=True` and pooling variance prediction are unsupported.
+
+## Editing in marimo
 
 Open a marimo notebook (a `.py` file with `import marimo` and `marimo.App(...)`) and the **marimo** tab appears beside **PyTorch**. Choosing the tab starts `marimo edit --headless --watch` for that file and embeds the page:
 

@@ -347,6 +347,19 @@ pre.code .ln.hl { background: var(--hl); }
 .modal .body { overflow: auto; padding: 14px 16px; display: flex; flex-direction: column; gap: 10px; }
 .modal textarea { width: 100%; min-height: 280px; font-family: var(--mono); font-size: 12px; line-height: 1.5; border: 1px solid var(--line); border-radius: 8px; padding: 10px; background: var(--code-bg); resize: vertical; }
 .modal footer { display: flex; gap: 8px; justify-content: flex-end; align-items: center; padding: 10px 16px; border-top: 1px solid var(--line); flex-wrap: wrap; }
+.block-preview { width: min(1100px, 100%); height: min(860px, 92vh); max-height: 92vh; }
+.block-preview .body { padding: 0; position: relative; }
+#blockPreviewSvg { width: 100%; height: 100%; min-height: 240px; touch-action: none; cursor: grab; }
+#blockPreviewSvg text { fill: var(--ink); font-family: var(--mono); pointer-events: none; }
+#blockPreviewSvg .preview-node rect { fill: var(--panel); stroke: var(--line); stroke-width: 1.5; }
+#blockPreviewSvg [data-preview-type="linear"] rect { fill: var(--lin-bg); stroke: var(--lin-bd); }
+#blockPreviewSvg [data-preview-type="norm"] rect { fill: var(--norm-bg); stroke: var(--norm-bd); }
+#blockPreviewSvg [data-preview-type="act"] rect { fill: var(--act-bg); stroke: var(--act-bd); }
+#blockPreviewSvg [data-preview-type="block"] rect { fill: var(--blk-bg); stroke: var(--blk-bd); }
+#blockPreviewSvg .preview-node.bad rect { stroke: var(--err); }
+#blockPreviewSvg [data-preview-node] { cursor: pointer; }
+#blockPreviewSvg [data-preview-node]:hover rect, #blockPreviewSvg [data-preview-node]:focus rect { stroke: var(--sel); stroke-width: 2.5; }
+#blockPreviewSvg .preview-edge { fill: none; stroke: var(--muted); stroke-width: 1.5; }
 .ex-modal { width: min(1240px, 100%); height: min(860px, 92vh); max-height: 92vh; }
 .ex-body { display: grid; grid-template-columns: 360px minmax(0, 1fr); min-height: 0; }
 .ex-settings { overflow: auto; padding: 12px 16px 20px; border-right: 1px solid var(--line); display: flex; flex-direction: column; gap: 14px; }
@@ -491,6 +504,13 @@ details summary { cursor: pointer; color: var(--muted); font-size: 12.5px; }
       <div class="ex-right"><div class="tabs" id="exTabs"></div><div class="ex-preview" id="exPreview"></div></div>
     </div>
     <footer><span class="hint" id="exNote"></span><span class="spacer"></span><button class="btn" id="exCopy">Copy</button><button class="btn" id="exDlModel">Download model.py</button><button class="btn" id="exDlTrain">Download train.py</button><button class="btn" id="exZip">Download both (.zip)</button><button class="btn primary" id="exGo">Save both to a folder…</button></footer>
+  </div>
+</div>
+<div class="modal-bg" id="blockPreviewModal" hidden>
+  <div class="modal block-preview" role="dialog" aria-modal="true" aria-labelledby="blockPreviewTitle">
+    <header><button class="btn" id="blockPreviewBack" hidden>Back</button><b id="blockPreviewTitle">Block preview</b><span class="spacer"></span><button class="btn" id="blockPreviewClose">Close</button></header>
+    <div class="body"><svg id="blockPreviewSvg" role="group" aria-label="Block contents and tensor shapes"></svg></div>
+    <footer><span class="hint" id="blockPreviewNote"></span><span class="spacer"></span><button class="btn" id="blockPreviewOut" aria-label="Zoom out preview">−</button><button class="btn" id="blockPreviewFit">Fit</button><button class="btn" id="blockPreviewIn" aria-label="Zoom in preview">+</button></footer>
   </div>
 </div>
 <div class="modal-bg" id="importModal" hidden>
@@ -5009,7 +5029,7 @@ function blockInspector(el, n) {
   if (reps > 1) h += `<p class="hint" style="margin-top:-4px">Written as <span class="mono">nn.ModuleList([…] for _ in range(${reps}))</span> with a loop; every copy uses the sizes above.</p>`;
   h += field('Code name', txt('name', n.params.name, true, 'placeholder="auto"')) + field('Nickname', txt('title', n.params.title, false, 'placeholder="optional, shown beside it"'));
   if (cf) h += `<div class="errbox"><b>! Size conflict inside ${esc(blk.name)}.</b> ${esc(dimText(cf.a))} ≠ ${esc(dimText(cf.b))}. Open the block to fix it.</div>`;
-  h += `<div class="row"><button class="btn primary" id="iOpenBlk">Open block</button><button class="btn" id="iExpand">Expand into layers</button><button class="btn" id="iDel">Delete</button></div>`;
+  h += `<div class="row"><button class="btn primary" id="iOpenBlk">Open block</button><button class="btn" id="iExpand">Expand into layers</button><button class="btn" id="iPreviewBlk">Preview contents</button><button class="btn" id="iDel">Delete</button></div>`;
   h += `<div class="stat"><span>Output shape</span><b>${sh ? esc(shapeText(sh)) : '—'}</b></div><div class="stat"><span>Parameters in this use</span><b>${fmt(pc)}</b></div>`;
   el.innerHTML = h;
   el.onchange = e => {
@@ -5021,6 +5041,7 @@ function blockInspector(el, n) {
     const f = t.dataset.f; if (f) commit(() => { n.params[f] = t.value; });
   };
   $('#iOpenBlk').onclick = () => enterBlock(blk.id);
+  $('#iPreviewBlk').onclick = () => previewBlock(n);
   const rs = $('#iResetSizes'); if (rs) rs.onclick = () => commit(() => params.forEach(p => setBlockArg(n, p, +blk.graph.symbols[p] || 64)));
   $('#iExpand').onclick = () => expandUse(n.id);
   $('#iDel').onclick = deleteSel;
@@ -5371,7 +5392,7 @@ function openBlockPop(n, ev) {
   popEl.style.top = Math.max(8, Math.min(ev.clientY - r.top + 10, r.height - 220)) + 'px';
   popEl.innerHTML = `<small><b class="mono">${esc(blk.name)}</b>: input size comes from the stream.</small>`
     + (params.length ? params.map(p => `<div style="display:flex;flex-direction:column;gap:4px"><small>${esc((blk.labels && blk.labels[p]) || p)} size for this use (default ${esc(blk.graph.symbols[p])})</small><div class="big"><input type="number" min="1" data-bp="${esc(p)}" id="bp-${esc(p)}" value="${esc(NN.evalDim(n.params.args && n.params.args[p] != null ? n.params.args[p] : p, S.g.symbols) ?? '')}"></div></div>`).join('') : '<small>This block has no sizes of its own.</small>')
-    + `<div class="acts"><button class="btn" id="bpOpen">Open block</button><button class="btn" id="wpCancel">Cancel</button>${params.length ? '<button class="btn primary" id="wpApply">Apply</button>' : ''}</div>`;
+    + `<div class="acts"><button class="btn" id="bpOpen">Open block</button><button class="btn" id="bpPreview">Preview contents</button><button class="btn" id="wpCancel">Cancel</button>${params.length ? '<button class="btn primary" id="wpApply">Apply</button>' : ''}</div>`;
   wrap.appendChild(popEl);
   const f = popEl.querySelector('[data-bp]'); if (f) { f.focus(); f.select(); }
   const apply = () => {
@@ -5382,6 +5403,7 @@ function openBlockPop(n, ev) {
   const ap = popEl.querySelector('#wpApply'); if (ap) ap.onclick = apply;
   popEl.querySelector('#wpCancel').onclick = closePop;
   popEl.querySelector('#bpOpen').onclick = () => { closePop(); enterBlock(blk.id); };
+  popEl.querySelector('#bpPreview').onclick = () => { closePop(); previewBlock(n); };
   popEl.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); apply(); } if (e.key === 'Escape') closePop(); });
 }
 function openWidthPop(id, ev) {
@@ -5534,7 +5556,8 @@ function nodeMenu(x, y, clickedId) {
     h = item('openblock', 'Open block', 'Edit its inside; applies to every use')
       + (can || reps > 1 ? `<label class="argrow" style="padding-left:10px">Repeat × <input type="text" id="ctx-repeat" data-repeat="1" value="${reps}" style="width:60px"></label>` : `<p class="hint" style="padding:2px 10px 4px;margin:0">Repeat needs the same size in and out.</p>`)
       + (reps > 1 ? item('split', 'Split into separate uses', `${reps} blocks, each with its own sizes`) : '')
-      + item('expand', 'Expand into layers', 'Replace this use with its layers') + '<hr>' + h;
+      + item('expand', 'Expand into layers', 'Replace this use with its layers')
+      + item('previewblock', 'Preview contents', 'View one copy and its shapes without editing') + '<hr>' + h;
   }
   if (ids.length && !ids.every(id => byId(id) && ['input', 'output', 'loss'].includes(byId(id).type))) h += item('saveblock', 'Save selection as block', 'A library block with as many inputs and outputs as the selection has');
   h += item('dup', ids.length > 1 ? 'Duplicate layers' : one && one.type === 'block' ? 'Duplicate block' : 'Duplicate layer') + item('inspect', 'Show details') + item('del', 'Delete', '', '', 'danger');
@@ -5562,6 +5585,7 @@ function nodeMenu(x, y, clickedId) {
       }
       else if (act === 'group') groupSel();
       else if (act === 'openblock') enterBlock(one.params.block);
+      else if (act === 'previewblock') previewBlock(one);
       else if (act === 'expand') expandUse(one.id);
       else if (act === 'split') splitRepeat(one.id);
       else if (act === 'saveblock') saveSelectionAsBlock();
@@ -5953,6 +5977,130 @@ function switchTo(key) {
   const v = S.views[key];
   if (v) { S.view = Object.assign({}, v); render(); } else requestAnimationFrame(fit);
 }
+// Preview owns a detached snapshot. It never switches editor tabs or calls changed()/commit().
+const previewBlock = (() => {
+  const modal = $('#blockPreviewModal'), diagram = $('#blockPreviewSvg');
+  let stack = [], focusBefore = null, view = null, bounds = null, drag = null;
+  const frame = () => stack[stack.length - 1];
+  const paintView = () => diagram.setAttribute('viewBox', `${view.x} ${view.y} ${view.w} ${view.h}`);
+  const fitPreview = () => { view = { ...bounds }; paintView(); };
+  const zoom = factor => {
+    if (!view) return;
+    const w = Math.max(bounds.w / 12, Math.min(bounds.w * 4, view.w * factor)), h = w * view.h / view.w;
+    view = { x: view.x + (view.w - w) / 2, y: view.y + (view.h - h) / 2, w, h }; paintView();
+  };
+  const close = () => {
+    modal.hidden = true; stack = []; drag = null;
+    if (focusBefore && focusBefore.isConnected) focusBefore.focus();
+  };
+  function renderPreview() {
+    const { graph, info, name, repeat } = frame(), ix = info.ix;
+    const dim = value => String(value) === NN.BATCH ? NN.BATCH : String(NN.evalDim(value, graph.symbols) ?? value);
+    const shape = value => value ? value.map(dim).join(' × ') : 'unknown';
+    const rows = n => {
+      const outputs = n.type === 'block' && graph.blocks[n.params.block] ? NN.blockOutputs(graph.blocks[n.params.block]).length : 1;
+      return Array.from({ length: Math.max(1, outputs) }, (_, k) => (outputs > 1 ? `out ${k + 1}: ` : '') + shape(info.shapes.get(k ? n.id + '@' + k : n.id)));
+    };
+    const label = n => n.type === 'block' ? (graph.blocks[n.params.block]?.name || 'Missing block')
+      : n.type === 'linear' ? `Linear ${dim(n.params.out)}×${dim(n.params.in)}` : NN.nodeLabel(n) || n.type;
+    const sizes = new Map(graph.nodes.map(n => {
+      const lines = [label(n), n.params.name || '', ...rows(n)];
+      return [n.id, { w: Math.max(200, ...lines.map(line => line.length * 8 + 28)), h: 52 + rows(n).length * 18 }];
+    }));
+    NN.autoLayout(graph, n => sizes.get(n.id));
+    const yScale = Math.max(1.7, (Math.max(0, ...[...sizes.values()].map(s => s.h)) + 46) / 74);
+    graph.nodes.forEach(n => { n.y *= yScale; });
+    const box = n => ({ x: n.x - sizes.get(n.id).w / 2, y: n.y - sizes.get(n.id).h / 2, ...sizes.get(n.id) });
+    const boxes = graph.nodes.map(box);
+    const left = (boxes.length ? Math.min(...boxes.map(b => b.x)) : 0) - 40, top = (boxes.length ? Math.min(...boxes.map(b => b.y)) : 0) - 40;
+    bounds = { x: left, y: top, w: Math.max(left + 200, ...boxes.map(b => b.x + b.w)) - left + 40, h: Math.max(top + 160, ...boxes.map(b => b.y + b.h)) - top + 40 };
+    let content = '<defs><marker id="previewArrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="var(--muted)"/></marker></defs>';
+    for (const edge of graph.edges) {
+      const a = ix.byId.get(edge.from), b = ix.byId.get(edge.to); if (!a || !b) continue;
+      const A = box(a), B = box(b), count = NN.inCount(b), x = b.x + (edge.port - (count - 1) / 2) * 22;
+      const down = b.y > a.y, y0 = down ? A.y + A.h : A.y, y1 = down ? B.y : B.y + B.h;
+      const bend = Math.max(24, Math.abs(y1 - y0) / 2) * (down ? 1 : -1);
+      const sourceX = a.x + ((edge.out || 0) - (rows(a).length - 1) / 2) * 22;
+      const path = Math.abs(a.y - b.y) < 20
+        ? `M ${a.x < b.x ? A.x + A.w : A.x} ${a.y} L ${a.x < b.x ? B.x : B.x + B.w} ${b.y}`
+        : `M ${sourceX} ${y0} C ${sourceX} ${y0 + bend}, ${x} ${y1 - bend}, ${x} ${y1}`;
+      content += `<path class="preview-edge" d="${path}" marker-end="url(#previewArrow)"><title>${esc(shape(info.shapes.get(NN.srcKey(edge))))} · input ${edge.port + 1}</title></path>`;
+    }
+    for (const n of graph.nodes) {
+      const b = box(n), nested = n.type === 'block' && graph.blocks[n.params.block], error = info.errors.get(n.id);
+      content += `<g class="preview-node${error ? ' bad' : ''}" data-preview-type="${esc(n.type)}"${nested ? ` data-preview-node="${esc(n.id)}" tabindex="0" role="button" aria-label="Preview ${esc(label(n))}"` : ''}><title>${esc(error || (nested ? 'Click to preview this nested block' : label(n)))}</title><rect x="${b.x}" y="${b.y}" width="${b.w}" height="${b.h}" rx="8"/><text x="${n.x}" y="${b.y + 21}" text-anchor="middle" font-size="13" font-weight="500">${esc(label(n))}</text><text x="${n.x}" y="${b.y + 38}" text-anchor="middle" font-size="11">${esc(n.params.name || (nested ? 'Click to preview' : ''))}</text>${rows(n).map((line, i) => `<text class="preview-shape" x="${n.x}" y="${b.y + 56 + i * 18}" text-anchor="middle" font-size="12">${esc(line)}</text>`).join('')}</g>`;
+    }
+    diagram.innerHTML = content;
+    $('#blockPreviewTitle').textContent = stack.map(f => f.name).join(' / ') + ' — preview';
+    $('#blockPreviewNote').textContent = `Read-only. ${repeat > 1 ? `Showing one of ${repeat} copies. ` : ''}Drag to pan; scroll to zoom. Click nested blocks to preview.`;
+    $('#blockPreviewBack').hidden = stack.length < 2;
+    fitPreview();
+  }
+  function push(graph, use) {
+    if (stack.length >= 24) return toast('Block preview nesting limit reached.');
+    const info = NN.inferShapes(graph), ix = NN.index(graph), block = graph.blocks?.[use.params.block];
+    if (!block) return;
+    const inputShapes = ix.inKeys.get(use.id).map(key => info.shapes.get(key));
+    const inner = NN.instantiateBlock(graph, use, inputShapes);
+    const innerInfo = NN.inferShapes(inner); innerInfo.ix = NN.index(inner);
+    stack.push({ graph: inner, info: innerInfo, name: block.name, repeat: Math.max(1, +use.params.repeat || 1) });
+    renderPreview();
+  }
+  function nested(target) {
+    const element = target.closest('[data-preview-node]'); if (!element) return;
+    const g = frame().graph; push(g, g.nodes.find(n => n.id === element.dataset.previewNode));
+  }
+  $('#blockPreviewClose').onclick = close;
+  $('#blockPreviewBack').onclick = () => { stack.pop(); renderPreview(); $('#blockPreviewClose').focus(); };
+  $('#blockPreviewFit').onclick = fitPreview;
+  $('#blockPreviewIn').onclick = () => zoom(0.8);
+  $('#blockPreviewOut').onclick = () => zoom(1.25);
+  modal.addEventListener('click', e => { if (e.target === modal) close(); });
+  diagram.addEventListener('wheel', e => { e.preventDefault(); zoom(e.deltaY > 0 ? 1.12 : 1 / 1.12); }, { passive: false });
+  diagram.addEventListener('pointerdown', e => {
+    if (e.button !== 0) return;
+    const matrix = diagram.getScreenCTM(); if (!matrix) return;
+    drag = { x: e.clientX, y: e.clientY, view: { ...view }, scaleX: matrix.a, scaleY: matrix.d, moved: false, target: e.target };
+    diagram.setPointerCapture(e.pointerId);
+  });
+  diagram.addEventListener('pointermove', e => {
+    if (!drag || !diagram.hasPointerCapture(e.pointerId)) return;
+    const dx = e.clientX - drag.x, dy = e.clientY - drag.y;
+    if (Math.abs(dx) + Math.abs(dy) > 4) drag.moved = true;
+    if (drag.moved) { view = { ...drag.view, x: drag.view.x - dx / drag.scaleX, y: drag.view.y - dy / drag.scaleY }; paintView(); }
+  });
+  diagram.addEventListener('pointerup', e => {
+    if (!diagram.hasPointerCapture(e.pointerId)) return;
+    diagram.releasePointerCapture(e.pointerId);
+    if (drag && !drag.moved) nested(drag.target);
+    drag = null;
+  });
+  diagram.addEventListener('pointercancel', () => { drag = null; });
+  // Keep model shortcuts and paste/drop imports out of this read-only view.
+  document.addEventListener('keydown', e => {
+    if (modal.hidden) return;
+    e.stopImmediatePropagation();
+    if (e.key === 'Escape') { e.preventDefault(); close(); }
+    else if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() !== 'c') e.preventDefault();
+    else if (e.key === 'Enter' || e.key === ' ') { if (e.target.closest('[data-preview-node]')) { e.preventDefault(); nested(e.target); } }
+    else if (e.key === 'Tab') {
+      const controls = [...modal.querySelectorAll('button, [tabindex="0"]')].filter(el => !el.hidden);
+      const index = controls.indexOf(document.activeElement), next = (index + (e.shiftKey ? -1 : 1) + controls.length) % controls.length;
+      e.preventDefault(); controls[next].focus();
+    }
+  }, true);
+  for (const type of ['paste', 'drop', 'dragover']) document.addEventListener(type, e => {
+    if (!modal.hidden) { e.preventDefault(); e.stopImmediatePropagation(); }
+  }, true);
+  return use => {
+    closePop(); closeCtx(); focusBefore = document.activeElement;
+    const snapshot = JSON.parse(JSON.stringify({ ...S.g, blocks: R().blocks || {} }));
+    const selected = snapshot.nodes.find(n => n.id === use.id); if (!selected) return;
+    stack = []; push(snapshot, selected);
+    if (!stack.length) return;
+    modal.hidden = false; $('#blockPreviewClose').focus();
+  };
+})();
 function enterBlock(id) { switchTo(id); }
 function exitBlock() { if (!S.edit) return; if (!R().libHost) switchTo('model'); else if (S.edit !== hostMain(R())) switchTo(hostMain(R())); }
 function closeTab(id) {
