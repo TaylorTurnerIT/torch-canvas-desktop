@@ -172,6 +172,7 @@ kbd { font-family: var(--mono); font-size: 10.5px; border: 1px solid var(--line)
 .node .openbtn rect { fill: var(--blk-bd); stroke: var(--bg); stroke-width: 1.5; }
 .node .openbtn text { fill: var(--bg) !important; font-family: var(--sans); font-size: 10.5px; font-weight: 600; pointer-events: none; }
 .node .openbtn:hover rect { filter: brightness(1.12); }
+.openbtn .ico { fill: none; stroke: var(--bg); stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; pointer-events: none; }
 /* a block drawn open: its layers inside a purple frame */
 .pvf .pv-box { fill: var(--blk-bg); fill-opacity: .4; stroke: var(--blk-bd); stroke-width: 1.4; }
 .pvf .pv-back { fill: var(--blk-bg); fill-opacity: .7; stroke: var(--blk-bd); stroke-width: .9; opacity: .65; }
@@ -1016,6 +1017,11 @@ function useKeys() {
 }
 const peekKey = n => (n.pk != null ? n.pk : useKeys().get(n.id));
 const FR_PAD = 16, FR_TOP = 30;
+// the little buttons at a block's bottom-right corner: arrows pointing out (draw it open) and in (fold it back)
+const PEEK_ICON = {
+  open: (x, y) => `<path class="ico" d="M${x - 3.5},${y + 3.5} L${x + 3.5},${y - 3.5} M${x + 0.5},${y - 3.5} H${x + 3.5} V${y - 0.5} M${x - 0.5},${y + 3.5} H${x - 3.5} V${y + 0.5}"/>`,
+  fold: (x, y) => `<path class="ico" d="M${x - 3.5},${y + 3.5} L${x - 0.5},${y + 0.5} M${x - 3.5},${y + 0.5} H${x - 0.5} V${y + 3.5} M${x + 3.5},${y - 3.5} L${x + 0.5},${y - 0.5} M${x + 3.5},${y - 0.5} H${x + 0.5} V${y - 3.5}"/>`,
+};
 function togglePeek(id) {
   const opening = !S.open.has(id); opening ? S.open.add(id) : S.open.delete(id); render(); renderInspector();
   // an opened block that doesn't fit on screen brings the whole picture into view
@@ -1095,7 +1101,7 @@ function frameSvg(pv) {
     const bx = f.x + f.w - 44;
     h += `<rect class="pv-box" x="${f.x}" y="${f.y}" width="${f.w}" height="${f.h}" rx="12"/>`
       + `<text class="pv-title" x="${f.x + 12}" y="${f.y + 19}">${esc(f.blk.name + (f.reps > 1 ? ` × ${f.reps}` : ''))}</text>`
-      + `<g class="openbtn" data-peek="${esc(f.use)}"><title>Fold this block back into one box</title><rect x="${bx - 42}" y="${f.y - 9}" width="38" height="18" rx="9"/><text x="${bx - 23}" y="${f.y + 4}" text-anchor="middle">Fold</text></g>`
+      + `<g class="openbtn" data-peek="${esc(f.use)}"><title>Fold this block back into one box</title><rect x="${f.x + f.w - 24}" y="${f.y + f.h - 9}" width="28" height="18" rx="9"/>${PEEK_ICON.fold(f.x + f.w - 10, f.y + f.h)}</g>`
       + `<g class="openbtn" data-openblock="${esc(f.blk.id)}"><title>Open this block to view or edit its inside (or double-click)</title><rect x="${bx}" y="${f.y - 9}" width="44" height="18" rx="9"/><text x="${bx + 22}" y="${f.y + 4}" text-anchor="middle">Open</text></g>`;
     return `<g class="pvf${S.sel.nodes.has(f.root) ? ' sel' : ''}" data-frame="${esc(f.root)}"><title>${esc(f.blk.name)}: double-click to open</title>${h}</g>`;
   }).join('');
@@ -1594,7 +1600,7 @@ function render() {
           + `<text class="bt" x="${cx}" y="${cy + oy}" text-anchor="middle" font-size="12.5">${esc(t.title)}</text>`
           + `<text class="mono dimtxt" data-lindim="${n.id}" x="${cx}" y="${cy + oy + 14}" text-anchor="middle" font-size="10.5"><title>Click to set this block's sizes</title>${esc(t.io)}</text>`
           + (t.args ? `<text class="n-init" x="${cx}" y="${cy + oy + 26}" text-anchor="middle">${esc(t.args)}</text>` : '')
-          + `<g class="openbtn" data-peek="${esc(peekKey(n))}"><title>Show what is inside this block, in place</title><rect x="${L.x + cw - 90}" y="${L.y - 9}" width="46" height="18" rx="9"/><text x="${L.x + cw - 67}" y="${L.y + 4}" text-anchor="middle">Inside</text></g>`
+          + `<g class="openbtn" data-peek="${esc(peekKey(n))}"><title>Show what is inside this block, in place</title><rect x="${L.x + cw - 24}" y="${L.y + ch - 9}" width="28" height="18" rx="9"/>${PEEK_ICON.open(L.x + cw - 10, L.y + ch)}</g>`
           + `<g class="openbtn" data-openblock="${esc(n.params.block)}"><title>Open this block to view or edit its inside (or double-click)</title><rect x="${L.x + cw - 40}" y="${L.y - 9}" width="44" height="18" rx="9"/><text x="${L.x + cw - 18}" y="${L.y + 4}" text-anchor="middle">Open</text></g>`;
         break;
       }
