@@ -469,7 +469,7 @@ details summary { cursor: pointer; color: var(--muted); font-size: 12.5px; }
 #codeEdit::selection { background: color-mix(in srgb, var(--sel) 30%, transparent); color: transparent; }
 .warns li.err { color: var(--err); }
 .right[data-tab="marimo"] #codeBar, .right[data-tab="marimo"] #codePane { display: none; }
-#marimoPane { grid-row: 2 / 4; display: grid; grid-template-rows: auto minmax(0, 1fr); min-height: 0; }
+#marimoPane { grid-row: 2 / -1; display: grid; grid-template-rows: auto minmax(0, 1fr); min-height: 0; }
 #marimoPane[hidden] { display: none; }
 .marimo-head { display: flex; align-items: center; gap: 8px; padding: 8px 12px; border-bottom: 1px solid var(--line); font-size: 12px; color: var(--muted); }
 .marimo-head #marimoStatus { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }

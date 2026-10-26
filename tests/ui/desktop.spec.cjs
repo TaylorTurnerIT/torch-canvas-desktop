@@ -246,6 +246,17 @@ test('marimo pane starts the notebook server, embeds it, and stops it', async ({
   await expect(page.locator('#marimoFrames iframe')).toHaveAttribute('src', 'http://127.0.0.1:4173/desktop.js');
   await expect(page.locator('#marimoStatus')).toHaveText('/test/project');
   await expect(page.locator('#codePane')).toBeHidden();
+  // An iframe can exist and load while its grid track has zero height.
+  for (const viewport of [{ width: 1440, height: 960 }, { width: 1080, height: 720 }, { width: 2560, height: 1440 }]) {
+    await page.setViewportSize(viewport);
+    await expect.poll(async () => {
+      const frame = await page.locator('#marimoFrames iframe').boundingBox();
+      const right = await page.locator('.right').boundingBox();
+      return !!frame && !!right && frame.width > 280 && frame.height > right.height * 0.6
+        && Math.abs(frame.y + frame.height - right.y - right.height) < 2;
+    }).toBe(true);
+  }
+  await page.setViewportSize({ width: 1440, height: 960 });
   await page.screenshot({ path: 'test-results/marimo-pane.png' });
   expect(await page.evaluate(() => window.nativeCalls.filter(c => c.command === 'marimo_start').map(c => c.args))).toEqual([{ id: 'nb.py' }]);
   await page.locator('#tabCode').click();
