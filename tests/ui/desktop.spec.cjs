@@ -616,3 +616,24 @@ test('blocks inside blocks open in their own frames, and a layer in a frame cann
   await page.locator('#zFit').click();
   expect(errors).toEqual([]);
 });
+
+
+test('reloading an identical block under its saved name reuses the library entry', async ({ page }) => {
+  await page.goto('http://127.0.0.1:4173');
+  const source = fs.readFileSync('tests/fixtures/aliased-block-width.py', 'utf8');
+  async function open(name, text) {
+    await page.evaluate(({name, text}) => {
+      window.savedFiles[name] = Array.from(new TextEncoder().encode(text));
+      window.nextPickedFile = { id: name, identity: '/test/' + name, name, kind: 'file' };
+    }, {name, text});
+    await page.keyboard.press('Control+o');
+    await expect(page.locator('#fileBar')).toContainText(name);
+  }
+  await open('first.py', source);
+  const count = await page.evaluate(() => Object.keys(torchCanvas.state.libBlocks).length);
+  await open('renamed.py', source.replaceAll('Block19', 'Block24'));
+  expect(await page.evaluate(() => Object.keys(torchCanvas.state.libBlocks).length)).toBe(count);
+  expect(await page.evaluate(() => Object.values(torchCanvas.state.root.blocks).map(b => b.name))).toEqual(['Block24']);
+  await open('again.py', source);
+  expect(await page.evaluate(() => Object.keys(torchCanvas.state.libBlocks).length)).toBe(count);
+});

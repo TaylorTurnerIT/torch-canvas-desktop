@@ -166,8 +166,8 @@
     for (const p of c.params) {
       if (!p.name) continue;
       const bp = bm.get(p.name), i = find(p.name);
-      if (!bp) { if (i < 0) { const at = segs.length && segs[segs.length - 1].raw.trim() === '' ? segs.length - 1 : segs.length; segs.splice(at, 0, { raw: (at ? ' ' : '') + p.raw.trim(), name: p.name, eq: -1, def: null }); } }
-      else if (bp.def !== p.def && i >= 0 && segs[i].eq >= 0 && p.def != null) {
+      if (i < 0) { const at = segs.length && segs[segs.length - 1].raw.trim() === '' ? segs.length - 1 : segs.length; segs.splice(at, 0, { raw: (at ? ' ' : '') + p.raw.trim(), name: p.name, eq: -1, def: null }); }
+      else if (bp && bp.def !== p.def && i >= 0 && segs[i].eq >= 0 && p.def != null) {
         const s = segs[i], tail = s.raw.slice(s.eq + 1), lead = /^\s*/.exec(tail)[0], trail = /\s*$/.exec(tail)[0];
         segs[i] = Object.assign({}, s, { raw: s.raw.slice(0, s.eq + 1) + lead + p.def + trail, def: p.def });
       }

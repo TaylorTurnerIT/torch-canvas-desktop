@@ -258,3 +258,16 @@ test('source recovery does not replace unrelated import failures', () => {
   const invalid = branchedGate.replace('return self.head_norm(self.gate(x))', 'return self.head_norm(None)');
   assert.throws(() => NN.syncSource(invalid, graph), /expected a tensor input/);
 });
+
+
+test('renaming a block adds generated dimensions missing from the handwritten constructor', () => {
+  const source = fs.readFileSync('tests/fixtures/aliased-block-width.py', 'utf8');
+  const graph = NN.importPython(source).graph;
+  const block = Object.values(graph.blocks)[0];
+  block.name = 'RenamedBlock'; block.graph.name = 'RenamedBlock';
+  const out = NN.syncSource(source, graph, { gen: { literalDims: false } });
+  assert.match(out, /self\.blocks = nn\.ModuleList\(\[RenamedBlock\(width, hidden\)/);
+  const model = out.slice(out.indexOf('class ResidualMLP'));
+  assert.match(model.split('\n').find(line => line.includes('def __init__')), /\bhidden=1024\b/);
+  assert.equal(NN.syncSource(out, NN.importPython(out).graph), out);
+});

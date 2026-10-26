@@ -8936,7 +8936,7 @@ function libBlocksFor(graph) {
   const walk = g => { for (const z of g.nodes) if (z.type === 'block' && z.params.lib && !out[z.params.block]) { const L = S.libBlocks[z.params.lib]; if (!L) continue; out[z.params.block] = { id: z.params.block, name: L.name, graph: L.graph, lib: z.params.lib }; walk(L.graph); } };
   walk(graph); return out;
 }
-function sameCode(blk, L, root) { try { return NN.blockClassCode(blk, {}, (root && root.blocks) || {}) === NN.blockClassCode({ name: L.name, graph: L.graph }, {}, libBlocksFor(L.graph)); } catch { return false; } }
+function sameCode(blk, L, root) { try { return NN.blockClassCode(blk, {}, (root && root.blocks) || {}) === NN.blockClassCode({ name: blk.name, graph: L.graph }, {}, libBlocksFor(L.graph)); } catch { return false; } }
 // Every block is a library block. Copy library definitions into a network's blocks, and link any block that isn't
 // linked yet: to the library block of the same name when it is the same block (or always, for the shipped example
 // networks); otherwise it is added to the library, under a new name if its name is taken by a different block.
@@ -8948,7 +8948,8 @@ function syncLinked(root, o = {}) {
     // a deleted block: its uses go (also an example network's own copy of it)
     if (isDeleted(blk.lib) || (!blk.lib && o.byName && deletedName(blk.name))) { dropBlock(root, blk.id); ch = true; continue; }
     if (!blk.lib || !S.libBlocks[blk.lib]) {
-      const f = Object.keys(S.libBlocks).find(f => S.libBlocks[f].name === blk.name && (o.byName || sameCode(blk, S.libBlocks[f], root)));
+      const f = Object.keys(S.libBlocks).find(f => S.libBlocks[f].name === blk.name && (o.byName || sameCode(blk, S.libBlocks[f], root)))
+        || (!o.byName && Object.keys(S.libBlocks).find(f => sameCode(blk, S.libBlocks[f], root)));
       if (f && !Object.values(root.blocks).some(b => b !== blk && b.lib === f)) blk.lib = f;
       else {
         const old = blk.name, clash = nm => Object.values(S.libBlocks).some(L => L.name === nm) || Object.values(root.blocks).some(b => b !== blk && b.name === nm);
