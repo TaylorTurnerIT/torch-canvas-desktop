@@ -271,3 +271,24 @@ test('renaming a block adds generated dimensions missing from the handwritten co
   assert.match(model.split('\n').find(line => line.includes('def __init__')), /\bhidden=1024\b/);
   assert.equal(NN.syncSource(out, NN.importPython(out).graph), out);
 });
+
+
+test('literal dimension edits preserve required constructor arguments used by callers', () => {
+  const source = fs.readFileSync('tests/fixtures/aliased-block-width.py', 'utf8');
+  const graph = NN.importPython(source).graph;
+  graph.nodes.find(n => n.params.name === 'input_layer').params.in = '3072';
+  graph.nodes.find(n => n.params.name === 'head_fc2').params.out = '10';
+  const out = NN.syncSource(source, graph, { gen: { literalDims: false } });
+  const check = spawnSync('python3', ['-c', `
+import ast, sys
+module = ast.parse(sys.stdin.read())
+model = next(n for n in module.body if isinstance(n, ast.ClassDef) and n.name == 'ResidualMLP')
+constructor = next(n for n in model.body if isinstance(n, ast.FunctionDef) and n.name == '__init__')
+required = [n.arg for n in constructor.args.args[:-len(constructor.args.defaults)]]
+assert required == ['self', 'in_features', 'num_classes'], required
+`], { input: out, encoding: 'utf8' });
+  assert.equal(check.status, 0, check.stderr);
+  assert.match(out, /self\.input_layer = nn\.Linear\(3072, width\)/);
+  assert.match(out, /self\.head_fc2 = nn\.Linear\(width, 10\)/);
+  assert.equal(NN.syncSource(out, NN.importPython(out).graph), out);
+});

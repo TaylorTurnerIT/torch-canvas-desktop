@@ -157,7 +157,7 @@
     });
     return { before: header.slice(0, open + 1), after: header.slice(close), params };
   }
-  function patchParams(orig, base, cur) {
+  function patchParams(orig, base, cur, preserveRequired = false) {
     const o = paramsOf(orig), b = paramsOf(base), c = paramsOf(cur);
     if (!o || !b || !c) return orig;
     const bm = new Map(b.params.filter(p => p.name).map(p => [p.name, p])), cm = new Map(c.params.filter(p => p.name).map(p => [p.name, p]));
@@ -172,7 +172,7 @@
         segs[i] = Object.assign({}, s, { raw: s.raw.slice(0, s.eq + 1) + lead + p.def + trail, def: p.def });
       }
     }
-    for (const p of b.params) if (p.name && !cm.has(p.name)) { const i = find(p.name); if (i >= 0) segs.splice(i, 1); }
+    for (const p of b.params) if (p.name && !cm.has(p.name) && (!preserveRequired || !o.params.some(original => original.name === p.name && original.def == null))) { const i = find(p.name); if (i >= 0) segs.splice(i, 1); }
     return o.before + segs.map(s => s.raw).join(',') + o.after;
   }
   const reindent = (lines, from, to) => from === to ? lines : lines.map(l => (isBlank(l) ? l : ' '.repeat(to) + l.slice(Math.min(from, indentOf(l)))));
@@ -182,10 +182,12 @@
   // Rewrite one method of the original class so it follows the generated base -> cur change.
   function patchMethod(oL, oIt, bL, bIt, cL, cIt, ci) {
     const O = methodParts(oL, oIt, ci.o), B = methodParts(bL, bIt, ci.b), C = methodParts(cL, cIt, ci.c);
-    const head = patchParams(jn(oL, O.head[0], O.head[1]), jn(bL, B.head[0], B.head[1]), jn(cL, C.head[0], C.head[1])).split('\n');
+    const name = (/^(?:async\s+)?def\s+(\w+)/.exec(oIt.text) || [])[1];
+    // Required constructor arguments are a public interface, even when a diagram
+    // replaces their dimension expressions with literals. Keep callers compatible.
+    const head = patchParams(jn(oL, O.head[0], O.head[1]), jn(bL, B.head[0], B.head[1]), jn(cL, C.head[0], C.head[1]), name === '__init__').split('\n');
     const lead = oL.slice(oIt.a, oIt.p);
     const bodyOf = (L, M) => reindent(L.slice(M.bodyFrom, M.body.length ? M.body[M.body.length - 1].b : M.bodyFrom), M.indent, O.indent);
-    const name = (/^(?:async\s+)?def\s+(\w+)/.exec(oIt.text) || [])[1];
     if (name !== '__init__') {
       // Replace the body with the generated one, keeping the original docstring.
       const doc = O.docstring ? oL.slice(O.docstring.a, O.body.length > 1 ? O.body[1].a : O.docstring.b) : [];
